@@ -543,7 +543,7 @@ export const dict = {
   "wsl.onboarding.versionMismatch": "Kurulu sürüm masaüstü uygulamasının sürümüyle eşleşmiyor.",
   "wsl.onboarding.adding": "Ekleniyor…",
 
-  "dialog.project.edit.title": "Projeyi düzenle",
+  "dialog.project.edit.title": "Düzenle",
   "dialog.project.edit.name": "Ad",
   "dialog.project.edit.icon": "Simge",
   "dialog.project.edit.icon.alt": "Proje simgesi",

@@ -535,7 +535,7 @@ export const dict = {
   "wsl.onboarding.versionMismatch": "已安裝版本與桌面應用程式版本不符。",
   "wsl.onboarding.adding": "新增中…",
 
-  "dialog.project.edit.title": "編輯專案",
+  "dialog.project.edit.title": "編輯",
   "dialog.project.edit.name": "名稱",
   "dialog.project.edit.icon": "圖示",
   "dialog.project.edit.icon.alt": "專案圖示",

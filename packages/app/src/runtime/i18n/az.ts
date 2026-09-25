@@ -504,7 +504,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "masaüstü {{version}}",
   "wsl.onboarding.versionMismatch": "Quraşdırılmış versiya masaüstü proqram versiyasına uyğun gəlmir.",
   "wsl.onboarding.adding": "Əlavə edilir…",
-  "dialog.project.edit.title": "Layihəni redaktə et",
+  "dialog.project.edit.title": "Redaktə et",
   "dialog.project.edit.name": "Ad",
   "dialog.project.edit.icon": "İkon",
   "dialog.project.edit.icon.alt": "Layihə ikonu",

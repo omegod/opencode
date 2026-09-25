@@ -502,7 +502,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "επιτραπέζιος υπολογιστής {{version}}",
   "wsl.onboarding.versionMismatch": "Η εγκατεστημένη έκδοση δεν ταιριάζει με την έκδοση της εφαρμογής για υπολογιστές.",
   "wsl.onboarding.adding": "Προσθήκη…",
-  "dialog.project.edit.title": "Επεξεργασία έργου",
+  "dialog.project.edit.title": "Επεξεργασία",
   "dialog.project.edit.name": "Όνομα",
   "dialog.project.edit.icon": "Εικονίδιο",
   "dialog.project.edit.icon.alt": "Εικονίδιο έργου",

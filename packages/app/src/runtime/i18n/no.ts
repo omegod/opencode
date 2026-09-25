@@ -774,7 +774,7 @@ export const dict = {
   "dialog.server.current": "Gjeldende server",
   "dialog.server.status.default": "Standard",
 
-  "dialog.project.edit.title": "Rediger prosjekt",
+  "dialog.project.edit.title": "Rediger",
   "dialog.project.edit.name": "Navn",
   "dialog.project.edit.icon": "Ikon",
   "dialog.project.edit.icon.alt": "Prosjektikon",

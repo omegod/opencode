@@ -509,7 +509,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "سطح المكتب {{version}}",
   "wsl.onboarding.versionMismatch": "لا يتطابق الإصدار المثبت مع إصدار تطبيق سطح المكتب.",
   "wsl.onboarding.adding": "جارٍ الإضافة…",
-  "dialog.project.edit.title": "تحرير المشروع",
+  "dialog.project.edit.title": "تحرير",
   "dialog.project.edit.name": "الاسم",
   "dialog.project.edit.icon": "أيقونة",
   "dialog.project.edit.icon.alt": "أيقونة المشروع",

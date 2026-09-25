@@ -501,7 +501,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "мизи корӣ {{version}}",
   "wsl.onboarding.versionMismatch": "Версияи насбшуда ба версияи барномаи мизи корӣ мувофиқат намекунад.",
   "wsl.onboarding.adding": "Илова кардан…",
-  "dialog.project.edit.title": "Таҳрири лоиҳа",
+  "dialog.project.edit.title": "Таҳрир",
   "dialog.project.edit.name": "Ном",
   "dialog.project.edit.icon": "Нишона",
   "dialog.project.edit.icon.alt": "Нишонаи лоиҳа",

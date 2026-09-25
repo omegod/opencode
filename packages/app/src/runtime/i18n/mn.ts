@@ -503,7 +503,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "ширээний компьютер {{version}}",
   "wsl.onboarding.versionMismatch": "Суулгасан хувилбар нь ширээний програмын хувилбартай таарахгүй байна.",
   "wsl.onboarding.adding": "Нэмэж байна…",
-  "dialog.project.edit.title": "Төслийг засварлах",
+  "dialog.project.edit.title": "Засварлах",
   "dialog.project.edit.name": "Нэр",
   "dialog.project.edit.icon": "Дүрс",
   "dialog.project.edit.icon.alt": "Төслийн дүрс тэмдэг",

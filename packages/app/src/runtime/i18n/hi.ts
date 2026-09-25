@@ -507,7 +507,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "डेस्कटॉप {{version}}",
   "wsl.onboarding.versionMismatch": "इंस्टॉल किया गया संस्करण डेस्कटॉप ऐप संस्करण से मेल नहीं खाता।",
   "wsl.onboarding.adding": "जोड़ा जा रहा है…",
-  "dialog.project.edit.title": "प्रोजेक्ट संपादित करें",
+  "dialog.project.edit.title": "संपादित करें",
   "dialog.project.edit.name": "नाम",
   "dialog.project.edit.icon": "आइकन",
   "dialog.project.edit.icon.alt": "प्रोजेक्ट आइकन",

@@ -510,7 +510,7 @@ export const dict: Record<string, string> = {
   "wsl.onboarding.desktopVersion": "ཌེཀསི་ཊོཔ་ {{version}}",
   "wsl.onboarding.versionMismatch": "གཞི་བཙུགས་འབད་ཡོད་པའི་ཐོན་རིམ་འདི་ ཌེཀསི་ཊོཔ་ཨེཔ་ཐོན་རིམ་དང་མཐུན་སྒྲིག་མི་འབད།",
   "wsl.onboarding.adding": "ཁ་སྐོང་བརྐྱབ་དོ།",
-  "dialog.project.edit.title": "ཞུན་དག་ལས་གཞི།",
+  "dialog.project.edit.title": "ཞུན༌དག",
   "dialog.project.edit.name": "མིང",
   "dialog.project.edit.icon": "ངོས་དཔར།",
   "dialog.project.edit.icon.alt": "ལས་འགུལ་ངོས་དཔར།",

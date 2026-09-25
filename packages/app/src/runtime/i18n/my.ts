@@ -513,7 +513,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "ဒက်စ်တော့ {{version}}",
   "wsl.onboarding.versionMismatch": "ထည့်သွင်းထားသောဗားရှင်းသည် ဒက်စ်တော့အက်ပ်ဗားရှင်းနှင့် မကိုက်ညီပါ။",
   "wsl.onboarding.adding": "ထည့်နေသည်…",
-  "dialog.project.edit.title": "ပရောဂျက်ကို တည်းဖြတ်ပါ။",
+  "dialog.project.edit.title": "တည်းဖြတ်ရန်",
   "dialog.project.edit.name": "အမည်",
   "dialog.project.edit.icon": "သင်္ကေတ",
   "dialog.project.edit.icon.alt": "ပရောဂျက် သင်္ကေတ",

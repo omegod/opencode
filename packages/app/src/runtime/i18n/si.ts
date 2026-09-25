@@ -499,7 +499,7 @@ export const dict: Record<string, string> = {
   "wsl.onboarding.desktopVersion": "ඩෙස්ක්ටොප් {{version}}",
   "wsl.onboarding.versionMismatch": "ස්ථාපිත අනුවාදය ඩෙස්ක්ටොප් යෙදුම් අනුවාදයට නොගැලපේ.",
   "wsl.onboarding.adding": "එකතු කරමින්…",
-  "dialog.project.edit.title": "ව්‍යාපෘතිය සංස්කරණය කරන්න",
+  "dialog.project.edit.title": "සංස්කරණය කරන්න",
   "dialog.project.edit.name": "නම",
   "dialog.project.edit.icon": "නිරූපකය",
   "dialog.project.edit.icon.alt": "ව්යාපෘති නිරූපකය",

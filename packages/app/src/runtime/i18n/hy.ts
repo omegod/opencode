@@ -502,7 +502,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "աշխատասեղանի {{version}}",
   "wsl.onboarding.versionMismatch": "Տեղադրված տարբերակը չի համապատասխանում աշխատասեղանի հավելվածի տարբերակին։",
   "wsl.onboarding.adding": "Ավելացվում է…",
-  "dialog.project.edit.title": "Խմբագրել նախագիծը",
+  "dialog.project.edit.title": "Խմբագրել",
   "dialog.project.edit.name": "Անուն",
   "dialog.project.edit.icon": "Պատկերակ",
   "dialog.project.edit.icon.alt": "Նախագծի պատկերակ",

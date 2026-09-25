@@ -857,7 +857,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "application de bureau {{version}}",
   "wsl.onboarding.versionMismatch": "La version installée ne correspond pas à celle de l'application de bureau.",
   "wsl.onboarding.adding": "Ajout…",
-  "dialog.project.edit.title": "Modifier le projet",
+  "dialog.project.edit.title": "Modifier",
   "dialog.project.edit.name": "Nom",
   "dialog.project.edit.icon": "Icône",
   "dialog.project.edit.icon.alt": "Icône du projet",

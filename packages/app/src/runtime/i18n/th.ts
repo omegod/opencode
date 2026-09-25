@@ -539,7 +539,7 @@ export const dict = {
   "wsl.onboarding.versionMismatch": "เวอร์ชันที่ติดตั้งไม่ตรงกับเวอร์ชันของแอปเดสก์ท็อป",
   "wsl.onboarding.adding": "กำลังเพิ่ม…",
 
-  "dialog.project.edit.title": "แก้ไขโปรเจกต์",
+  "dialog.project.edit.title": "แก้ไข",
   "dialog.project.edit.name": "ชื่อ",
   "dialog.project.edit.icon": "ไอคอน",
   "dialog.project.edit.icon.alt": "ไอคอนโปรเจกต์",

@@ -531,7 +531,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "desktop {{version}}",
   "wsl.onboarding.versionMismatch": "Nainštalovaná verzia sa nezhoduje s verziou desktopovej aplikácie.",
   "wsl.onboarding.adding": "Pridáva sa…",
-  "dialog.project.edit.title": "Upraviť projekt",
+  "dialog.project.edit.title": "Upraviť",
   "dialog.project.edit.name": "Názov",
   "dialog.project.edit.icon": "Ikona",
   "dialog.project.edit.icon.alt": "Ikona projektu",

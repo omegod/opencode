@@ -510,7 +510,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "asztali {{version}}",
   "wsl.onboarding.versionMismatch": "A telepített verzió nem egyezik az asztali alkalmazás verziójával.",
   "wsl.onboarding.adding": "Hozzáadás…",
-  "dialog.project.edit.title": "Projekt szerkesztése",
+  "dialog.project.edit.title": "Szerkesztés",
   "dialog.project.edit.name": "Név",
   "dialog.project.edit.icon": "Ikon",
   "dialog.project.edit.icon.alt": "Projekt ikonra",

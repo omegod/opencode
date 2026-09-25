@@ -502,7 +502,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "escriptori {{version}}",
   "wsl.onboarding.versionMismatch": "La versió instal·lada no coincideix amb la versió de l'aplicació d'escriptori.",
   "wsl.onboarding.adding": "S'està afegint…",
-  "dialog.project.edit.title": "Edita el projecte",
+  "dialog.project.edit.title": "Edita",
   "dialog.project.edit.name": "Nom",
   "dialog.project.edit.icon": "Icona",
   "dialog.project.edit.icon.alt": "Icona del projecte",

@@ -493,7 +493,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "ዴስክቶፕ {{version}}",
   "wsl.onboarding.versionMismatch": "የተጫነው ሥሪት ከዴስክቶፕ መተግበሪያ ሥሪት ጋር አይዛመድም።",
   "wsl.onboarding.adding": "በማከል ላይ…",
-  "dialog.project.edit.title": "ፕሮጀክት አርትዕ",
+  "dialog.project.edit.title": "አርትዕ",
   "dialog.project.edit.name": "ስም",
   "dialog.project.edit.icon": "አዶ",
   "dialog.project.edit.icon.alt": "የፕሮጀክት አዶ",

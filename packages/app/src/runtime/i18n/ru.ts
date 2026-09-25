@@ -530,7 +530,7 @@ export const dict = {
   "wsl.onboarding.versionMismatch": "Установленная версия не соответствует версии приложения.",
   "wsl.onboarding.adding": "Добавление…",
 
-  "dialog.project.edit.title": "Редактировать проект",
+  "dialog.project.edit.title": "Редактировать",
   "dialog.project.edit.name": "Название",
   "dialog.project.edit.icon": "Значок",
   "dialog.project.edit.icon.alt": "Значок проекта",

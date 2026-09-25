@@ -511,7 +511,7 @@ export const dict = {
   "wsl.onboarding.versionMismatch": "インストールされているバージョンがデスクトップアプリのバージョンと一致しません。",
   "wsl.onboarding.adding": "追加中…",
 
-  "dialog.project.edit.title": "プロジェクトを編集",
+  "dialog.project.edit.title": "編集",
   "dialog.project.edit.name": "名前",
   "dialog.project.edit.icon": "アイコン",
   "dialog.project.edit.icon.alt": "プロジェクトアイコン",

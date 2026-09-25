@@ -500,7 +500,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "darbvirsmas {{version}}",
   "wsl.onboarding.versionMismatch": "Instalētā versija neatbilst darbvirsmas lietotnes versijai.",
   "wsl.onboarding.adding": "Pievieno…",
-  "dialog.project.edit.title": "Rediģēt projektu",
+  "dialog.project.edit.title": "Rediģēt",
   "dialog.project.edit.name": "Nosaukums",
   "dialog.project.edit.icon": "Ikona",
   "dialog.project.edit.icon.alt": "Projekta ikona",

@@ -512,7 +512,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "ڈیسک ٹاپ \u2068{{version}}\u2069",
   "wsl.onboarding.versionMismatch": "انسٹال کیتا گیا ورژن ڈیسک ٹاپ ایپ ورژن نال میل نئیں کھاندا۔",
   "wsl.onboarding.adding": "شامل کر رہیا واں…",
-  "dialog.project.edit.title": "پروجیکٹ وچ ترمیم کرو",
+  "dialog.project.edit.title": "ترمیم کرو",
   "dialog.project.edit.name": "ناں",
   "dialog.project.edit.icon": "آئکن",
   "dialog.project.edit.icon.alt": "پروجیکٹ آئیکن",

@@ -502,7 +502,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "ish stoli {{version}}",
   "wsl.onboarding.versionMismatch": "Oʻrnatilgan versiya ish stoli ilovasi versiyasiga mos kelmaydi.",
   "wsl.onboarding.adding": "Qo'shilmoqda…",
-  "dialog.project.edit.title": "Loyihani tahrirlash",
+  "dialog.project.edit.title": "Tahrirlash",
   "dialog.project.edit.name": "Ism",
   "dialog.project.edit.icon": "Belgi",
   "dialog.project.edit.icon.alt": "Loyiha belgisi",

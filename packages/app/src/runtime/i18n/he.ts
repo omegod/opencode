@@ -505,7 +505,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "גרסת שולחן העבודה: {{version}}",
   "wsl.onboarding.versionMismatch": "הגרסה המותקנת אינה תואמת את גרסת האפליקציה לשולחן העבודה.",
   "wsl.onboarding.adding": "מוסיף…",
-  "dialog.project.edit.title": "ערוך פרויקט",
+  "dialog.project.edit.title": "ערוך",
   "dialog.project.edit.name": "שם",
   "dialog.project.edit.icon": "סמל",
   "dialog.project.edit.icon.alt": "סמל פרויקט",

@@ -498,7 +498,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "töölaud {{version}}",
   "wsl.onboarding.versionMismatch": "Installitud versioon ei ühti töölauarakenduse versiooniga.",
   "wsl.onboarding.adding": "Lisamine…",
-  "dialog.project.edit.title": "Redigeeri projekti",
+  "dialog.project.edit.title": "Muuda",
   "dialog.project.edit.name": "Nimi",
   "dialog.project.edit.icon": "Ikoon",
   "dialog.project.edit.icon.alt": "Projekti ikoon",

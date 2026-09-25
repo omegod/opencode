@@ -509,7 +509,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "دسکتاپ {{version}}",
   "wsl.onboarding.versionMismatch": "نسخه نصب شده با نسخه برنامه دسکتاپ مطابقت ندارد.",
   "wsl.onboarding.adding": "در حال افزودن…",
-  "dialog.project.edit.title": "ویرایش پروژه",
+  "dialog.project.edit.title": "ویرایش کنید",
   "dialog.project.edit.name": "نام",
   "dialog.project.edit.icon": "نماد",
   "dialog.project.edit.icon.alt": "نماد پروژه",

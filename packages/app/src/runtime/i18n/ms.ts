@@ -511,7 +511,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "desktop {{version}}",
   "wsl.onboarding.versionMismatch": "Versi yang dipasang tidak sepadan dengan versi aplikasi desktop.",
   "wsl.onboarding.adding": "Sedang menambah…",
-  "dialog.project.edit.title": "Edit projek",
+  "dialog.project.edit.title": "Sunting",
   "dialog.project.edit.name": "Nama",
   "dialog.project.edit.icon": "Ikon",
   "dialog.project.edit.icon.alt": "Ikon projek",

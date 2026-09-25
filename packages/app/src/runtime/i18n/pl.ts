@@ -503,7 +503,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "aplikacja komputerowa {{version}}",
   "wsl.onboarding.versionMismatch": "Zainstalowana wersja nie jest zgodna z wersją aplikacji komputerowej.",
   "wsl.onboarding.adding": "Dodawanie…",
-  "dialog.project.edit.title": "Edytuj projekt",
+  "dialog.project.edit.title": "Edytuj",
   "dialog.project.edit.name": "Nazwa",
   "dialog.project.edit.icon": "Ikona",
   "dialog.project.edit.icon.alt": "Ikona projektu",

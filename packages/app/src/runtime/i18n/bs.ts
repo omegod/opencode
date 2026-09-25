@@ -532,7 +532,7 @@ export const dict = {
   "wsl.onboarding.versionMismatch": "Instalirana verzija ne odgovara verziji desktop aplikacije.",
   "wsl.onboarding.adding": "Dodavanje…",
 
-  "dialog.project.edit.title": "Uredi projekat",
+  "dialog.project.edit.title": "Uredi",
   "dialog.project.edit.name": "Naziv",
   "dialog.project.edit.icon": "Ikonica",
   "dialog.project.edit.icon.alt": "Ikonica projekta",

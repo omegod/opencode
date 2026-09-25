@@ -499,7 +499,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "iş stoly {{version}}",
   "wsl.onboarding.versionMismatch": "Gurlan wersiýa iş stoly programma wersiýasyna gabat gelenok.",
   "wsl.onboarding.adding": "Goşmak …",
-  "dialog.project.edit.title": "Taslamany redaktirläň",
+  "dialog.project.edit.title": "Redaktirläň",
   "dialog.project.edit.name": "Ady",
   "dialog.project.edit.icon": "Nyşan",
   "dialog.project.edit.icon.alt": "Taslamanyň nyşany",

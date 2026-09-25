@@ -570,7 +570,7 @@ export const dict = {
   "wsl.onboarding.versionMismatch": "Встановлена версія не відповідає версії десктопного застосунку.",
   "wsl.onboarding.adding": "Додавання…",
 
-  "dialog.project.edit.title": "Редагувати проєкт",
+  "dialog.project.edit.title": "Редагувати",
   "dialog.project.edit.name": "Назва",
   "dialog.project.edit.icon": "Іконка",
   "dialog.project.edit.icon.alt": "Іконка проєкту",

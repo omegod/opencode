@@ -501,7 +501,7 @@ export const dict: Record<string, string> = {
   "wsl.onboarding.desktopVersion": "डेस्कटप {{version}}",
   "wsl.onboarding.versionMismatch": "स्थापना गरिएको संस्करण डेस्कटप एप संस्करणसँग मेल खाँदैन।",
   "wsl.onboarding.adding": "थप्दै…",
-  "dialog.project.edit.title": "परियोजना सम्पादन गर्नुहोस्",
+  "dialog.project.edit.title": "सम्पादन गर्नुहोस्",
   "dialog.project.edit.name": "नाम",
   "dialog.project.edit.icon": "आइकन",
   "dialog.project.edit.icon.alt": "परियोजना आइकन",

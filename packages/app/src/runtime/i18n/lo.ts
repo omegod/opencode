@@ -508,7 +508,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "ເດັສທັອບ {{version}}",
   "wsl.onboarding.versionMismatch": "ເວີຊັນທີ່ຕິດຕັ້ງບໍ່ກົງກັບເວີຊັນຂອງແອັບ desktop.",
   "wsl.onboarding.adding": "ກຳລັງເພີ່ມ…",
-  "dialog.project.edit.title": "ແກ້ໄຂໂຄງການ",
+  "dialog.project.edit.title": "ແກ້ໄຂ",
   "dialog.project.edit.name": "ຊື່",
   "dialog.project.edit.icon": "ໄອຄອນ",
   "dialog.project.edit.icon.alt": "ໄອຄອນໂຄງການ",

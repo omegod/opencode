@@ -531,7 +531,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "namizje {{version}}",
   "wsl.onboarding.versionMismatch": "Nameščena različica se ne ujema z različico namizne aplikacije.",
   "wsl.onboarding.adding": "Dodajanje …",
-  "dialog.project.edit.title": "Uredi projekt",
+  "dialog.project.edit.title": "Uredi",
   "dialog.project.edit.name": "Ime",
   "dialog.project.edit.icon": "Ikona",
   "dialog.project.edit.icon.alt": "Ikona projekta",

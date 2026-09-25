@@ -327,7 +327,7 @@ export const dict = {
   "dialog.server.menu.delete": "삭제",
   "dialog.server.current": "현재 서버",
   "dialog.server.status.default": "기본값",
-  "dialog.project.edit.title": "프로젝트 편집",
+  "dialog.project.edit.title": "편집",
   "dialog.project.edit.name": "이름",
   "dialog.project.edit.icon": "아이콘",
   "dialog.project.edit.icon.alt": "프로젝트 아이콘",

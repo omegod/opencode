@@ -829,7 +829,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "desktop {{version}}",
   "wsl.onboarding.versionMismatch": "Den installerade versionen matchar inte versionen av skrivbordsappen.",
   "wsl.onboarding.adding": "Lägger till…",
-  "dialog.project.edit.title": "Redigera projekt",
+  "dialog.project.edit.title": "Redigera",
   "dialog.project.edit.name": "Namn",
   "dialog.project.edit.icon": "Ikon",
   "dialog.project.edit.icon.alt": "Projektikonen",

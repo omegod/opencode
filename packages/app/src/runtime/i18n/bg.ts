@@ -503,7 +503,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "работен плот {{version}}",
   "wsl.onboarding.versionMismatch": "Инсталираната версия не съответства на версията на настолното приложение.",
   "wsl.onboarding.adding": "Добавяне…",
-  "dialog.project.edit.title": "Редактиране на проекта",
+  "dialog.project.edit.title": "Редактиране",
   "dialog.project.edit.name": "Име",
   "dialog.project.edit.icon": "Икона",
   "dialog.project.edit.icon.alt": "Икона на проекта",

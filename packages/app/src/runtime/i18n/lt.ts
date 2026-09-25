@@ -511,7 +511,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "darbalaukis {{version}}",
   "wsl.onboarding.versionMismatch": "Įdiegta versija neatitinka darbalaukio programos versijos.",
   "wsl.onboarding.adding": "Pridedama…",
-  "dialog.project.edit.title": "Redaguoti projektą",
+  "dialog.project.edit.title": "Redaguoti",
   "dialog.project.edit.name": "Vardas",
   "dialog.project.edit.icon": "Piktograma",
   "dialog.project.edit.icon.alt": "Projekto piktograma",

@@ -753,7 +753,7 @@ export const dict = {
   "wsl.onboarding.versionMismatch": "Den installerede version matcher ikke desktopappens version.",
   "wsl.onboarding.adding": "Tilføjer…",
 
-  "dialog.project.edit.title": "Rediger projekt",
+  "dialog.project.edit.title": "Rediger",
   "dialog.project.edit.name": "Navn",
   "dialog.project.edit.icon": "Ikon",
   "dialog.project.edit.icon.alt": "Projektikon",

@@ -500,7 +500,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "დესკტოპის {{version}}",
   "wsl.onboarding.versionMismatch": "დაინსტალირებული ვერსია არ ემთხვევა დესკტოპის აპის ვერსიას.",
   "wsl.onboarding.adding": "დამატება…",
-  "dialog.project.edit.title": "პროექტის რედაქტირება",
+  "dialog.project.edit.title": "რედაქტირება",
   "dialog.project.edit.name": "სახელი",
   "dialog.project.edit.icon": "ხატულა",
   "dialog.project.edit.icon.alt": "პროექტის ხატულა",

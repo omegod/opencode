@@ -499,7 +499,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "skriviborð {{version}}",
   "wsl.onboarding.versionMismatch": "Innsetta útgávan passar ikki til skriviborðsappiútgávuna.",
   "wsl.onboarding.adding": "Leggi til…",
-  "dialog.project.edit.title": "Rætta verkætlan",
+  "dialog.project.edit.title": "Rætta",
   "dialog.project.edit.name": "Navn",
   "dialog.project.edit.icon": "Ikon",
   "dialog.project.edit.icon.alt": "Verkætlanarmerki",

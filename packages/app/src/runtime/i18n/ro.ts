@@ -499,7 +499,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "desktop {{version}}",
   "wsl.onboarding.versionMismatch": "Versiunea instalată nu corespunde cu versiunea aplicației desktop.",
   "wsl.onboarding.adding": "Se adaugă…",
-  "dialog.project.edit.title": "Editează proiectul",
+  "dialog.project.edit.title": "Editează",
   "dialog.project.edit.name": "Nume",
   "dialog.project.edit.icon": "Pictogramă",
   "dialog.project.edit.icon.alt": "Pictograma proiectului",

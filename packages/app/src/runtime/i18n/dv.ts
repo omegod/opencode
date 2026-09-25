@@ -511,7 +511,7 @@ export const dict = {
   "wsl.onboarding.desktopVersion": "ޑެސްކްޓޮޕް \u2068{{version}}\u2069 އެވެ",
   "wsl.onboarding.versionMismatch": "އިންސްޓޯލް ކޮށްފައިވާ ވަރޝަން ޑެސްކްޓޮޕް އެޕް ވަރޝަން އާއި އެއްގޮތެއް ނުވެއެވެ.",
   "wsl.onboarding.adding": "އިތުރުކުރަނީ…",
-  "dialog.project.edit.title": "އެޑިޓް ޕްރޮޖެކްޓް",
+  "dialog.project.edit.title": "ބަދަލު ގެނައުން",
   "dialog.project.edit.name": "ނަން",
   "dialog.project.edit.icon": "އައިކޮން",
   "dialog.project.edit.icon.alt": "ޕްރޮޖެކްޓް އައިކޮން",
