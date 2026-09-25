@@ -609,7 +609,7 @@ export const dict = {
   "server.row.incompatible":
     "This server is running OpenCode {{version}}, which isn't compatible with this app. Upgrade it to OpenCode V2 to continue.",
 
-  "dialog.project.edit.title": "Edit project",
+  "dialog.project.edit.title": "Edit",
   "dialog.project.edit.name": "Name",
   "dialog.project.edit.icon": "Icon",
   "dialog.project.edit.icon.alt": "Project icon",
@@ -1171,6 +1171,11 @@ export const dict = {
   "settings.appearance.row.tabs.description": "Choose how session tabs are arranged",
   "settings.appearance.row.tabs.horizontal": "Horizontal",
   "settings.appearance.row.tabs.vertical": "Vertical",
+  "settings.appearance.row.tabs.groupByProject.title": "Group by project",
+  "settings.appearance.row.tabs.groupByProject.description": "Group session tabs under their project directories",
+  "tab.group.sessions": "Sessions",
+  "tab.group.collapse": "Collapse project sessions",
+  "tab.group.expand": "Expand project sessions",
   "settings.notifications.description": "Choose when to receive notifications and hear sounds",
   "settings.shortcuts.description": "Customize shortcuts for common actions",
   "settings.servers.description": "Manage server connections",

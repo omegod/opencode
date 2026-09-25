@@ -58,6 +58,10 @@
   min-height: 44px;
 }
 
+[data-slot="mobile-tabs-drawer"] [data-slot="tab-group-header"] {
+  min-height: 44px;
+}
+
 [data-slot="mobile-tabs-drawer"] [data-titlebar-tab] [data-slot="tab-close"] {
   inset-inline-end: 0;
   width: 44px;

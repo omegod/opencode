@@ -76,6 +76,9 @@ export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
     const [info, setInfo, , infoReady] = persisted(Persist.window("tabs.info"), TabStorage.Infos, {})
     const [panes, setPanes, , panesReady] = persisted(Persist.window("tabs.panes"), TabStorage.Panes, {})
     const [closed, setClosed, , closedReady] = persisted(Persist.window("tabs.closed"), TabStorage.Closed, [])
+    const [groupCollapse, setGroupCollapse] = persisted(Persist.window("tabs.groups"), TabStorage.GroupCollapse, {
+      collapsed: {},
+    })
     const [pending, setPending] = createStore<Record<string, PendingSession | undefined>>({})
 
     const params = useParams()
@@ -226,6 +229,12 @@ export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
             tabs.splice(0, tabs.length, ...next)
           }),
         )
+      },
+      groupCollapsed(key: string) {
+        return groupCollapse.collapsed[key] ?? false
+      },
+      toggleGroupCollapsed(key: string) {
+        setGroupCollapse("collapsed", key, (value) => !value)
       },
       draft(draftID: string) {
         const tab = store.find((item) => item.type === "draft" && item.draftID === draftID)

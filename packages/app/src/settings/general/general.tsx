@@ -321,6 +321,26 @@ const TabLayoutSetting = () => {
   )
 }
 
+const GroupTabsByProjectSetting = () => {
+  const language = useLanguage()
+  const settings = useSettings()
+  return (
+    <Show when={settings.appearance.tabLayout() === "vertical"}>
+      <SettingsRow
+        title={language.t("settings.appearance.row.tabs.groupByProject.title")}
+        description={language.t("settings.appearance.row.tabs.groupByProject.description")}
+      >
+        <div data-action="settings-tabs-group-by-project">
+          <Switch
+            checked={settings.appearance.groupTabsByProject()}
+            onChange={settings.appearance.setGroupTabsByProject}
+          />
+        </div>
+      </SettingsRow>
+    </Show>
+  )
+}
+
 export const SettingsGeneral: Component = () => {
   const language = useLanguage()
   const platform = usePlatform()
@@ -348,6 +368,7 @@ export const SettingsGeneral: Component = () => {
       <SettingsList>
         <LanguageSetting />
         <TabLayoutSetting />
+        <GroupTabsByProjectSetting />
 
         <WorkspaceDestinationSetting />
         <AutoApprovePermissionsSetting />
@@ -472,20 +493,22 @@ export const SettingsGeneral: Component = () => {
           </div>
         </SettingsRow>
 
-        <SettingsRow
-          title={language.t("settings.updates.row.check.title")}
-          description={language.t("settings.updates.row.check.description")}
-        >
-          <Button
-            data-action="settings-check-updates"
-            size="normal"
-            variant="neutral"
-            disabled={!updater.action().run}
-            onClick={() => updater.run()}
+        <Show when={platform.updater && platform.updater.state().status !== "disabled"}>
+          <SettingsRow
+            title={language.t("settings.updates.row.check.title")}
+            description={language.t("settings.updates.row.check.description")}
           >
-            {language.t(updater.action().label)}
-          </Button>
-        </SettingsRow>
+            <Button
+              data-action="settings-check-updates"
+              size="normal"
+              variant="neutral"
+              disabled={!updater.action().run}
+              onClick={() => updater.run()}
+            >
+              {language.t(updater.action().label)}
+            </Button>
+          </SettingsRow>
+        </Show>
       </SettingsList>
     </div>
   )

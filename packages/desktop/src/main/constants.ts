@@ -5,7 +5,9 @@ const raw = import.meta.env.OPENCODE_CHANNEL
 export const CHANNEL: Channel = raw === "local" || raw === "dev" || raw === "beta" || raw === "prod" ? raw : "dev"
 export const VERSION = app.isPackaged ? app.getVersion() : (process.env.OPENCODE_VERSION ?? app.getVersion())
 
-export const UPDATER_ENABLED = app.isPackaged && CHANNEL !== "dev"
+// This fork ships without the desktop updater: releases are installed manually, so no build
+// checks for updates, shows update UI, or notifies about new versions.
+export const UPDATER_ENABLED = false
 
 const appNames: Record<string, string> = {
   dev: "OpenCode Dev",

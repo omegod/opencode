@@ -43,6 +43,9 @@ export const Tabs = Persistence.array(Schema.Union([SessionCodec, Draft]))
 export const Recent = Persistence.struct({
   key: Schema.optional(Schema.String),
 })
+export const GroupCollapse = Persistence.struct({
+  collapsed: Persistence.record(Persistence.fallback(Schema.Boolean, () => false)),
+})
 export const Info = Persistence.struct({
   title: Schema.optional(Schema.String),
   directory: Schema.optional(Schema.String),
