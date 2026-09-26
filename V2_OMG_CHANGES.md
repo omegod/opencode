@@ -81,17 +81,16 @@
 
 ## 2. 桌面端关闭自动更新
 
-结论：关闭后不再检查更新、不再出现任何更新提示；发布包同样关闭。
+结论：关闭后不再检查更新、不再出现任何更新提示；发布包同样不内置更新源。
 
 ### 实现
 
 - `packages/desktop/src/main/constants.ts`：`UPDATER_ENABLED = false`（本分支固定关闭；以后要恢复只改这一行）。
-- 设置页「检查更新」行在更新器禁用时隐藏：`packages/app/src/settings/general/general.tsx`。
-- 更新器平台不创建后，启动检查、10 分钟轮询、标题栏更新按钮、原生对话框、菜单项均不会生效。
-
-### 不受影响
-
-- 版本变化后首次启动的 Release notes 弹窗仍由 `settings.general.releaseNotes` 控制，属于手动升级后的说明，不是更新通知。
+- `packages/desktop/electron-builder.config.ts`：移除 beta/prod 的 `publish` 配置，打包不再生成 `app-update.yml` 更新源文件（artifact 命名、签名、dmg/zip 目标不受影响；electron-updater 依赖保留但运行时已失效）。
+- 设置页整个「更新」区块（含 Release notes 开关）在更新器禁用时隐藏：`packages/app/src/settings/general/general.tsx`。
+- What's New 弹窗与 opencode.ai/changelog.json 拉取在更新器禁用时一并停用：`packages/app/src/shell/updates/highlights.tsx`。
+- 设置搜索中的「检查更新」「Release notes」条目随更新器状态隐藏：`packages/app/src/settings/search-index.ts`、`search.tsx`。
+- 更新器平台不创建后，启动检查、10 分钟轮询、标题栏更新按钮、原生对话框、菜单项均不会生效；命令面板的检查更新命令本就 `hidden`，无需改动。
 
 ## 3. 中文文案补充与术语修正
 
@@ -112,14 +111,47 @@
 
 繁体 `zht.ts` 未改：台湾用语「背景執行」本身正确。
 
+## 4. 提供商管理与自定义提供商表单增强
+
+### 服务端：配置文件写入 provider
+
+- `packages/schema/src/config.ts`：`Config.Patch` 新增可选 `provider` 字段（`Record<providerID, 条目 | null>`，值为 opencode.json 的 v1 文件结构，`null` 表示删除该提供商）；`shell` 改为可选，只在传入时修改，避免客户端只写 provider 时误删 shell 设置。
+- `packages/core/src/config.ts`：`Config.update` 按 `["provider", providerID]` 逐条 JSONC 编辑（新增/覆盖/删除），保留注释与无关内容；每次编辑基于当前文本顺序应用（jsonc-parser 拒绝同一对象上的并发编辑）。写入最高优先级**全局**配置文件后触发 reload。
+- 已知限制：写入的是全局配置文件；若同名提供商定义在项目级配置中，项目级仍会覆盖全局的编辑结果。
+- 客户端已重新生成（`packages/client` `bun run generate`）。
+- 测试：`packages/core/test/config/config.test.ts` 覆盖新增/删除/注释保留/重载投影。
+
+### 自定义提供商表单（新增与编辑复用同一弹窗）
+
+- 协议格式选项：Compatible（`@ai-sdk/openai-compatible`，聊天补全）与 Response（`@ai-sdk/openai`，Responses API）。
+- 模型行可展开（model-id 左侧箭头）：展开后分「Token 限制」（上下文默认 200000、输出默认 16000）与「模型属性」两块；模型属性为 `属性名 + JSON 值` 行，默认三行 `options = {"reasoningEffort":"high"}`、`modalities = {"input":["text"],"output":["text"]}`、`variants = {"high":{"reasoningEffort":"high"}}`，支持 `+` 新增、默认行可删除/修改，JSON 值非法内联报错；序列化时每行按 `模型[属性名] = JSON 值` 原样写入模型顶层（`limit` 恒写 context/output）。
+- 同名提供商拒绝：保存时 providerID 与「运行中提供商列表 + 配置文件中的提供商」任一冲突即拒绝提交并内联提示（`provider.custom.error.providerID.exists`）；编辑模式下 ID 只读且排除自身。
+- 编辑模式：从 `config.get()` 文档反解预填（`aisdk:` 前缀 → 协议、`settings.baseURL`/`apiKey`/`env`、模型 limit/settings/capabilities/variants），API 密钥回显（`{env:VAR}` 引用原样显示）。
+- 保存：`config.update({ provider: { [id]: entry } })`，成功后失效并重取 provider/model 数据 + toast。
+- 文案：en 新增源串、zh 同步中文；其余语言按上游惯例回退英文。
+
+### 提供商列表 hover 菜单
+
+- 「配置」与「自定义」徽标的提供商行（均来自配置文件定义）hover 显示竖向省略号菜单：编辑 / 移除（复用标题栏分组菜单的 `hover-reveal` 模式）。
+- 编辑：连接提供商弹窗直接进入自定义表单编辑态；移除：确认对话框后从配置文件删除该提供商并刷新列表。
+- 环境 / API 密钥 / 账号类型的行行为不变。
+
+## 5. 左右布局下内容页顶部支持窗口拖动
+
+- 左右布局（`appearance.tabLayout: "vertical"`）会隐藏全宽标题栏，此前唯一的拖动区是 macOS 侧边栏顶部的 28px spacer，主页 / 设置 / 会话页顶部无法拖动窗口。
+- `packages/app/src/shell/shell.tsx`：`<main>` 内新增一条覆盖顶部 8px 间隙（`--shell-top-inset`）的 `data-tauri-drag-region` 拖动条，绝对定位、`z-50`，不遮挡卡片内容、无视觉变化；仅竖排布局且非 Windows 桌面时渲染（Windows 保留标题栏自身拖动区）。
+- 顺带发现（未改）：Linux 竖排布局下侧边栏 spacer 仅 macOS 渲染，整个窗口没有可拖区域。
+
 ## 变更文件清单
 
 | 文件                                                       | 变更                                     |
 | ---------------------------------------------------------- | ---------------------------------------- |
+| `packages/app/src/shell/shell.tsx`                         | 竖排布局下内容页顶部间隙作为窗口拖动区   |
 | `packages/app/src/settings/model.tsx`                      | 新增 `appearance.groupTabsByProject`     |
 | `packages/app/src/settings/model.test.ts`                  | 默认值断言更新                           |
-| `packages/app/src/settings/general/general.tsx`            | 新增分组开关；更新器禁用时隐藏检查更新行 |
+| `packages/app/src/settings/general/general.tsx`            | 新增分组开关；更新器禁用时隐藏整个更新区块 |
 | `packages/app/src/settings/search-catalog.ts`              | 新增设置搜索项                           |
+| `packages/app/src/settings/search-index.ts` / `search.tsx` | 更新器禁用时隐藏更新相关搜索条目         |
 | `packages/app/src/runtime/i18n/en.ts`                      | 新增英文文案                             |
 | `packages/app/src/runtime/i18n/zh.ts`                      | 新增中文文案并修正 shell / 背景 术语     |
 | `packages/app/src/shell/tabs/schema.ts`                    | 新增 `GroupCollapse` 持久化结构          |
@@ -132,5 +164,16 @@
 | `packages/app/src/shell/titlebar/project-tab-group.tsx`    | 新增：可折叠分组标题与菜单               |
 | `packages/app/src/shell/titlebar/tab-nav.tsx`              | 会话行可隐藏头像、支持缩进               |
 | `packages/app/src/shell/titlebar/titlebar.css`             | 移动抽屉里分组标题的触控高度             |
+| `packages/app/src/shell/updates/highlights.tsx`            | 更新器禁用时停用 What's New 弹窗         |
+| `packages/app/src/providers/credentials/form.ts`           | 协议格式、模型展开配置、校验、编辑预填   |
+| `packages/app/src/providers/credentials/form.test.ts`      | 测试随表单能力更新                       |
+| `packages/app/src/providers/credentials/dialog.tsx`        | 配置读写接入（同名拒绝、编辑、保存落盘） |
+| `packages/app/src/providers/connect/dialog.tsx`            | 连接弹窗控制器支持编辑模式               |
+| `packages/app/src/settings/providers/providers.tsx`        | 配置/自定义行 hover 菜单与移除确认       |
 | `packages/ui/src/icons/icon/icon.tsx`                      | 新增 `outline-dots-vertical` / `folder-opened`，`folder` 改用锐角 codicon |
+| `packages/schema/src/config.ts`                            | `Config.Patch` 支持 provider 增删        |
+| `packages/core/src/config.ts`                              | `Config.update` 应用 provider 补丁       |
+| `packages/core/test/config/config.test.ts`                 | provider patch 测试                      |
+| `packages/client/src/**`（生成文件）                       | 随协议变更重新生成                       |
 | `packages/desktop/src/main/constants.ts`                   | `UPDATER_ENABLED` 固定关闭               |
+| `packages/desktop/electron-builder.config.ts`              | 移除 beta/prod publish，不再生成 app-update.yml |
