@@ -24,7 +24,7 @@
 - 分组标题为「目录图标 + 目录名 + 竖向省略号菜单」，整行可点击收起/展开该目录的会话。
 - 收起态用 `folder`，展开态用 `folder-opened`（VS Code Codicons，MIT，四角改为锐角）；标题默认用会话的非激活样式，hover/pressed 复用会话标签的 overlay 效果。
 - 收起状态持久化（与标签顺序同一存储，同一窗口内共享，刷新/重启后保留）。
-- 分组内的会话行缩进一级：缩进做在行内 padding（`ps-4`）上，背景/hover/激活高亮仍是整行宽度，水平与非分组模式不受影响。
+- 分组内的会话行缩进一级：缩进做在行内 padding（`ps-7`）上，背景/hover/激活高亮仍是整行宽度，水平与非分组模式不受影响。
 - 每个项目分组标题右侧有竖向省略号菜单：编辑 / 会话 / 关闭。
 - 分组标题支持拖动排序。
 
@@ -177,3 +177,23 @@
 | `packages/client/src/**`（生成文件）                       | 随协议变更重新生成                       |
 | `packages/desktop/src/main/constants.ts`                   | `UPDATER_ENABLED` 固定关闭               |
 | `packages/desktop/electron-builder.config.ts`              | 移除 beta/prod publish，不再生成 app-update.yml |
+
+## 6. 合并上游 v2.0.17 / v2.0.18
+
+- **版本号随官方走**：合并官方 release 提交后，根与所有 workspace 的 `version` 均为 `2.0.18`（2.0.16 → 2.0.18），fork 不再单独维护版本号。
+- 合并官方 tag `v2.0.18`（内容含 v2.0.17）：相对 fork 基线 `c1f50659a7` 共 65 个上游提交。`upstream/v2` 分支 tip 另有 4 个未发布提交（含 TUI MCP 模型选择修复），本次不取，留给下次同步。
+- 上游主要内容：app 队列提示词撤销回输入框、提供商账号切换、会话项目图标解析统一；ai 媒体客户端统一重构与一批厂商/媒体修复；core Console 托管 MCP、工具名放宽、shell 信号上报；tui OpenTUI 0.5.12、大 diff 虚拟化、fs.watch 防崩；codemode WeakMap/WeakSet 与 test262 支持等。
+- 唯一需要手工整合的文件：`packages/app/src/settings/providers/providers.tsx`。
+  - 双方改写了同一区域：上游新增「账号切换」菜单，fork 新增「编辑 / 移除」菜单。
+  - 合并后的显示顺序为 `canManageAccounts` → `configDefined` → `canDisconnect` → 环境提示：有 credential 的提供商显示账号菜单；config / custom 提供商显示编辑/移除菜单；其余保持断开按钮或环境提示。两者天然互斥（有 credential 时 `source()` 不会是 config/custom），行为互不影响。
+- `packages/app/src/runtime/i18n/en.ts`（双方各自加键）与 `packages/app/src/shell/titlebar/tab-nav.tsx`（上游仅改 `projectForSession` 调用）为自动合并。
+- `packages/client` 生成文件合并后执行 `bun run generate`，无差异。
+- `bun install` 同步上游依赖变更（`bun.lock` 由上游更新，fork 未改动，无冲突）。
+- 后续同步策略：直接 `git merge v2.0.x`；本次采用 merge commit，未 rebase fork 提交。
+
+验证：
+
+- `bun run check`（根目录，lint + 全量 typecheck）通过（EXIT=0）。
+- 合并结果相对 `v2.0.18` 的差异文件 = fork 功能改动的 101 个文件，无多余、无丢失。
+- 包级测试与合并前对比无回归：`packages/app` 937 → 941 项（上游新增 4 项），失败项相同（1 项本地环境）；`packages/core` 40 项失败、`packages/desktop` 8 项失败在合并前后完全一致（ripgrep / shell / watcher / browser 集成等环境依赖）。
+
