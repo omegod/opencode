@@ -56,12 +56,18 @@ type IntegrationForm = NonNullable<ProviderConnectMethod["form"]>[number]
 type StringForm = Extract<IntegrationForm, { type: "string" }>
 
 export function useProviderConnectController() {
-  const [store, setStore] = createStore({ selected: undefined as string | undefined })
-  const reset = () => setStore("selected", undefined)
+  const [store, setStore] = createStore({
+    selected: undefined as string | undefined,
+    // A config-defined provider being edited through the custom provider form.
+    edit: undefined as string | undefined,
+  })
+  const reset = () => setStore({ selected: undefined, edit: undefined })
 
   return {
     selected: () => store.selected,
-    select: (provider?: string) => setStore("selected", provider),
+    edit: () => store.edit,
+    select: (provider?: string) => setStore({ selected: provider, edit: undefined }),
+    editProvider: (providerID: string) => setStore({ selected: CUSTOM_ID, edit: providerID }),
     reset,
   }
 }
@@ -96,6 +102,9 @@ export const DialogConnectProvider: Component<{
   function Content() {
     return (
       <Switch>
+        <Match keyed when={controller.edit()}>
+          {(providerID) => <CustomProviderForm autofocus={false} edit={providerID} />}
+        </Match>
         <Match when={controller.selected() === CUSTOM_ID}>
           <CustomProviderForm autofocus={false} />
         </Match>
