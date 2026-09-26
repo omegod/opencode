@@ -1,7 +1,10 @@
 import { Button } from "@opencode/ui/button"
 import { Badge } from "@opencode/ui/badge"
 import { useDialog } from "@opencode/ui/context/dialog"
+import { Dialog, DialogFooter, DialogHeader, DialogTitleGroup } from "@opencode/ui/dialog"
 import { Icon } from "@opencode/ui/icon"
+import { IconButton } from "@opencode/ui/icon-button"
+import { Menu } from "@opencode/ui/menu"
 import { OpenCodeLogo } from "@/providers/opencode-logo"
 import { showToast } from "@/shell/notifications/toast"
 import { popularProviders, useProviders } from "@/providers/catalog/providers"
@@ -60,9 +63,7 @@ export const SettingsProviders: Component<{
     return integrations.list().find((entry) => entry.id === id)
   }
 
-  const connect = (provider?: string) => {
-    setState("connecting", true)
-    providerConnect.select(provider)
+  const showConnectDialog = () => {
     void dialog.show(
       () => (
         <DialogConnectProvider
@@ -91,6 +92,52 @@ export const SettingsProviders: Component<{
         ]).catch(() => undefined)
       },
     )
+  }
+
+  const connect = (provider?: string) => {
+    setState("connecting", true)
+    providerConnect.select(provider)
+    showConnectDialog()
+  }
+
+  const editProvider = (item: ProviderItem) => {
+    setState("connecting", true)
+    providerConnect.editProvider(item.id)
+    showConnectDialog()
+  }
+
+  const removeProvider = (item: ProviderItem) => {
+    void dialog.show(() => <DialogRemoveProvider name={item.name} onRemove={() => void removeProviderConfig(item)} />)
+  }
+
+  const removeProviderConfig = (item: ProviderItem) => {
+    const location = props.directory ? { directory: props.directory } : undefined
+    serverSdk.api.config
+      .update({ provider: { [item.id]: null } })
+      .then(() => {
+        showToast({
+          variant: "success",
+          icon: "circle-check",
+          title: language.t("provider.remove.toast.removed.title", { provider: item.name }),
+          description: language.t("provider.remove.toast.removed.description"),
+        })
+        data.location.provider.invalidate(location)
+        data.location.model.invalidate(location)
+        // The server reloads the config file asynchronously; give the reload a beat before
+        // refetching so the list no longer shows the removed provider.
+        setTimeout(() => {
+          void Promise.all([data.location.provider.sync(location), data.location.model.sync(location)]).catch(
+            () => undefined,
+          )
+        }, 500)
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err)
+        showToast({
+          title: language.t("common.requestFailed"),
+          description: language.tDynamic("provider.remove.toast.failed.description", message, { provider: item.name }),
+        })
+      })
   }
 
   const available = createMemo(() => {
@@ -190,6 +237,13 @@ export const SettingsProviders: Component<{
     return currentSource !== "env" && currentSource !== "config"
   }
 
+  // Config- and custom-defined providers live in the user's config file, so they are
+  // managed in place (edit / remove) instead of through credentials.
+  const configDefined = (item: ProviderItem) => {
+    const current = source(item)
+    return current === "config" || current === "custom"
+  }
+
   const note = (id: string) => PROVIDER_NOTES.find((item) => item.match(id))?.key
 
   const disconnect = async (item: ProviderItem, name: string) => {
@@ -256,7 +310,7 @@ export const SettingsProviders: Component<{
                     <Show
                       when={managedGroup()}
                       fallback={
-                        <div class="settings-provider-row group">
+                        <div class="settings-provider-row group group/provider-row">
                           <div class="settings-provider-lead">
                             <ProviderModelIcon provider={item} class="settings-provider-icon shrink-0" />
 
@@ -268,22 +322,49 @@ export const SettingsProviders: Component<{
                             </div>
                           </div>
                           <Show
-                            when={canDisconnect(item)}
+                            when={configDefined(item)}
                             fallback={
-                              <span class="settings-provider-env-hint">
-                                {language.t("settings.providers.connected.environmentDescription")}
-                              </span>
+                              <Show
+                                when={canDisconnect(item)}
+                                fallback={
+                                  <span class="settings-provider-env-hint">
+                                    {language.t("settings.providers.connected.environmentDescription")}
+                                  </span>
+                                }
+                              >
+                                <Button
+                                  size="normal"
+                                  variant="ghost-muted"
+                                  onClick={() =>
+                                    void disconnect(item, item.name)
+                                  }
+                                >
+                                  {language.t("common.disconnect")}
+                                </Button>
+                              </Show>
                             }
                           >
-                            <Button
-                              size="normal"
-                              variant="ghost-muted"
-                              onClick={() =>
-                                void disconnect(item, item.name)
-                              }
-                            >
-                              {language.t("common.disconnect")}
-                            </Button>
+                            <Menu gutter={6} modal={false} placement="bottom-end">
+                              <Menu.Trigger
+                                as={IconButton}
+                                data-action="provider-row-menu"
+                                variant="ghost-muted"
+                                size="small"
+                                class="hover-reveal group-hover/provider-row:opacity-100 focus-visible:opacity-100 data-[expanded]:opacity-100"
+                                icon={<Icon name="outline-dots-vertical" />}
+                                aria-label={language.t("common.moreOptions")}
+                              />
+                              <Menu.Portal>
+                                <Menu.Content>
+                                  <Menu.Item onSelect={() => editProvider(item)}>
+                                    {language.t("common.edit")}
+                                  </Menu.Item>
+                                  <Menu.Item onSelect={() => removeProvider(item)}>
+                                    {language.t("common.remove")}
+                                  </Menu.Item>
+                                </Menu.Content>
+                              </Menu.Portal>
+                            </Menu>
                           </Show>
                         </div>
                       }
@@ -402,5 +483,35 @@ export const SettingsProviders: Component<{
         </div>
       </div>
     </>
+  )
+}
+
+function DialogRemoveProvider(props: { name: string; onRemove: () => void }) {
+  const dialog = useDialog()
+  const language = useLanguage()
+  return (
+    <Dialog fit>
+      <DialogHeader>
+        <DialogTitleGroup
+          title={language.t("provider.remove.title")}
+          description={language.t("provider.remove.description", { provider: props.name })}
+        />
+      </DialogHeader>
+      <DialogFooter>
+        <Button type="button" variant="neutral" onClick={() => dialog.close()}>
+          {language.t("common.cancel")}
+        </Button>
+        <Button
+          type="button"
+          variant="danger"
+          onClick={() => {
+            props.onRemove()
+            dialog.close()
+          }}
+        >
+          {language.t("common.remove")}
+        </Button>
+      </DialogFooter>
+    </Dialog>
   )
 }
