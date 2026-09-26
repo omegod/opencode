@@ -99,7 +99,7 @@ export default function Layout(props: ParentProps) {
           </Show>
           {/* Size containment collapses percentage-height descendants in WebKit. */}
           <main
-            class="flex-1 min-h-0 min-w-0 overflow-x-hidden flex flex-col items-start contain-content"
+            class="relative flex-1 min-h-0 min-w-0 overflow-x-hidden flex flex-col items-start contain-content"
             style={{
               "padding-top": bottomTitlebar() ? "env(safe-area-inset-top, 0px)" : "0px",
               "padding-bottom":
@@ -112,6 +112,11 @@ export default function Layout(props: ParentProps) {
               "--settings-top-inset": mobile() && !bottomTitlebar() ? "0px" : "var(--shell-top-inset, 8px)",
             }}
           >
+            <Show when={verticalTabs() && platform.platform === "desktop" && platform.os !== "windows"}>
+              {/* Vertical tabs hide the titlebar on macOS/Linux; keep the gap above content cards draggable.
+                  Windows keeps the visible titlebar, so the strip would only be redundant there. */}
+              <div data-tauri-drag-region class="absolute inset-x-0 top-0 z-50 h-[var(--shell-top-inset,8px)]" />
+            </Show>
             <SshAuthentication>
               <Suspense>{props.children}</Suspense>
             </SshAuthentication>
