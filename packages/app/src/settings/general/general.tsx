@@ -540,7 +540,7 @@ export const SettingsGeneral: Component = () => {
           </SettingsList>
         </section>
 
-        <Show when={desktop()}>
+        <Show when={desktop() && platform.updater && platform.updater.state().status !== "disabled"}>
           <UpdatesSection />
         </Show>
       </div>

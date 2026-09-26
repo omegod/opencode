@@ -18,6 +18,8 @@ export function settingsSearchIndex(input: {
   desktop: boolean
   browser: boolean
   mobile: boolean
+  /** False hides the update-related general entries, e.g. when the desktop updater is disabled. */
+  updatesEnabled: boolean
   translate: ReturnType<typeof useLanguage>["t"]
 }) {
   const items: SettingsSearchResult[] = []
@@ -57,6 +59,11 @@ export function settingsSearchIndex(input: {
     if (entry.available === "desktop" && !input.desktop) return
     if (entry.available === "browser" && !input.browser) return
     if (entry.available === "mobile" && !input.mobile) return
+    if (
+      !input.updatesEnabled &&
+      (entry.target === "settings-check-updates" || entry.target === "settings-release-notes")
+    )
+      return
     add(entry, { type: "root", tab: entry.tab, target: entry.target }, "")
   })
   input.servers.forEach((server) => {

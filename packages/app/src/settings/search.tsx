@@ -76,6 +76,7 @@ export function SettingsSearch() {
       desktop: platform.platform === "desktop",
       browser: !!platform.browserPane,
       mobile: mobile(),
+      updatesEnabled: !platform.updater || platform.updater.state().status !== "disabled",
       translate: language.t,
     }),
   )
