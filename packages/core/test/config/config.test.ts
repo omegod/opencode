@@ -1,5 +1,6 @@
 import path from "path"
 import fs from "fs/promises"
+import { parse as parseJsonc } from "jsonc-parser"
 import { describe, expect, test } from "bun:test"
 import { Effect, Fiber, Layer, Logger, Schema, Stream } from "effect"
 import { FastCheck } from "effect/testing"
@@ -188,6 +189,52 @@ describe("Config", () => {
           Effect.andThen(once.pipe(Effect.provide(testLayer(link, global, real)))),
           // Same spelling on both sides: still exactly once.
           Effect.andThen(once.pipe(Effect.provide(testLayer(real, global, real)))),
+        )
+      }),
+    ),
+  )
+
+  it.live("patches provider entries in the global config file while preserving unrelated content", () =>
+    Effect.acquireDisposable(Effect.promise(() => tmpdir())).pipe(
+      Effect.flatMap((tmp) => {
+        const global = path.join(tmp.path, "global")
+        const project = path.join(tmp.path, "project")
+        const file = path.join(global, "opencode.json")
+        const entry = {
+          npm: "@ai-sdk/openai-compatible",
+          name: "Custom",
+          options: { baseURL: "https://api.example.com/v1", apiKey: "secret" },
+          models: {
+            "model-a": {
+              name: "Model A",
+              limit: { context: 200000, output: 16000 },
+              options: { reasoningEffort: "high" },
+            },
+          },
+        }
+        return Effect.promise(async () => {
+          await fs.mkdir(global, { recursive: true })
+          await fs.mkdir(project, { recursive: true })
+          await fs.writeFile(
+            file,
+            `{\n  // Keep this comment.\n  "shell": "/bin/zsh",\n  "provider": {\n    "old": { "npm": "@ai-sdk/openai-compatible", "name": "Old" }\n  }\n}\n`,
+          )
+        }).pipe(
+          Effect.andThen(
+            Effect.gen(function* () {
+              const config = yield* Config.Service
+              yield* config.update!({ provider: { custom: entry, old: null } }).pipe(Effect.orDie)
+              const text = yield* Effect.promise(() => fs.readFile(file, "utf8"))
+              // Comments and shell survive the JSONC edit; the new entry is written and the removed one is gone.
+              expect(text).toContain("// Keep this comment.")
+              expect(parseJsonc(text)).toEqual({ shell: "/bin/zsh", provider: { custom: entry } })
+              // The debounced reload projects the written entry.
+              yield* Effect.sleep("500 millis")
+              const providers = Config.latest(yield* config.entries(), "providers")
+              expect(Object.keys(providers ?? {})).toEqual(["custom"])
+              expect(providers?.custom.name).toBe("Custom")
+            }).pipe(Effect.provide(testLayer(project, global))),
+          ),
         )
       }),
     ),
