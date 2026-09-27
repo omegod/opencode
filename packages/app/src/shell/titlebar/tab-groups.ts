@@ -19,6 +19,8 @@ export type TabGroup = {
   tabs: Tab[]
 }
 
+export const projectGroupKey = (server: ServerConnection.Key, worktree: string) => `${server}\n${worktree}`
+
 export const projectSortableId = (server: ServerConnection.Key, worktree: string) =>
   `project:${server}\n${worktree}`
 
@@ -42,7 +44,7 @@ export function groupTabEntries(
   const groups = new Map<string, TabGroup>()
   for (const entry of entries) {
     const worktree = entry.project?.worktree ?? entry.directory
-    const key = `${entry.server}\n${worktree}`
+    const key = projectGroupKey(entry.server, worktree)
     const existing = groups.get(key)
     if (existing) {
       existing.tabs.push(entry.tab)

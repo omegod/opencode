@@ -3,6 +3,7 @@ import { useSortable } from "@dnd-kit/solid/sortable"
 import { Icon } from "@opencode/ui/icon"
 import { IconButton } from "@opencode/ui/icon-button"
 import { Menu } from "@opencode/ui/menu"
+import { Tooltip } from "@opencode/ui/tooltip"
 import { useLanguage } from "@/runtime/i18n/language"
 import { useSettingsSurface } from "@/settings/surface"
 import { useLayout } from "@/shell/state/layout"
@@ -77,15 +78,17 @@ export function ProjectTabGroupHeader(props: {
         </span>
       </button>
       <Menu gutter={6} modal={false} placement="bottom-end">
-        <Menu.Trigger
-          as={IconButton}
-          data-action="tab-group-menu"
-          variant="ghost-muted"
-          size="small"
-          class="hover-reveal group-hover/tab-group:opacity-100 focus-visible:opacity-100 data-[expanded]:opacity-100"
-          icon={<Icon name="outline-dots-vertical" />}
-          aria-label={language.t("common.moreOptions")}
-        />
+        <Tooltip placement="bottom" value={language.t("common.moreOptions")}>
+          <Menu.Trigger
+            as={IconButton}
+            data-action="tab-group-menu"
+            variant="ghost-muted"
+            size="small"
+            class="hover-reveal group-hover/tab-group:opacity-100 focus-visible:opacity-100 data-[expanded]:opacity-100"
+            icon={<Icon name="outline-dots-vertical" />}
+            aria-label={language.t("common.moreOptions")}
+          />
+        </Tooltip>
         <Menu.Portal>
           <Menu.Content>
             <Menu.Item disabled={!props.group.project} onSelect={edit}>

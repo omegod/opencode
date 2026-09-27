@@ -1199,6 +1199,8 @@ export const dict = {
   "settings.appearance.row.tabs.vertical": "Vertical",
   "settings.appearance.row.tabs.groupByProject.title": "Group by project",
   "settings.appearance.row.tabs.groupByProject.description": "Group session tabs under their project directories",
+  "tab.group.projects": "Projects ({{count}})",
+  "tab.group.openFolder": "Open Folder",
   "tab.group.sessions": "Sessions",
   "tab.group.collapse": "Collapse project sessions",
   "tab.group.expand": "Expand project sessions",

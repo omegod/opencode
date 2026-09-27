@@ -1,12 +1,13 @@
-import { createMemo, For, Show } from "solid-js"
+import { createEffect, createMemo, createSignal, For, onCleanup, Show } from "solid-js"
 import { createStore } from "solid-js/store"
-import { DragDropProvider, PointerSensor } from "@dnd-kit/solid"
+import { DragDropProvider, PointerSensor, type DragDropProviderProps } from "@dnd-kit/solid"
 import { isSortable } from "@dnd-kit/solid/sortable"
 import { Accessibility, AutoScroller, Feedback, PointerActivationConstraints } from "@dnd-kit/dom"
 import { RestrictToVerticalAxis } from "@dnd-kit/abstract/modifiers"
 import { RestrictToElement } from "@dnd-kit/dom/modifiers"
 import { arrayMove } from "@dnd-kit/helpers"
 import { tabKey, type Tab } from "@/shell/tabs/tabs"
+import { useLanguage } from "@/runtime/i18n/language"
 import { ServerConnection } from "@/runtime/server/registry"
 import { useGlobal } from "@/runtime/server/runtime"
 import { useCommand } from "@/shell/commands/command"
@@ -15,10 +16,17 @@ import { projectForSession } from "@/shell/layout/helpers"
 import type { LocalProject } from "@/shell/state/layout"
 import { isProjectDirectory } from "@/workspaces/paths"
 import { TabStripEntry } from "./tab-entry"
+import { ProjectGroupAdd } from "./project-group-add"
 import { ProjectTabGroupHeader } from "./project-tab-group"
 import { isTabCloseTarget } from "./tab-gesture"
 import { adjacentTabKey, mergeVisibleTabOrder } from "./tab-order"
-import { groupTabEntries, parseProjectSortableId, projectMoveIndex, type TabGroup } from "./tab-groups"
+import {
+  groupTabEntries,
+  parseProjectSortableId,
+  projectGroupKey,
+  projectMoveIndex,
+  type TabGroup,
+} from "./tab-groups"
 
 function matchProject(projects: LocalProject[], directory: string) {
   if (!directory) return undefined
@@ -38,6 +46,18 @@ function activationSensor() {
   })
 }
 
+function sortableListProps(element: () => HTMLElement): Pick<DragDropProviderProps, "sensors" | "plugins" | "modifiers"> {
+  return {
+    sensors: [activationSensor()],
+    plugins: (defaults) => [
+      ...defaults.filter((plugin) => plugin !== Accessibility),
+      AutoScroller.configure({ acceleration: 8, threshold: { x: 0, y: 0.05 } }),
+      Feedback.configure({ dropAnimation: null }),
+    ],
+    modifiers: [RestrictToVerticalAxis, RestrictToElement.configure({ element })],
+  }
+}
+
 // Grouped vertical tab list. Project headers and the sessions of each project sort in separate drag
 // contexts: the outer provider only sees headers, and every project mounts its own provider for its
 // sessions, so a session can never be sorted into another project.
@@ -51,7 +71,9 @@ export function ProjectTabList(props: {
   const global = useGlobal()
   const tabs = useTabs()
   const command = useCommand()
+  const language = useLanguage()
   const [visibility, setVisibility] = createStore<Record<string, boolean>>({})
+  const [draggingKey, setDraggingKey] = createSignal<string | null>(null)
   let listRef!: HTMLDivElement
 
   const entries = createMemo(() =>
@@ -101,6 +123,8 @@ export function ProjectTabList(props: {
   const visibleIndex = (key: string) => visibleTabIds().indexOf(key)
   const groupVisible = (group: TabGroup) =>
     groupCollapsed(group) || group.tabs.some((tab) => tab.type === "draft" || visibility[tabKey(tab)])
+  const projectCount = () => groups().filter((group) => group.project && groupVisible(group)).length
+  const groupedKeys = () => new Set(groups().map((group) => projectGroupKey(group.server, group.directory)))
   const projectGroupIndex = (group: TabGroup) => {
     if (!group.project || !groupVisible(group)) return undefined
     return groups()
@@ -149,14 +173,16 @@ export function ProjectTabList(props: {
 
   return (
     <DragDropProvider
-      sensors={[activationSensor()]}
-      plugins={(defaults) => [
-        ...defaults.filter((plugin) => plugin !== Accessibility),
-        AutoScroller.configure({ acceleration: 8, threshold: { x: 0, y: 0.05 } }),
-        Feedback.configure({ dropAnimation: null }),
-      ]}
-      modifiers={[RestrictToVerticalAxis, RestrictToElement.configure({ element: () => listRef })]}
+      {...sortableListProps(() => listRef)}
+      onDragStart={(event) => {
+        const source = event.operation.source
+        if (!isSortable(source)) return
+        const project = parseProjectSortableId(source.id.toString())
+        if (!project) return
+        setDraggingKey(projectGroupKey(project.server, project.worktree))
+      }}
       onDragEnd={(event) => {
+        setDraggingKey(null)
         const source = event.operation.source
         if (event.canceled || !isSortable(source)) return
         const project = parseProjectSortableId(source.id.toString())
@@ -170,36 +196,71 @@ export function ProjectTabList(props: {
         data-orientation="vertical"
         class="flex w-full min-w-0 flex-col items-stretch"
       >
+        <div
+          data-slot="tab-list-label"
+          class="group/label flex select-none items-center pt-1 pe-1 ps-1.5"
+        >
+          <span class="min-w-0 flex-1 text-[13px] leading-4 font-medium text-v2-text-text-faint">
+            {language.t("tab.group.projects", { count: projectCount() })}
+          </span>
+          <ProjectGroupAdd exclude={groupedKeys} />
+        </div>
         {/* Keyed by group key strings: group objects are recreated on every recompute. */}
         <For each={groups().map((group) => group.key)}>
           {(key) => {
             const group = createMemo(() => groups().find((item) => item.key === key))
+            let motionEl!: HTMLDivElement
+            // Dragging a header collapses its sessions without writing the persisted collapse
+            // state, so dropping (or canceling) restores the pre-drag expansion automatically.
+            const effCollapsed = () => {
+              const current = group()
+              return !!current && (groupCollapsed(current) || draggingKey() === current.key)
+            }
+            const initial = group()
+            const [itemsMounted, setItemsMounted] = createSignal(!!initial && !groupCollapsed(initial))
+            // Collapsed sessions stay mounted only until the height transition ends, preserving the
+            // unmount-on-collapse lazy loading.
+            createEffect(() => {
+              if (!effCollapsed()) {
+                setItemsMounted(true)
+                return
+              }
+              const timer = window.setTimeout(() => setItemsMounted(false), 160)
+              onCleanup(() => window.clearTimeout(timer))
+            })
             return (
               <Show when={group()}>
                 {(value) => (
-                  <div data-slot="tab-group" class="flex min-w-0 flex-col gap-1">
+                  <div data-slot="tab-group" class="flex min-w-0 flex-col">
                     <Show when={groupVisible(value())}>
                       <ProjectTabGroupHeader
                         group={value()}
                         index={projectGroupIndex(value())}
-                        collapsed={groupCollapsed(value())}
+                        collapsed={effCollapsed()}
                         onToggle={() => tabs.toggleGroupCollapsed(value().key)}
                         onClose={props.onClose}
                       />
                     </Show>
-                    <Show when={!groupCollapsed(value())}>
-                      <ProjectGroupTabs
-                        group={value()}
-                        current={props.currentTab}
-                        allKeys={props.tabs.map(tabKey)}
-                        visibleKeys={visibleKeys()}
-                        shortcutIndex={visibleIndex}
-                        onVisibleChange={(key, visible) => setVisibility(key, visible)}
-                        onNavigate={props.onNavigate}
-                        onClose={props.onClose}
-                        onReorder={props.onReorder}
-                      />
-                    </Show>
+                    <div
+                      ref={motionEl}
+                      data-slot="tab-group-motion"
+                      data-collapsed={effCollapsed()}
+                      inert={effCollapsed()}
+                    >
+                      <Show when={itemsMounted()}>
+                        <ProjectGroupTabs
+                          group={value()}
+                          current={props.currentTab}
+                          allKeys={props.tabs.map(tabKey)}
+                          visibleKeys={visibleKeys()}
+                          shortcutIndex={visibleIndex}
+                          onVisibleChange={(key, visible) => setVisibility(key, visible)}
+                          onNavigate={props.onNavigate}
+                          onClose={props.onClose}
+                          onReorder={props.onReorder}
+                        />
+                      </Show>
+                    </div>
                   </div>
                 )}
               </Show>
@@ -229,13 +290,7 @@ function ProjectGroupTabs(props: {
 
   return (
     <DragDropProvider
-      sensors={[activationSensor()]}
-      plugins={(defaults) => [
-        ...defaults.filter((plugin) => plugin !== Accessibility),
-        AutoScroller.configure({ acceleration: 8, threshold: { x: 0, y: 0.05 } }),
-        Feedback.configure({ dropAnimation: null }),
-      ]}
-      modifiers={[RestrictToVerticalAxis, RestrictToElement.configure({ element: () => ref })]}
+      {...sortableListProps(() => ref)}
       onDragEnd={(event) => {
         const source = event.operation.source
         if (event.canceled || !isSortable(source)) return

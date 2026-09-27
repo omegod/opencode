@@ -225,6 +225,52 @@
   }
 }
 
+[data-slot="tab-group-motion"] {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  padding-top: 4px;
+  transition:
+    grid-template-rows 150ms ease-out,
+    padding-top 150ms ease-out,
+    opacity 120ms ease-out;
+}
+
+[data-slot="tab-group-motion"][data-collapsed="true"] {
+  grid-template-rows: minmax(0, 0fr);
+  padding-top: 0;
+  opacity: 0;
+}
+
+[data-slot="tab-group-motion"] > [data-slot="tab-group-items"] {
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="tab-group-motion"] {
+    transition: none;
+  }
+}
+
+/* forceMount keeps this menu mounted, so the close fade runs via data-closed
+   instead of relying on Kobalte's presence race; forwards hides it at the end. */
+[data-slot="tab-list-add-content"][data-component="menu-v2-content"][data-closed] {
+  animation: titlebar-project-add-close 150ms ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes titlebar-project-add-close {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+    visibility: hidden;
+  }
+}
+
 @container (44px < width <= 64px) {
   [data-titlebar-tab]:not([data-orientation="vertical"]):not([data-editing="true"]):is(:hover, [data-active="true"])
     [data-slot="tab-link"] {

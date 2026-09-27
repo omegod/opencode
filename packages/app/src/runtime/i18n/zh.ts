@@ -1331,6 +1331,8 @@ export const dict = {
   "settings.appearance.row.tabs.vertical": "垂直",
   "settings.appearance.row.tabs.groupByProject.title": "按项目分组",
   "settings.appearance.row.tabs.groupByProject.description": "将会话标签归入各自的项目目录",
+  "tab.group.projects": "项目({{count}})",
+  "tab.group.openFolder": "打开文件夹",
   "tab.group.sessions": "会话",
   "tab.group.collapse": "收起项目会话",
   "tab.group.expand": "展开项目会话",
