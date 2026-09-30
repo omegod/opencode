@@ -197,3 +197,29 @@
 - 合并结果相对 `v2.0.18` 的差异文件 = fork 功能改动的 101 个文件，无多余、无丢失。
 - 包级测试与合并前对比无回归：`packages/app` 937 → 941 项（上游新增 4 项），失败项相同（1 项本地环境）；`packages/core` 40 项失败、`packages/desktop` 8 项失败在合并前后完全一致（ripgrep / shell / watcher / browser 集成等环境依赖）。
 
+## 7. 合并上游 v2.0.19 / v2.0.20
+
+- **版本号随官方走**：合并后根与所有 workspace 的 `version` 均为 `2.0.20`（2.0.18 → 2.0.20）。
+- 分两次合并：`v2.0.19` 见 `bf43bb3293`（tag 范围内 53 个上游提交，含 release 提交）；`v2.0.20` 见 `43e9fc4448`（30 个上游提交，不含 `sync release versions for v2.0.19`——它与已合并的 v2.0.19 release 提交内容完全一致，diff 为空）。
+- 上游 tag 拓扑有个坑：`v2.0.19` 的 release 提交与 v2.0.20 那条线（`sync release versions for v2.0.19`）同父于 `ca084b2430`，内容相同但**互不为祖先**。所以 `git merge v2.0.20` 的 merge base 仍是 `ca084b2430`，版本号文件会再次冲突，属预期。
+- 冲突共 38 个：37 个 `package.json` 的 `version` 字段 + `bun.lock`。全部按上游 `2.0.20` 取值——fork 侧对这些文件只有版本号改动（`git diff ca084b2430 bf43bb3293` 里除 `"version"` 外无其他行），因此不存在功能改动被覆盖的问题。
+- 双方都改过的源文件只有 4 个，全部自动合并：`packages/app/src/providers/connect/dialog.tsx`、`packages/app/src/runtime/i18n/en.ts`、`packages/client/src/effect/api/api.ts` 与 `packages/client` 生成文件。
+  - `dialog.tsx` 是唯一需要人工确认的：上游加了 ChatGPT 引导弹窗（`chatgptWelcome` 状态、`DialogChatGPTPlanWelcome`、`onConnected(methodID)`），fork 加了自定义提供商编辑模式（`controller.editProvider`、`Edit` 分支）。合并后两者共存；`onCloseAutoFocus` 由「提前 return」改成两段独立判断，`completed` 与 `chatgptWelcome` 各自触发，语义与两侧原意一致。
+- 上游主要内容：
+  - **v2.0.19**：core/ai 侧请求输出 token 上限 256k 与按上下文窗口计算输出上限、prompt-cache 复用（去掉 session ID、调整指令顺序）、provider 亲和头共享、Cloudflare 环境 ID 兜底、provider 路由 ID 去重；ai 队列生成的重试/恢复/取消、ElevenLabs Scribe 转写路由、Gemini thought signature 保留、按 provider 错误码分类终止失败、xAI Responses 推理摘要；cli `--session` 指向不存在的会话时创建、auth 选择器与 MCP auth 共用分组、ctrl+c 取消认证；tui open 选择器项目去重、后台 shell 与中断命令区分、diff 查看器支持「最后一轮来源」；仓库 host 相对路径段拒绝、shell 工具环境对齐、清理死代码与转发 shim、models.dev 快照刷新。
+  - **v2.0.20**：cli 新增 `auth export` / `auth import`（协议 + schema + server handler + 生成客户端）、可禁用后台服务、`run` 拒绝权限询问后继续且子代理询问/并行拒绝不再中断；core 新增 ChatGPT token-sharing OAuth 方式（`plugin/provider/chatgpt.ts`）并按更新后的合作方指南对齐、会话错误保留 provider 响应体、数据库文件权限限制为属主、Console 重新登录提示；app 新增 ChatGPT token-sharing 引导与用量上限弹窗；ai 修正 Bedrock thinking 块绑定与 redacted reasoning 收尾、Mistral thinking 元数据延迟到块末、Workers AI 经 chat template 关闭 thinking、更多 message protocol 路由启用显式缓存、provider 错误体解析与展示；tui 新会话菜单显示「最近关闭」、低活跃度错误改用 disclosure 图标；ui/session-ui/desktop 弱化 diff 词高亮（@pierre/diffs 1.5.1）、moved notice 改为时间线分隔、Electron 44.4.5、隔离 dev 服务固定端口。
+- 依赖变更：`packages/core` 新增 `jose` 6.0.11（ChatGPT OAuth 校验 JWKS），`@pierre/diffs` 1.2.10 → 1.5.1，`electron` 44.4.3 → 44.4.5。
+- `upstream/v2` 分支 tip 另有 15 个未发布提交（app 会话引用跳转、desktop 页内浏览器批注等），本次不取，留给下次同步。
+- 后续同步策略不变：直接 `git merge v2.0.x`，采用 merge commit，不 rebase fork 提交。
+
+验证：
+
+- `bun install` 同步上述依赖；安装后 `bun.lock` 与合并结果逐字节一致（`git diff bun.lock` 为空）。
+- `packages/client` 执行 `bun run generate`，无差异（生成文件与协议一致）。
+- `bun run check`（根目录，lint + 全量 typecheck）通过：35/35 tasks successful，EXIT=0。
+- 合并结果相对 `v2.0.20` 的 103 个差异文件全部落在 fork 功能改动集合内，无多余文件；fork 合并前的改动无丢失（差异仅剩按上游取值的版本号文件）。
+- 包级测试（合并前后对比）：
+  - `packages/app`：941 通过 / 1 跳过 / 1 失败。唯一失败 `bootstrap.test.ts > recovers project metadata after the connection to the server is dropped` 在合并前源码下同样失败（已用 `git checkout bf43bb3293 -- packages/app packages/client` 复现），属本机回环 socket 环境问题，非本次合并引入。
+  - `packages/core`：5520 通过 / 41 跳过 / 46 失败 / 1 error。合并后的失败集合是合并前（51 项）的**真子集，无新增失败**；合并前多出的 5 项（`ChatGPTPlugin` 3 项、`Database file permissions` 2 项）是重建合并前状态时的假象——这三个测试文件由 v2.0.20 新增，回退源码时它们仍留在磁盘上，于是跑在被回退的实现上必然失败，在真实合并结果中全部通过。
+  - 46 项失败集中在 ripgrep / search tools、pty、ShellTool 复合语法、PluginSupervisor reload、watcher、SSE、MCP 连接，全部依赖子进程、socket 或文件系统监听，与第 6 节记录的本地环境基线同类（本次未逐个追查）。
+
