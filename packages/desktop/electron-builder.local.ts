@@ -1,17 +1,18 @@
-import { execFileSync } from "node:child_process"
 import base from "./electron-builder.config"
 
-// Local prod builds have no Team-ID signing certificate: electron-builder signs
-// the bundle with hardened runtime using a teamless cert, and dyld then rejects
-// every framework load ("different Team IDs"). Re-sign ad-hoc after signing and
-// before the dmg/zip targets are built, so the images contain the fixed bundle.
+// Local prod builds reuse an existing self-signed certificate ("RedixDevCert") instead of a
+// Developer ID. macOS then reports an unidentified developer and offers the Privacy & Security
+// "Open Anyway" flow, rather than treating the bundle as damaged, and the build never adds
+// anything to the keychain. The certificate must already exist on the build machine.
+//
+// `hardenedRuntime` stays off: with a teamless certificate the runtime flag makes dyld reject
+// framework loads, and notarization (which needs a Developer ID) is skipped as well.
 export default {
   ...base,
-  afterSign: async (context: {
-    appOutDir: string
-    packager: { appInfo: { productFilename: string } }
-  }) => {
-    const app = `${context.appOutDir}/${context.packager.appInfo.productFilename}.app`
-    execFileSync("codesign", ["--force", "--deep", "--sign", "-", app], { stdio: "inherit" })
+  mac: {
+    ...base.mac,
+    identity: "RedixDevCert",
+    hardenedRuntime: false,
+    notarize: false,
   },
 }
