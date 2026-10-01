@@ -223,3 +223,22 @@
   - `packages/core`：5520 通过 / 41 跳过 / 46 失败 / 1 error。合并后的失败集合是合并前（51 项）的**真子集，无新增失败**；合并前多出的 5 项（`ChatGPTPlugin` 3 项、`Database file permissions` 2 项）是重建合并前状态时的假象——这三个测试文件由 v2.0.20 新增，回退源码时它们仍留在磁盘上，于是跑在被回退的实现上必然失败，在真实合并结果中全部通过。
   - 46 项失败集中在 ripgrep / search tools、pty、ShellTool 复合语法、PluginSupervisor reload、watcher、SSE、MCP 连接，全部依赖子进程、socket 或文件系统监听，与第 6 节记录的本地环境基线同类（本次未逐个追查）。
 
+## 8. 分组侧栏独立组件化：主色文字、相对时间与溢出模糊渐隐
+
+按项目分组开启时，左侧栏的「主页 / 新建会话 / 会话列表」整体切换为一套独立组件，不再复用上游共享的垂直布局内联代码；非分组（扁平）垂直布局与移动端抽屉保持上游原样。
+
+### 实现
+
+- 新组件 `packages/app/src/shell/titlebar/project-group-sidebar.tsx`：
+  - `ProjectGroupSidebar` 组合三部分：`ProjectGroupSidebarHome`（主页按钮）、`ProjectGroupSidebarNewSession`（新建会话按钮）、`ProjectTabList`（既有分组列表）；主页/新建会话从 `titlebar.tsx` 的内联写法提为组件，回调（`toggleHome` / `openNewTab`）仍由 titlebar 传入。
+  - 列表自带滚动容器（`overflow-y-auto` + `no-scrollbar`），上下边缘按溢出状态做两层效果：滚动节点上的 24px alpha 渐变 mask（`mask-image: linear-gradient`，与 ZCode 的 ScrollFadeViewport 同方案）+ 边缘 `backdrop-filter: blur(6px)` 且自身带渐变 mask 的模糊覆盖层（ZCode 源码实际只有透明度渐隐、没有模糊，模糊层为 fork 增强）。溢出状态由 scroll 监听 + ResizeObserver（观察滚动节点与内容节点）驱动，滚到边缘时对应侧的 mask/模糊自动消失。
+  - 根节点带 `data-tab-grouped="true"`，供 CSS 限定分组侧栏样式。
+- 配色：`tab-nav.css` 新增 `[data-tab-grouped="true"] [data-slot="tab-link"] { color: var(--v2-text-text-base) }`——分组侧栏内会话/草稿行常态即主色（亮色主题近黑），不再等 hover/激活；「项目(N)」标签与分组标题保持灰色。主页/新建会话按钮在新组件内直接用主色，右侧快捷键提示常态显示并缩小一号（11px）；「项目(N)」右侧的「+」图标用 `size="small"`（14px），按钮尺寸不变。
+- 相对时间：分组侧栏的会话行右侧显示最后活跃时间（`session.time.updated`），小字（11px）灰色、垂直居中。所有行（含激活行）统一为 hover 才显示关闭按钮：hover/编辑/触屏时时间标签以 display 互换直接从布局移除（ZCode TaskListItem/GroupedTaskRow 同款，无任何宽度动画），标题自然延伸、关闭按钮淡入。关闭按钮的「激活行常显」规则在显示时间的行里关闭（仍作用于其他模式与草稿行）；分组内激活未 hover 的行标题渐隐带回落到 4px（上游 24px 是为常显关闭按钮留位的）。文案复用既有 `common.time.justNow` / `minutesAgo.short` / `hoursAgo.short` / `daysAgo.short`（zh：刚刚/n分钟前/n小时前/n天前），无新增翻译键；`getRelativeTime` 改为接受 `string | number`。
+- 切换点：`titlebar.tsx` 垂直 Portal 内按 `settings.appearance.groupTabsByProject()` 切换 `<ProjectGroupSidebar>` 与原有内联结构（fallback）。
+- 透传链：`ProjectTabList` 新增 `showSessionTime`（默认关闭，移动端抽屉的分组列表不受影响），经 `ProjectGroupTabs → TabStripEntry → SessionTabEntry → SessionTabSlot` 传入 `TabNavItem` 渲染。
+
+### 不变
+
+- 非分组垂直布局、水平标签栏、移动端抽屉的代码路径未动（抽屉里的分组列表继续走 `tab-strip.tsx` 的分组分支：无时间标签、无 recolor、无渐隐）。
+- i18n：无新增键。

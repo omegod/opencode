@@ -77,6 +77,30 @@
   --tab-overlay: var(--v2-overlay-simple-overlay-pressed);
 }
 
+/* The grouped sidebar renders every session row in the primary text color instead of the faint
+   tab color; the project label and group headers keep their gray. */
+[data-tab-grouped="true"] [data-slot="tab-link"] {
+  color: var(--v2-text-text-base);
+}
+
+/* Grouped rows show the relative time instead of a persistent close button, so an active row
+   that is not hovered fades its title with the resting offset rather than the button offset. */
+[data-tab-grouped="true"] [data-titlebar-tab][data-active="true"]:not(:hover) [data-slot="tab-link"] {
+  --tab-title-fade-offset: 4px;
+}
+
+/* Grouped rows show the relative time in the close button's slot. On an active row the icon is
+   hover-only, so while it is hidden the wrapper must not paint its pressed backdrop over the
+   label; the backdrop returns together with the hovered icon. Touch keeps the always-visible
+   icon and its backdrop from the hover: none rule below. */
+@media (hover: hover) {
+  [data-tab-grouped="true"]
+    [data-titlebar-tab][data-active="true"]:not(:hover):not([data-editing="true"])
+    [data-slot="tab-close"] {
+    background: none;
+  }
+}
+
 [data-titlebar-tab]:is(:hover, [data-state="pressed"]) [data-slot="tab-close"] {
   background: linear-gradient(var(--tab-overlay), var(--tab-overlay)), var(--tab-base);
 }

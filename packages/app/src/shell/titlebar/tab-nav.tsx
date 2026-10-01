@@ -17,6 +17,7 @@ import type { SessionInfo } from "@opencode/client/promise"
 import { sessionTabTitle } from "./tab-title"
 import { canOpenTabRename, forwardTabRef } from "./tab-gesture"
 import { TabPreviewPopover } from "./tab-popover"
+import { getRelativeTime } from "@/shell/time"
 import "./tab-nav.css"
 
 // MouseEvent.button uses 1 for the middle/wheel button.
@@ -40,6 +41,7 @@ export function TabNavItem(props: {
   orientation?: "horizontal" | "vertical"
   hideProjectAvatar?: boolean
   indent?: boolean
+  showSessionTime?: boolean
 }) {
   const language = useLanguage()
   const [menu, setMenu] = createStore({ open: false, rename: false })
@@ -185,6 +187,10 @@ export function TabNavItem(props: {
     onCleanup(cleanup)
   })
 
+  // Only rows that actually render a relative time trade the active row's always-visible close
+  // button for the hover reveal; pending or missing sessions keep the close button.
+  const sessionTime = () => (props.showSessionTime ? props.session?.time.updated : undefined)
+
   const tab = () => (
     <div
       ref={(el) => {
@@ -315,11 +321,26 @@ export function TabNavItem(props: {
         />
       </Menu.Context.Trigger>
 
+      {/* Relative last-activity time. Swaps with the close button via display, like ZCode's task
+          rows: no width animation, the title simply extends into the freed space on hover. */}
+      <Show when={sessionTime()}>
+        {(time) => (
+          <span
+            data-slot="tab-time"
+            class="shrink-0 text-[11px] leading-text-compact text-v2-text-text-faint group-hover:hidden group-data-[editing=true]:hidden [@media(hover:none)]:hidden"
+          >
+            {getRelativeTime(time(), language.t)}
+          </span>
+        )}
+      </Show>
+
       <div data-slot="tab-close">
         <IconButton
           size="small"
           variant="ghost-muted"
-          class="hover-reveal relative z-10 group-hover:opacity-100 group-data-[active=true]:opacity-100 group-data-[editing=true]:opacity-100"
+          class={`hover-reveal relative z-10 group-hover:opacity-100 group-data-[editing=true]:opacity-100 ${
+            sessionTime() ? "" : "group-data-[active=true]:opacity-100"
+          }`}
           onPointerDown={(event) => {
             event.preventDefault()
             event.stopPropagation()

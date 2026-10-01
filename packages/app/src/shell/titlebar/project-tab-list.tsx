@@ -64,6 +64,7 @@ function sortableListProps(element: () => HTMLElement): Pick<DragDropProviderPro
 export function ProjectTabList(props: {
   tabs: Tab[]
   currentTab: Tab | undefined
+  showSessionTime?: boolean
   onNavigate: (tab: Tab, el?: HTMLDivElement) => void
   onClose: (tab: Tab) => void
   onReorder: (keys: string[]) => void
@@ -254,6 +255,7 @@ export function ProjectTabList(props: {
                           allKeys={props.tabs.map(tabKey)}
                           visibleKeys={visibleKeys()}
                           shortcutIndex={visibleIndex}
+                          showSessionTime={props.showSessionTime ?? false}
                           onVisibleChange={(key, visible) => setVisibility(key, visible)}
                           onNavigate={props.onNavigate}
                           onClose={props.onClose}
@@ -278,6 +280,7 @@ function ProjectGroupTabs(props: {
   allKeys: string[]
   visibleKeys: Set<string>
   shortcutIndex: (key: string) => number
+  showSessionTime: boolean
   onVisibleChange: (key: string, visible: boolean) => void
   onNavigate: (tab: Tab, el?: HTMLDivElement) => void
   onClose: (tab: Tab) => void
@@ -314,6 +317,7 @@ function ProjectGroupTabs(props: {
                 sortableIndex={sortableIndex(id)}
                 indent
                 hideProjectAvatar
+                showSessionTime={props.showSessionTime}
                 onVisibleChange={props.onVisibleChange}
                 onNavigate={props.onNavigate}
                 onClose={props.onClose}

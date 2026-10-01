@@ -98,7 +98,7 @@ export function ProjectGroupAdd(props: { exclude: () => Set<string> }) {
           variant="ghost-muted"
           size="small"
           class="hover-reveal group-hover/label:opacity-100 focus-visible:opacity-100 data-[expanded]:!opacity-0"
-          icon={<Icon name="plus" />}
+          icon={<Icon name="plus" size="small" />}
           aria-label={language.t("home.project.add")}
         />
       </Tooltip>

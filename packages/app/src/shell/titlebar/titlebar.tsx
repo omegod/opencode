@@ -15,6 +15,7 @@ import { useSettings } from "@/settings/model"
 import { WindowsAppMenu } from "./windows-menu"
 import { applyPath, backPath, forwardPath, type HistoryLocation } from "./history"
 import { TitlebarTabStrip } from "@/shell/titlebar/tab-strip"
+import { ProjectGroupSidebar } from "@/shell/titlebar/project-group-sidebar"
 import { makeEventListener } from "@solid-primitives/event-listener"
 import { createMediaQuery } from "@solid-primitives/media"
 import { readSessionTabsRemovedDetail, SESSION_TABS_REMOVED_EVENT } from "@/shell/titlebar/session-events"
@@ -668,30 +669,53 @@ export function Titlebar(props: {
                             <Show when={!windows()}>
                               <ChannelIndicator sidebar debugTools={props.debugTools} />
                             </Show>
-                            {homeButton(true)}
-                            <button
-                              type="button"
-                              data-titlebar-tab-action
-                              data-action="vertical-tabs-new-session"
-                              class="group flex h-7 w-full shrink-0 items-center gap-1.5 rounded-[6px] ps-1.5 pe-2 text-[13px] leading-4 text-v2-text-text-faint hover:text-v2-text-text-base"
-                              onClick={openNewTab}
-                              aria-label={language.t("command.session.new")}
+                            <Show
+                              when={settings.appearance.groupTabsByProject()}
+                              fallback={
+                                <>
+                                  {homeButton(true)}
+                                  <button
+                                    type="button"
+                                    data-titlebar-tab-action
+                                    data-action="vertical-tabs-new-session"
+                                    class="group flex h-7 w-full shrink-0 items-center gap-1.5 rounded-[6px] ps-1.5 pe-2 text-[13px] leading-4 text-v2-text-text-faint hover:text-v2-text-text-base"
+                                    onClick={openNewTab}
+                                    aria-label={language.t("command.session.new")}
+                                  >
+                                    <Icon name="edit" class="shrink-0" />
+                                    <span class="min-w-0 truncate">{language.t("command.session.new")}</span>
+                                    <span
+                                      class="ms-auto hidden min-w-0 truncate text-v2-text-text-faint group-hover:block group-focus-visible:block"
+                                      aria-hidden="true"
+                                    >
+                                      <bdi dir="ltr">{command.keybind("tab.new")}</bdi>
+                                    </span>
+                                  </button>
+                                  <div class="h-4 w-full shrink-0" aria-hidden="true" />
+                                  <div class="flex min-h-0 flex-1 flex-col gap-1">
+                                    <TitlebarTabStrip
+                                      orientation="vertical"
+                                      tabs={tabsStore}
+                                      currentTab={currentTab()}
+                                      onNavigate={(tab, el) => {
+                                        tabs.select(tab)
+                                        el?.scrollIntoView({ behavior: "instant", block: "nearest" })
+                                      }}
+                                      onClose={(tab) => {
+                                        const index = tabsStore.findIndex((item) => tabKey(item) === tabKey(tab))
+                                        if (index !== -1) tabsStoreActions.closeTab(index)
+                                      }}
+                                      onReorder={(keys) => tabsStoreActions.reorder(keys)}
+                                    />
+                                  </div>
+                                </>
+                              }
                             >
-                              <Icon name="edit" class="shrink-0" />
-                              <span class="min-w-0 truncate">{language.t("command.session.new")}</span>
-                              <span
-                                class="ms-auto hidden min-w-0 truncate text-v2-text-text-faint group-hover:block group-focus-visible:block"
-                                aria-hidden="true"
-                              >
-                                <bdi dir="ltr">{command.keybind("tab.new")}</bdi>
-                              </span>
-                            </button>
-                            <div class="h-4 w-full shrink-0" aria-hidden="true" />
-                            <div class="flex min-h-0 flex-1 flex-col gap-1">
-                              <TitlebarTabStrip
-                                orientation="vertical"
+                              <ProjectGroupSidebar
                                 tabs={tabsStore}
                                 currentTab={currentTab()}
+                                onHome={toggleHome}
+                                onNewSession={openNewTab}
                                 onNavigate={(tab, el) => {
                                   tabs.select(tab)
                                   el?.scrollIntoView({ behavior: "instant", block: "nearest" })
@@ -702,7 +726,7 @@ export function Titlebar(props: {
                                 }}
                                 onReorder={(keys) => tabsStoreActions.reorder(keys)}
                               />
-                            </div>
+                            </Show>
                             <Show when={updateState().visible}>
                               <div data-slot="vertical-tabs-footer" class="mt-2 flex w-full shrink-0 flex-col">
                                 <TitlebarUpdateIconButton state={updateState()} vertical />

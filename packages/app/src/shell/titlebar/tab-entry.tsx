@@ -18,6 +18,7 @@ function SessionTabSlot(props: {
   index: number
   indent?: boolean
   hideProjectAvatar: boolean
+  showSessionTime: boolean
   active: boolean
   orientation: "horizontal" | "vertical"
   session: SessionInfo | undefined
@@ -67,6 +68,7 @@ function SessionTabSlot(props: {
         orientation={props.orientation}
         hideProjectAvatar={props.hideProjectAvatar}
         indent={props.indent}
+        showSessionTime={props.showSessionTime}
       />
     </div>
   )
@@ -78,6 +80,7 @@ function SessionTabEntry(props: {
   index: number
   indent?: boolean
   hideProjectAvatar: boolean
+  showSessionTime: boolean
   active: boolean
   orientation: "horizontal" | "vertical"
   serverCtx: ServerCtx | undefined
@@ -165,6 +168,7 @@ function SessionTabEntry(props: {
         index={props.index}
         indent={props.indent}
         hideProjectAvatar={props.hideProjectAvatar}
+        showSessionTime={props.showSessionTime}
         active={props.active}
         orientation={props.orientation}
         session={session()}
@@ -243,6 +247,7 @@ export function TabStripEntry(props: {
   sortableIndex: number
   indent?: boolean
   hideProjectAvatar: boolean
+  showSessionTime?: boolean
   onVisibleChange: (key: string, visible: boolean) => void
   onNavigate: (tab: Tab, element: HTMLDivElement) => void
   onClose: (tab: Tab) => void
@@ -265,6 +270,7 @@ export function TabStripEntry(props: {
         index={props.sortableIndex}
         indent={props.indent}
         hideProjectAvatar={props.hideProjectAvatar}
+        showSessionTime={props.showSessionTime ?? false}
         active={props.current === props.tab}
         orientation={props.orientation}
         serverCtx={serverCtx()}
