@@ -242,3 +242,17 @@
 
 - 非分组垂直布局、水平标签栏、移动端抽屉的代码路径未动（抽屉里的分组列表继续走 `tab-strip.tsx` 的分组分支：无时间标签、无 recolor、无渐隐）。
 - i18n：无新增键。
+
+## 9. OpenCode 主题用户气泡改中性灰
+
+上游把普通目录会话（`data-local-session`）的用户气泡做成蓝系（浅色 `blue-100` 底 + `blue-700` 亮蓝字；深色 `blue-1200` 海军蓝底 + `blue-300` 蓝字，来自上游 #46538 / #47009），观感与整体灰阶界面冲突，fork 改为中性灰：浅色 `grey-200`（#F2F2F2）底 + 正文黑字，深色 `grey-900`（#2E2E2E）底 + 正文近白字。workspace（worktree）会话的纯蓝气泡与其他 35 个内置主题的观感均保持不变。
+
+### 实现
+
+- 新增一对语义 token `v2-background-bg-user-message` / `v2-text-text-user-message`，按 AGENTS.md 的语义角色原则走完整 token 链：`packages/ui/src/theme/v2/mapping.ts` 提供默认值（沿用上游蓝系取值，其他主题视觉不变），`packages/ui/src/styles/tokens/theme.css` 四个静态兜底块（`:root`、注释的 OS 偏好 dark 兜底、`[data-color-scheme="light"]`、`[data-color-scheme="dark"]`）同步补齐。
+- `packages/ui/src/theme/themes/oc-2.json` 在 light/dark 的 `v2Overrides` 里把这对 token 覆盖为中性灰（引用 `--v2-grey-200` / `--v2-grey-900` 与 `--v2-text-text-base`，不硬编码 hex）。
+- `packages/session-ui/src/components/message-part.css`：原来按 `[data-color-scheme]` 分裂的两条 local 气泡规则合并为一条，改引新 token（变量随主题注入自动切换浅/深）；workspace 规则（`--v2-background-bg-accent` + `--v2-text-text-contrast`）未动。
+
+### 不变
+
+- workspace 会话气泡、mention 前缀色（`--v2-blue-500`）、默认（非 local/workspace）气泡、其余主题。

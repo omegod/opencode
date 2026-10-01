@@ -15,6 +15,7 @@
     --v2-background-bg-button-neutral: var(--v2-grey-50);
     --v2-background-bg-accent: var(--v2-blue-600);
     --v2-background-bg-code-path: var(--v2-cyan-100);
+    --v2-background-bg-user-message: var(--v2-blue-100);
 
     /* ── Text ── */
     --v2-text-text-base: var(--v2-grey-1100);
@@ -26,6 +27,7 @@
     --v2-text-text-accent-hover: var(--v2-blue-700);
     --v2-text-text-code-accent: var(--v2-blue-900);
     --v2-text-text-code-path: var(--v2-blue-900);
+    --v2-text-text-user-message: var(--v2-blue-700);
 
     /* ── Icon ── */
     --v2-icon-icon-base: var(--v2-grey-800);
@@ -155,6 +157,7 @@
       --v2-background-bg-button-neutral: var(--v2-alpha-light-6);
       --v2-background-bg-accent: var(--v2-blue-600);
       --v2-background-bg-code-path: var(--v2-cyan-1200);
+      --v2-background-bg-user-message: var(--v2-blue-1200);
 
       --v2-text-text-base: var(--v2-grey-200);
       --v2-text-text-muted: var(--v2-grey-500);
@@ -165,6 +168,7 @@
       --v2-text-text-accent-hover: var(--v2-blue-300);
       --v2-text-text-code-accent: var(--v2-blue-400);
       --v2-text-text-code-path: var(--v2-blue-300);
+      --v2-text-text-user-message: var(--v2-blue-300);
 
       --v2-icon-icon-base: var(--v2-grey-400);
       --v2-icon-icon-muted: var(--v2-grey-600);
@@ -272,6 +276,7 @@
     --v2-background-bg-button-neutral: var(--v2-grey-50);
     --v2-background-bg-accent: var(--v2-blue-600);
     --v2-background-bg-code-path: var(--v2-cyan-100);
+    --v2-background-bg-user-message: var(--v2-blue-100);
 
     --v2-text-text-base: var(--v2-grey-1100);
     --v2-text-text-muted: var(--v2-grey-700);
@@ -282,6 +287,7 @@
     --v2-text-text-accent-hover: var(--v2-blue-700);
     --v2-text-text-code-accent: var(--v2-blue-900);
     --v2-text-text-code-path: var(--v2-blue-900);
+    --v2-text-text-user-message: var(--v2-blue-700);
 
     --v2-icon-icon-base: var(--v2-grey-800);
     --v2-icon-icon-muted: var(--v2-grey-600);
@@ -398,6 +404,7 @@
     --v2-background-bg-button-neutral: var(--v2-alpha-light-6);
     --v2-background-bg-accent: var(--v2-blue-600);
     --v2-background-bg-code-path: var(--v2-cyan-1200);
+    --v2-background-bg-user-message: var(--v2-blue-1200);
 
     --v2-text-text-base: var(--v2-grey-100);
     --v2-text-text-muted: var(--v2-grey-500);
@@ -408,6 +415,7 @@
     --v2-text-text-accent-hover: var(--v2-blue-300);
     --v2-text-text-code-accent: var(--v2-blue-400);
     --v2-text-text-code-path: var(--v2-blue-300);
+    --v2-text-text-user-message: var(--v2-blue-300);
 
     --v2-icon-icon-base: var(--v2-grey-400);
     --v2-icon-icon-muted: var(--v2-grey-600);

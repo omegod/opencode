@@ -1476,22 +1476,8 @@
   color: var(--v2-text-text-contrast);
 }
 
-:root[data-color-scheme="light"]
-  body
-  [data-local-session]
-  [data-component="user-message"]
-  [data-slot="user-message-text"] {
-  background: var(--v2-blue-100);
-  color: var(--v2-blue-700);
-  border-radius: 8px;
-}
-
-:root[data-color-scheme="dark"]
-  body
-  [data-local-session]
-  [data-component="user-message"]
-  [data-slot="user-message-text"] {
-  background: var(--v2-blue-1200);
-  color: var(--v2-blue-300);
+:root body [data-local-session] [data-component="user-message"] [data-slot="user-message-text"] {
+  background: var(--v2-background-bg-user-message);
+  color: var(--v2-text-text-user-message);
   border-radius: 8px;
 }
