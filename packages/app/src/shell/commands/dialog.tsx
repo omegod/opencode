@@ -11,6 +11,7 @@ import { formatKeybindParts } from "@/shell/commands/command"
 import { useLanguage } from "@/runtime/i18n/language"
 import { useTabs } from "@/shell/tabs/tabs"
 import { SessionTabAvatar } from "@/shell/layout/session-tab-avatar"
+import { clockNow, useClock } from "@/shell/clock"
 import { getRelativeTime } from "@/shell/time"
 import { createCommandPaletteFileEntry, createCommandPaletteModel, type CommandPaletteEntry } from "./palette"
 import { createCommandPaletteSearch } from "./search"
@@ -188,6 +189,7 @@ function PaletteRow(props: {
   onActive: () => void
   onSelect: () => void
 }) {
+  useClock()
   const session = () =>
     props.item.server && props.item.directory && props.item.sessionID
       ? { server: props.item.server, directory: props.item.directory, sessionID: props.item.sessionID }
@@ -266,7 +268,7 @@ function PaletteRow(props: {
           </div>
           <Show when={props.item.updated}>
             <span class="command-palette-meta">
-              {getRelativeTime(new Date(props.item.updated!).toISOString(), props.language.t)}
+              {getRelativeTime(new Date(props.item.updated!).toISOString(), props.language.t, clockNow())}
             </span>
           </Show>
         </Match>

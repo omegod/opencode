@@ -256,3 +256,22 @@
 ### 不变
 
 - workspace 会话气泡、mention 前缀色（`--v2-blue-500`）、默认（非 local/workspace）气泡、其余主题。
+
+## 10. 会话标签相对时间：改用 `time.idle` + 共享 60s 刷新
+
+### 背景
+
+标签右侧的最后活跃时间（第 8 节引入）原取 `session.time.updated`，而它的语义是元数据/入队时间（提示词入队、改名、模型/agent/权限、移动、目录解析等都会 bump），**不含助手回复与回合结束**；实测还有老会话被目录解析等非对话写入 bump 的情况。另外 `getRelativeTime` 只在渲染时计算，文案不会随时间自己变老。
+
+### 实现
+
+- `packages/app/src/shell/titlebar/tab-nav.tsx`：`sessionTime()` 改为 `max(session.time.idle, 已加载消息最后一条时间)`。`time.idle` 由服务端在每轮 execution 终态投影写入（`packages/core/src/session/projector.ts` 的 `projectIdle`），重启后未加载消息的标签也有值；assistant 消息用 `time.completed ?? time.created`，其他类型用 `time.created`；两者都取不到时不渲染（`<Show>` 空）。
+- 每轮结束客户端在 `session.execution.*` 终态重取 session（`packages/client/src/solid/data.ts`），标签自动跳到「刚刚」。
+- 新增 `packages/app/src/shell/clock.ts`：共享 `now` 信号 + 引用计数的 60s interval（`clockNow()` / `useClock()`）。
+- `packages/app/src/shell/time.ts`：`getRelativeTime(date, t, now = Date.now())` 增加可选第三参（原有调用行为不变）。
+- 接入 tick：`tab-nav.tsx`（会话标签）、`packages/app/src/settings/workspaces/workspaces.tsx`（工作区最近活跃/会话时间）、`packages/app/src/shell/commands/dialog.tsx`（命令面板最近会话）。
+
+### 不变
+
+- 服务端、协议、数据库无改动；i18n 无新增键。
+- `time.updated` 的语义与其他使用处（会话排序、workspaces/命令面板的时间来源）未动。

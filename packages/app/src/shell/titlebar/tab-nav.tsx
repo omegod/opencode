@@ -17,6 +17,7 @@ import type { SessionInfo } from "@opencode/client/promise"
 import { sessionTabTitle } from "./tab-title"
 import { canOpenTabRename, forwardTabRef } from "./tab-gesture"
 import { TabPreviewPopover } from "./tab-popover"
+import { clockNow, useClock } from "@/shell/clock"
 import { getRelativeTime } from "@/shell/time"
 import "./tab-nav.css"
 
@@ -44,6 +45,7 @@ export function TabNavItem(props: {
   showSessionTime?: boolean
 }) {
   const language = useLanguage()
+  useClock()
   const [menu, setMenu] = createStore({ open: false, rename: false })
   const [editing, setEditing] = createSignal(false)
   const [titleOverflowing, setTitleOverflowing] = createSignal(false)
@@ -189,7 +191,20 @@ export function TabNavItem(props: {
 
   // Only rows that actually render a relative time trade the active row's always-visible close
   // button for the hover reveal; pending or missing sessions keep the close button.
-  const sessionTime = () => (props.showSessionTime ? props.session?.time.updated : undefined)
+  // `time.idle` records the last execution terminal, so restored tabs keep a time before their
+  // transcript loads; loaded messages add the fresher timestamp while a turn is running.
+  const sessionTime = () => {
+    if (!props.showSessionTime) return
+    const session = props.session
+    if (!session) return
+    const last = serverCtx()?.data.session.message.list(session.id).at(-1)
+    const messageTime = last
+      ? last.type === "assistant"
+        ? (last.time.completed ?? last.time.created)
+        : last.time.created
+      : 0
+    return Math.max(session.time.idle ?? 0, messageTime) || undefined
+  }
 
   const tab = () => (
     <div
@@ -329,7 +344,7 @@ export function TabNavItem(props: {
             data-slot="tab-time"
             class="shrink-0 text-[11px] leading-text-compact text-v2-text-text-faint group-hover:hidden group-data-[editing=true]:hidden [@media(hover:none)]:hidden"
           >
-            {getRelativeTime(time(), language.t)}
+            {getRelativeTime(time(), language.t, clockNow())}
           </span>
         )}
       </Show>

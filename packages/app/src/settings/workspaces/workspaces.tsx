@@ -15,6 +15,7 @@ import { useDialog } from "@opencode/ui/context/dialog"
 import { getFilename } from "@opencode/util/path"
 import { useLanguage } from "@/runtime/i18n/language"
 import { useServer } from "@/runtime/server/current"
+import { clockNow, useClock } from "@/shell/clock"
 import { showToast } from "@/shell/notifications/toast"
 import { getRelativeTime } from "@/shell/time"
 import { sessionLabel } from "@/session/title"
@@ -60,6 +61,7 @@ export const SettingsWorkspaces: Component<{
   const data = server.ctx.data
   const tabs = useTabs()
   const platform = usePlatform()
+  useClock()
   const [store, setStore] = createStore({
     project: "all",
     transaction: undefined as "confirm" | "running" | undefined,
@@ -166,11 +168,11 @@ export const SettingsWorkspaces: Component<{
   const lastActive = (workspace: Workspace) => {
     const updated = workspaceSessions(workspace)[0]?.time.updated
     if (!updated) return undefined
-    return getRelativeTime(new Date(updated).toISOString(), language.t)
+    return getRelativeTime(new Date(updated).toISOString(), language.t, clockNow())
   }
   const sessionTime = (session: SessionInfo) => {
     if (!session.time.updated) return undefined
-    return getRelativeTime(new Date(session.time.updated).toISOString(), language.t)
+    return getRelativeTime(new Date(session.time.updated).toISOString(), language.t, clockNow())
   }
 
   const inspect = async (workspace: Workspace, context = captureDeleteContext()) => {
