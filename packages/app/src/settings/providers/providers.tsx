@@ -482,7 +482,7 @@ export const SettingsProviders: Component<{
                                     variant="ghost-muted"
                                     size="small"
                                     class="hover-reveal group-hover/provider-row:opacity-100 focus-visible:opacity-100 data-[expanded]:opacity-100"
-                                    icon={<Icon name="outline-dots-vertical" />}
+                                    icon={<Icon name="outline-dots" />}
                                     aria-label={language.t("common.moreOptions")}
                                   />
                                   <Menu.Portal>

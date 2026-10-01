@@ -101,6 +101,15 @@
   }
 }
 
+/* Grouped sidebar icon buttons keep their small button chrome but render the small (14px) icon:
+   the session row's close button and the group header's more-options trigger. The Icon component
+   sizes via width/height attributes, which these declarations override. */
+[data-tab-grouped="true"] [data-slot="tab-close"] svg[data-slot="icon-svg"],
+[data-tab-grouped="true"] [data-action="tab-group-menu"] svg[data-slot="icon-svg"] {
+  width: 14px;
+  height: 14px;
+}
+
 [data-titlebar-tab]:is(:hover, [data-state="pressed"]) [data-slot="tab-close"] {
   background: linear-gradient(var(--tab-overlay), var(--tab-overlay)), var(--tab-base);
 }

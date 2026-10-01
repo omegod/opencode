@@ -85,7 +85,7 @@ export function ProjectTabGroupHeader(props: {
             variant="ghost-muted"
             size="small"
             class="hover-reveal group-hover/tab-group:opacity-100 focus-visible:opacity-100 data-[expanded]:opacity-100"
-            icon={<Icon name="outline-dots-vertical" />}
+            icon={<Icon name="outline-dots" />}
             aria-label={language.t("common.moreOptions")}
           />
         </Tooltip>
