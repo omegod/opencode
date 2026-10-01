@@ -11,6 +11,10 @@ import { startDeepLinks } from "./startup/deep-links"
 import { requireRendererRoot } from "./startup/root"
 import { desktopVersion, initializeSentry } from "./startup/sentry"
 
+// The macOS window is drawn with native vibrancy; mark the document so the shell paints translucent
+// chrome over the blur.
+if (navigator.userAgent.includes("Mac")) document.documentElement.dataset.vibrancy = "true"
+
 const root = requireRendererRoot()
 const version = desktopVersion()
 

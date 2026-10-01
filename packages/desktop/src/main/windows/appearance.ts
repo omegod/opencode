@@ -6,7 +6,7 @@ import { emitIpcEvent } from "../ipc-events"
 import type { DesktopPaths } from "../paths"
 import { BACKGROUND_COLOR_KEY, PINCH_ZOOM_ENABLED_KEY } from "../storage/keys"
 import { getStore } from "../storage/store"
-import { storedBackgroundColor, titlebarOverlay, tone } from "./defaults"
+import { frameBackgroundColor, storedBackgroundColor, titlebarOverlay, tone, windowVibrancy } from "./defaults"
 
 const titlebarThemes = new WeakMap<BrowserWindow, Partial<TitlebarTheme>>()
 const pinchZoomEnabled = new WeakMap<BrowserWindow, boolean>()
@@ -19,11 +19,13 @@ export function windowAppearance(path: Path.Path, paths: DesktopPaths.Resolved) 
   return {
     title: "OpenCode",
     icon: iconPath(path, paths),
-    backgroundColor: backgroundColor ?? storedBackgroundColor(),
-    ...(process.platform === "darwin"
+    backgroundColor: frameBackgroundColor(backgroundColor ?? storedBackgroundColor()),
+    ...(windowVibrancy
       ? {
           titleBarStyle: "hidden" as const,
           trafficLightPosition: { x: 14, y: 14 },
+          vibrancy: "under-window" as const,
+          visualEffectState: "active" as const,
         }
       : {}),
     ...(process.platform === "win32"
@@ -54,7 +56,7 @@ export function setBackgroundColor(color: string) {
   if (getBackgroundColor() !== color) getStore().set(BACKGROUND_COLOR_KEY, color)
   backgroundColor = color
   BrowserWindow.getAllWindows().forEach((win) => {
-    win.setBackgroundColor(color)
+    win.setBackgroundColor(frameBackgroundColor(color))
     if (process.platform === "darwin") win.invalidateShadow()
   })
 }

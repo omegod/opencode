@@ -1,3 +1,9 @@
+/* macOS vibrancy paints the window backdrop natively, so the page itself must stay transparent for
+   the blur to show through the shell's translucent chrome. */
+:root[data-vibrancy="true"] {
+  background-color: transparent !important;
+}
+
 /* Desktop controls use the default cursor; the pointer cursor is reserved for links. */
 :where(
   .cursor-pointer:not(a):not([role="link"]),

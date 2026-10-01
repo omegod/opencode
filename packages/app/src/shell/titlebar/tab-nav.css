@@ -11,9 +11,16 @@
 
 [data-titlebar-tab],
 [data-titlebar-tab-action] {
-  --tab-base: var(--v2-background-bg-deep);
+  --tab-base: var(--shell-surface);
   --tab-overlay: transparent;
   background: linear-gradient(var(--tab-overlay), var(--tab-overlay)), var(--tab-base);
+}
+
+/* The macOS window is drawn over native vibrancy. Rows paint directly on the frosted sidebar and the
+   close chip adds no base of its own; the title fades out under the chip. */
+:root[data-vibrancy="true"] [data-titlebar-tab],
+:root[data-vibrancy="true"] [data-titlebar-tab-action] {
+  --tab-base: transparent;
 }
 
 [data-titlebar-tab][data-orientation="vertical"]:has([data-slot="tab-project"]) {
@@ -89,18 +96,6 @@
   --tab-title-fade-offset: 4px;
 }
 
-/* Grouped rows show the relative time in the close button's slot. On an active row the icon is
-   hover-only, so while it is hidden the wrapper must not paint its pressed backdrop over the
-   label; the backdrop returns together with the hovered icon. Touch keeps the always-visible
-   icon and its backdrop from the hover: none rule below. */
-@media (hover: hover) {
-  [data-tab-grouped="true"]
-    [data-titlebar-tab][data-active="true"]:not(:hover):not([data-editing="true"])
-    [data-slot="tab-close"] {
-    background: none;
-  }
-}
-
 /* Grouped sidebar icon buttons keep their small button chrome but render the small (14px) icon:
    the session row's close button and the group header's more-options trigger. The Icon component
    sizes via width/height attributes, which these declarations override. */
@@ -112,6 +107,14 @@
 
 [data-titlebar-tab]:is(:hover, [data-state="pressed"]) [data-slot="tab-close"] {
   background: linear-gradient(var(--tab-overlay), var(--tab-overlay)), var(--tab-base);
+}
+
+/* Grouped sidebar rows keep the close control a plain ghost-muted IconButton like the project
+   header's buttons: the wrapper only positions it and never paints a backdrop of its own, so
+   hovering a row shows no chip. This also overrides the always-on backdrop from the hover: none
+   rule below. */
+[data-tab-grouped="true"] [data-titlebar-tab] [data-slot="tab-close"] {
+  background: none;
 }
 
 [data-titlebar-tab][data-editing="true"] [data-slot="tab-close"] {

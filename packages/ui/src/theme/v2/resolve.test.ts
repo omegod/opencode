@@ -23,7 +23,7 @@ describe("contrast icon-button tokens", () => {
     expect(tokens["v2-icon-icon-inverse"]).toBe(tokens["v2-background-bg-base"])
     expect(tokens["v2-grey-1100"]).toBe("#161616ff")
     expect(tokens["v2-background-bg-contrast"]).toBe("var(--v2-grey-700)")
-    expect(tokens["v2-text-text-contrast"]).toBe("#f0f0f0ff")
+    expect(tokens["v2-text-text-contrast"]).toBe("var(--v2-grey-50)")
   })
 
   test("OC-2 light mode retains the existing contrast background and foreground", () => {

@@ -26,6 +26,14 @@ export function storedBackgroundColor() {
   return resolveThemeVariant(dark ? oc2Theme.dark : oc2Theme.light, dark)["background-base"]
 }
 
+// macOS draws the window frame with native vibrancy; the background must stay transparent there so
+// the blur shows through the renderer's translucent chrome.
+export const windowVibrancy = process.platform === "darwin"
+
+export function frameBackgroundColor(fallback: string) {
+  return windowVibrancy ? "#00000000" : fallback
+}
+
 export function titlebarOverlay(mode: "light" | "dark" = tone(), zoom = 1) {
   return {
     color: "#00000000",

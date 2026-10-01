@@ -25,6 +25,16 @@
   font-display: swap;
 }
 
+:root {
+  /* Window chrome surface. The macOS desktop renderer swaps in a translucent mix so the native
+     vibrancy blur shows through the sidebar and titlebar. */
+  --shell-surface: var(--v2-background-bg-deep);
+}
+
+:root[data-vibrancy="true"] {
+  --shell-surface: var(--v2-background-bg-chrome, color-mix(in oklab, var(--v2-background-bg-deep) 70%, transparent));
+}
+
 @media (display-mode: standalone) {
   /* WebKit excludes safe-area insets from dvh in installed apps. */
   #root {

@@ -32,7 +32,7 @@ describe("theme preload", () => {
     run()
 
     expect(document.documentElement.dataset.colorScheme).toBe("dark")
-    expect(document.documentElement.style.backgroundColor).toBe("#121212")
+    expect(document.documentElement.style.backgroundColor).toBe("#080808")
   })
 
   test("restores explicit light mode on a dark system", () => {
@@ -50,7 +50,7 @@ describe("theme preload", () => {
     run()
 
     expect(document.documentElement.dataset.colorScheme).toBe("dark")
-    expect(document.documentElement.style.backgroundColor).toBe("#121212")
+    expect(document.documentElement.style.backgroundColor).toBe("#080808")
   })
 
   test("keeps cached css for non-default themes", () => {

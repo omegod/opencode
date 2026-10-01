@@ -5,6 +5,7 @@ import { createStore } from "solid-js/store"
 import { makeEventListener } from "@solid-primitives/event-listener"
 import { createSimpleContext } from "../context/helper"
 import oc2ThemeJson from "./themes/oc-2.json"
+import oc2TranslucentThemeJson from "./themes/oc-2-translucent.json"
 import { resolveThemeVariant, themeToCss } from "./resolve"
 import { resolveThemeVariantV2, themeV2ToCss } from "./v2/resolve"
 import type { DesktopTheme } from "./types"
@@ -45,6 +46,7 @@ function knownThemes() {
 
 const names: Record<string, string> = {
   "oc-2": "OpenCode",
+  "oc-2-translucent": "OpenCode2",
   amoled: "AMOLED",
   aura: "Aura",
   ayu: "Ayu",
@@ -82,10 +84,11 @@ const names: Record<string, string> = {
   zenburn: "Zenburn",
 }
 const oc2Theme = oc2ThemeJson as DesktopTheme
+const oc2TranslucentTheme = oc2TranslucentThemeJson as DesktopTheme
 
 function resolveStoredTheme(id: string | null | undefined, registered?: Record<string, DesktopTheme>) {
   if (id === "oc-2" || (id && (knownThemes().has(id) || registered?.[id]))) return id
-  return "oc-2"
+  return "oc-2-translucent"
 }
 
 function read(key: string) {
@@ -152,11 +155,11 @@ function applyThemeCss(theme: DesktopTheme, themeId: string, mode: "light" | "da
   ensureThemeStyleElement().textContent = fullCss
   document.documentElement.dataset.theme = themeId
   document.documentElement.dataset.colorScheme = mode
-  document.documentElement.style.backgroundColor = isDark ? "#121212" : "#fafafa"
+  document.documentElement.style.backgroundColor = isDark ? "#080808" : "#fafafa"
 
   // Update theme-color meta tag to match light/dark mode
   const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.setAttribute("content", isDark ? "#121212" : "#fafafa")
+  if (meta) meta.setAttribute("content", isDark ? "#080808" : "#fafafa")
 }
 
 function cacheThemeVariants(theme: DesktopTheme, themeId: string) {
@@ -188,6 +191,7 @@ export const { use: useTheme, provider: ThemeProvider } = createSimpleContext({
     const [store, setStore] = createStore({
       themes: {
         "oc-2": oc2Theme,
+        "oc-2-translucent": oc2TranslucentTheme,
       } as Record<string, DesktopTheme>,
       themeId,
       colorScheme,

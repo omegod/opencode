@@ -58,7 +58,8 @@ export default function Layout(props: ParentProps) {
   return (
     <TitlebarRightProvider>
       <div
-        class="relative bg-v2-background-bg-deep flex-1 min-h-0 min-w-0 flex flex-col select-none [&_input]:select-text [&_textarea]:select-text [&_[contenteditable]]:select-text"
+        data-slot="shell-root"
+        class="relative bg-[var(--shell-surface)] flex-1 min-h-0 min-w-0 flex flex-col select-none [&_input]:select-text [&_textarea]:select-text [&_[contenteditable]]:select-text"
         style={{
           // Native Windows chrome supplies the gap; retain paint clearance for the panels' outer outlines.
           "--shell-top-inset": bottomTitlebar()
@@ -81,7 +82,7 @@ export default function Layout(props: ParentProps) {
             <aside
               ref={(element) => setState("tabsMount", element)}
               data-slot="vertical-tabs-sidebar"
-              class="relative flex h-full min-h-0 shrink-0 flex-col bg-v2-background-bg-deep pe-0.5 ps-2.5 pb-[var(--shell-bottom-inset,8px)] pt-[var(--shell-top-inset,8px)]"
+              class="relative flex h-full min-h-0 shrink-0 flex-col pe-0.5 ps-2.5 pb-[var(--shell-bottom-inset,8px)] pt-[var(--shell-top-inset,8px)]"
               style={{
                 width: `${state.tabsWidth}px`,
                 "padding-bottom": "max(10px, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))",

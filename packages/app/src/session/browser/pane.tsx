@@ -136,7 +136,7 @@ export function SessionBrowserPane(props: { browser: ReturnType<typeof createSes
     // The cutout exposes the app backdrop outside the rounded Review card,
     // not the browser surface inside it.
     const color = getComputedStyle(
-      surface.closest(".bg-v2-background-bg-deep") ?? document.documentElement,
+      surface.closest('[data-slot="shell-root"]') ?? document.documentElement,
     ).backgroundColor
     const next = `${tab.id}:${visible}:${left}:${top}:${right}:${bottom}:${color}:${window.devicePixelRatio}`
     if (next !== layout) {
