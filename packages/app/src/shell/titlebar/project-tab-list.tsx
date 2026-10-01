@@ -1,7 +1,7 @@
 import { createEffect, createMemo, createSignal, For, onCleanup, Show } from "solid-js"
 import { createStore } from "solid-js/store"
 import { DragDropProvider, PointerSensor, type DragDropProviderProps } from "@dnd-kit/solid"
-import { isSortable } from "@dnd-kit/solid/sortable"
+import { isSortable, useSortable } from "@dnd-kit/solid/sortable"
 import { Accessibility, AutoScroller, Feedback, PointerActivationConstraints } from "@dnd-kit/dom"
 import { RestrictToVerticalAxis } from "@dnd-kit/abstract/modifiers"
 import { RestrictToElement } from "@dnd-kit/dom/modifiers"
@@ -25,6 +25,7 @@ import {
   parseProjectSortableId,
   projectGroupKey,
   projectMoveIndex,
+  projectSortableId,
   type TabGroup,
 } from "./tab-groups"
 
@@ -46,7 +47,9 @@ function activationSensor() {
   })
 }
 
-function sortableListProps(element: () => HTMLElement): Pick<DragDropProviderProps, "sensors" | "plugins" | "modifiers"> {
+function sortableListProps(
+  element: () => HTMLElement,
+): Pick<DragDropProviderProps, "sensors" | "plugins" | "modifiers"> {
   return {
     sensors: [activationSensor()],
     plugins: (defaults) => [
@@ -58,9 +61,39 @@ function sortableListProps(element: () => HTMLElement): Pick<DragDropProviderPro
   }
 }
 
+type DraggedRow = {
+  element: Element
+  prev: Element | null
+  next: Element | null
+  parent: Element | null
+}
+
+// dnd-kit reorders by moving the dragged element in the DOM while dragging. Solid reconciles the
+// list from the order it last rendered, so the moved row has to be put back before the store change
+// reorders it, exactly like dnd-kit does for flat lists through `source.element`.
+function captureDraggedRow(element: Element | undefined): DraggedRow | undefined {
+  const row = element?.closest('[data-slot="tab-group"]')
+  if (!row) return
+  return { element: row, prev: row.previousElementSibling, next: row.nextElementSibling, parent: row.parentElement }
+}
+
+function restoreDraggedRow(row: DraggedRow | undefined) {
+  if (!row?.element.isConnected) return
+  if (row.prev?.isConnected && row.element.previousElementSibling !== row.prev) {
+    row.prev.insertAdjacentElement("afterend", row.element)
+    return
+  }
+  if (row.next?.isConnected && row.element.nextElementSibling !== row.next) {
+    row.next.insertAdjacentElement("beforebegin", row.element)
+    return
+  }
+  if (row.parent && row.element.parentElement !== row.parent) row.parent.appendChild(row.element)
+}
+
 // Grouped vertical tab list. Project headers and the sessions of each project sort in separate drag
-// contexts: the outer provider only sees headers, and every project mounts its own provider for its
-// sessions, so a session can never be sorted into another project.
+// contexts: the outer provider owns one sortable per project row (dragged by its header), and every
+// project mounts its own provider for its sessions, so a session can never be sorted into another
+// project.
 export function ProjectTabList(props: {
   tabs: Tab[]
   currentTab: Tab | undefined
@@ -76,6 +109,7 @@ export function ProjectTabList(props: {
   const [visibility, setVisibility] = createStore<Record<string, boolean>>({})
   const [draggingKey, setDraggingKey] = createSignal<string | null>(null)
   let listRef!: HTMLDivElement
+  let draggedRow: DraggedRow | undefined
 
   const entries = createMemo(() =>
     props.tabs.map((tab) => {
@@ -180,14 +214,18 @@ export function ProjectTabList(props: {
         if (!isSortable(source)) return
         const project = parseProjectSortableId(source.id.toString())
         if (!project) return
+        draggedRow = captureDraggedRow(source.element)
         setDraggingKey(projectGroupKey(project.server, project.worktree))
       }}
       onDragEnd={(event) => {
         setDraggingKey(null)
         const source = event.operation.source
+        const row = draggedRow
+        draggedRow = undefined
         if (event.canceled || !isSortable(source)) return
         const project = parseProjectSortableId(source.id.toString())
         if (!project) return
+        restoreDraggedRow(row)
         moveProject(project.server, project.worktree, source.initialIndex, source.index)
       }}
     >
@@ -197,10 +235,7 @@ export function ProjectTabList(props: {
         data-orientation="vertical"
         class="flex w-full min-w-0 flex-col items-stretch"
       >
-        <div
-          data-slot="tab-list-label"
-          class="group/label flex select-none items-center pt-1 pe-1 ps-1.5"
-        >
+        <div data-slot="tab-list-label" class="group/label flex select-none items-center pt-1 pe-1 ps-1.5">
           <span class="min-w-0 flex-1 text-[13px] leading-4 font-medium text-v2-text-text-faint">
             {language.t("tab.group.projects", { count: projectCount() })}
           </span>
@@ -210,6 +245,30 @@ export function ProjectTabList(props: {
         <For each={groups().map((group) => group.key)}>
           {(key) => {
             const group = createMemo(() => groups().find((item) => item.key === key))
+            // The sortable unit is the whole group block, not just the header: dnd-kit reorders by
+            // moving the source element next to the hovered element, and a header-sized unit lands
+            // inside the hovered group container (splitting its header from its sessions). The
+            // header stays the drag handle, the feedback source and the droppable target, so the
+            // drag starts, renders and hits exactly as before while the block moves as one.
+            const sortable = useSortable({
+              get id() {
+                const current = group()
+                return current ? projectSortableId(current.server, current.directory) : `project:${key}`
+              },
+              get index() {
+                const current = group()
+                return (current && projectGroupIndex(current)) ?? 0
+              },
+              get disabled() {
+                const current = group()
+                return !current || projectGroupIndex(current) === undefined
+              },
+              get transition() {
+                // The dragged block is only an empty slot while it is the source, and animating it
+                // would briefly make it the containing block of the fixed-position header.
+                return draggingKey() === key ? { duration: 0 } : undefined
+              },
+            })
             let motionEl!: HTMLDivElement
             // Dragging a header collapses its sessions without writing the persisted collapse
             // state, so dropping (or canceling) restores the pre-drag expansion automatically.
@@ -232,12 +291,15 @@ export function ProjectTabList(props: {
             return (
               <Show when={group()}>
                 {(value) => (
-                  <div data-slot="tab-group" class="flex min-w-0 flex-col">
+                  <div ref={sortable.ref} data-slot="tab-group" class="flex min-w-0 flex-col">
                     <Show when={groupVisible(value())}>
                       <ProjectTabGroupHeader
                         group={value()}
-                        index={projectGroupIndex(value())}
                         collapsed={effCollapsed()}
+                        dragging={sortable.isDragSource()}
+                        handleRef={sortable.handleRef}
+                        sourceRef={sortable.sourceRef}
+                        targetRef={sortable.targetRef}
                         onToggle={() => tabs.toggleGroupCollapsed(value().key)}
                         onClose={props.onClose}
                       />
