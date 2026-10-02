@@ -17,7 +17,7 @@ export function ProjectTabGroupHeader(props: {
   sourceRef: (element: Element | undefined) => void
   targetRef: (element: Element | undefined) => void
   onToggle: () => void
-  onClose: (tab: Tab) => void
+  onCloseAll: (tabs: Tab[]) => void
 }) {
   const language = useLanguage()
   const surface = useSettingsSurface()
@@ -39,7 +39,7 @@ export function ProjectTabGroupHeader(props: {
   }
 
   const close = () => {
-    for (const tab of props.group.tabs) props.onClose(tab)
+    props.onCloseAll(props.group.tabs)
   }
 
   return (

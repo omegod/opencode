@@ -301,7 +301,7 @@ export function ProjectTabList(props: {
                         sourceRef={sortable.sourceRef}
                         targetRef={sortable.targetRef}
                         onToggle={() => tabs.toggleGroupCollapsed(value().key)}
-                        onClose={props.onClose}
+                        onCloseAll={(groupTabs) => tabs.closeTabs(groupTabs)}
                       />
                     </Show>
                     <div

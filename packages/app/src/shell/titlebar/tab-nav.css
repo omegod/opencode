@@ -289,8 +289,19 @@
 }
 
 /* forceMount keeps this menu mounted, so the close fade runs via data-closed
-   instead of relying on Kobalte's presence race; forwards hides it at the end. */
-[data-slot="tab-list-add-content"][data-component="menu-v2-content"][data-closed] {
+   instead of relying on Kobalte's presence race; forwards hides it at the end.
+   Before the first open, hide the closed state without any animation: a close
+   animation declared on the initial stylesheet state also plays at mount (from
+   opacity 1) and would flash a ghost popup whenever the grouped list mounts.
+   `animation: none` also leaves menu-v2-in unplayed, so the first open still
+   fades in. */
+[data-slot="tab-list-add-content"][data-component="menu-v2-content"][data-closed]:not([data-opened]) {
+  animation: none;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+[data-slot="tab-list-add-content"][data-component="menu-v2-content"][data-closed][data-opened] {
   animation: titlebar-project-add-close 150ms ease-out forwards;
   pointer-events: none;
 }

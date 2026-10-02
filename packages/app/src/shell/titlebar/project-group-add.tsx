@@ -1,4 +1,4 @@
-import { For, Show } from "solid-js"
+import { createSignal, For, Show } from "solid-js"
 import { Menu } from "@opencode/ui/menu"
 import { Icon } from "@opencode/ui/icon"
 import { IconButton } from "@opencode/ui/icon-button"
@@ -30,6 +30,9 @@ export function ProjectGroupAdd(props: { exclude: () => Set<string> }) {
   const tabs = useTabs()
   const language = useLanguage()
   const pickDirectory = useDirectoryPicker()
+  // The menu content is force-mounted (see tab-nav.css), so the closed state must not run the
+  // close fade before the menu ever opened; that would flash the popup on every mount.
+  const [opened, setOpened] = createSignal(false)
 
   const addable = () =>
     global.servers.list().flatMap((conn) => {
@@ -90,7 +93,15 @@ export function ProjectGroupAdd(props: { exclude: () => Set<string> }) {
   }
 
   return (
-    <Menu forceMount gutter={6} modal={false} placement="bottom-end">
+    <Menu
+      forceMount
+      gutter={6}
+      modal={false}
+      placement="bottom-end"
+      onOpenChange={(open) => {
+        if (open) setOpened(true)
+      }}
+    >
       <Tooltip placement="bottom" value={language.t("home.project.add")}>
         <Menu.Trigger
           as={IconButton}
@@ -105,6 +116,7 @@ export function ProjectGroupAdd(props: { exclude: () => Set<string> }) {
       <Menu.Portal>
         <Menu.Content
           data-slot="tab-list-add-content"
+          data-opened={opened() ? "" : undefined}
           class="w-[243px] overflow-hidden rounded-md border-0 bg-v2-background-bg-layer-01 shadow-[var(--v2-elevation-floating)] focus:outline-none"
           onOpenAutoFocus={(event) => event.preventDefault()}
         >

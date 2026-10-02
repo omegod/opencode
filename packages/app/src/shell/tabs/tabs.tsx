@@ -376,6 +376,56 @@ export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
         if (tab.type === "session") updateClosed((stack) => pushClosedTab(stack, tab, index))
         removeTab(index)
       },
+      // User-initiated batch close (the grouped project header). Looping closeTab is not safe:
+      // each call captures an index synchronously while its removal lands in a separate
+      // startTransition microtask, so later splices would remove shifted neighbours. Remove
+      // every target by key in one store update and navigate once.
+      closeTabs(targets: Tab[]) {
+        const keys = new Set(targets.map(tabKey))
+        const closingTabs = store.filter((tab) => keys.has(tabKey(tab)))
+        if (closingTabs.length === 0) return
+        const anchor = store.findIndex((tab) => keys.has(tabKey(tab)))
+        const activeKey = recentKey()
+        const active = activeKey !== undefined && keys.has(activeKey) && location.pathname !== "/"
+        const removed = closingTabs.map(tabKey)
+        updateClosed((stack) => {
+          let next = stack
+          for (const tab of closingTabs) {
+            const index = store.findIndex((item) => tabKey(item) === tabKey(tab))
+            if (index !== -1) next = pushClosedTab(next, tab, index)
+          }
+          return next
+        })
+        for (const key of removed) closing.add(key)
+        void startTransition(() => {
+          setStore(
+            produce((tabs) => {
+              for (let i = tabs.length - 1; i >= 0; i--) {
+                const tab = tabs[i]
+                if (tab && keys.has(tabKey(tab))) tabs.splice(i, 1)
+              }
+              if (!active) return
+              const nextTab = tabs[anchor] ?? tabs[anchor - 1]
+              if (nextTab) {
+                navigateTab(nextTab)
+                return
+              }
+              setRecentKey(undefined)
+              navigate("/")
+            }),
+          )
+        }).finally(() => {
+          for (const key of removed) closing.delete(key)
+        })
+        for (const key of removed) {
+          memory.remove(key)
+          removeInfo(key)
+          removePanes(key)
+        }
+        for (const tab of closingTabs) {
+          if (tab.type === "draft") removeDraftPersisted(tab.draftID)
+        }
+      },
       reopenClosedTab() {
         if (!closedReady()) {
           void closedReady.promise?.then(() => actions.reopenClosedTab())

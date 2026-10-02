@@ -327,3 +327,14 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 
 - CLI 更新器（`packages/cli/src/services/updater.ts`）硬编码 `opencode.ai`，本次不动；终端用 fork CLI 如被提示官方更新，可配 `"update": "disable"`（或 `OPENCODE_DISABLE_AUTOUPDATE`）屏蔽。
 - 打包仍用 `electron-builder.local.ts`（`RedixDevCert` 自签、`hardenedRuntime: false`、`notarize: false`），签名身份不变是自动更新的前提。
+
+## 13. 分组组件修复：批量关闭会话与添加项目弹层挂载闪烁
+
+1. 关闭分组后组内会话不会全部关闭。
+   - 根因：分组头「关闭」原先循环 `onClose(tab)` → `closeTab(index)`，而 solid-js 客户端构建的 `startTransition` 在微任务执行（`Promise.resolve().then`），同步循环中按未更新的 store 捕获的 index 在后续 `splice` 时全部错位：后执行的删除会删错相邻标签或越界 no-op（实测关闭一组会留下部分组内标签，并可能误关其他项目的标签）。
+   - 修复：`packages/app/src/shell/tabs/tabs.tsx` 新增 `closeTabs(targets)` 批量动作，在**单次** `startTransition` + `produce` 内按 `tabKey` 从尾到头删除；导航只算一次（锚点为第一个被删位置，取删除后的 `tabs[anchor] ?? tabs[anchor-1]`）；统一入「最近关闭」栈、清理 memory/info/panes/草稿持久化。`project-tab-list.tsx` 把 `tabs.closeTabs` 传给分组头，`project-tab-group.tsx` 的「关闭」改为一次批量调用。
+2. 切换到按项目分组时，添加项目按钮的弹出层闪烁出现。
+   - 根因：`ProjectGroupAdd` 用 `forceMount` 让菜单常驻（`tab-nav.css` 在 `data-closed` 上播关闭动画并以 `forwards` 隐藏）。但元素挂载时就带 `data-closed`，该关闭动画同样会在挂载时播放且起始帧是 `opacity: 1`，于是每次分组列表挂载都会闪现整个弹层再淡出 150ms。
+   - 修复：`project-group-add.tsx` 用 `onOpenChange` 记录是否打开过，并在 `Menu.Content` 输出 `data-opened`；`tab-nav.css` 拆成两条规则——首次打开前 `animation: none; visibility: hidden`（不播关闭动画，也不预支 `menu-v2-in`，首次打开仍正常淡入），打开过之后 `[data-closed][data-opened]` 才播关闭淡出。
+
+验证：`packages/app` `bun typecheck` 通过；`bun test src/shell/tabs src/shell/titlebar src/settings` 与修改前基线一致（3 个 import 期报错为仓库现有环境问题，与本次无关）；oxlint 改动文件 0 警告。手工验证：分组头菜单关闭 → 组内标签全关、其他项目不受影响、`mod+shift+t` 可逐个恢复；切换「按项目组分组」不再闪现弹层，点击 + 的打开/关闭动画正常。
