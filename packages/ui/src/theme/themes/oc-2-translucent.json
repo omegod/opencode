@@ -156,7 +156,7 @@
       "v2-pink-1000": "#8c2d61ff",
       "v2-pink-1100": "#6f284fff",
       "v2-pink-1200": "#5c1d3fff",
-      "v2-background-bg-base": "var(--v2-grey-50)",
+      "v2-background-bg-base": "var(--v2-grey-100)",
       "v2-background-bg-deep": "var(--v2-grey-100)",
       "v2-background-bg-chrome": "color-mix(in oklab, var(--v2-background-bg-deep) 60%, transparent)",
       "v2-background-bg-layer-01": "var(--v2-grey-100)",

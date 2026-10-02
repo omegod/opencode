@@ -275,3 +275,19 @@
 
 - 服务端、协议、数据库无改动；i18n 无新增键。
 - `time.updated` 的语义与其他使用处（会话排序、workspaces/命令面板的时间来源）未动。
+
+## 11. OpenCode2 亮色内容页背景改 `#fafafa`
+
+### 背景
+
+OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-grey-50`（纯白 `#fff`），会话内容卡片整块纯白，太亮。ZCode 亮色（`ZCode/packages/ui/src/styles.css`）内容背景为 `neutral-50 = #fafafa`，纯白只留给卡片/输入框/浮层。
+
+### 实现
+
+- `packages/ui/src/theme/themes/oc-2-translucent.json`：亮色 `v2-background-bg-base` 改为 `var(--v2-grey-100)`（`#fafafa`），与 ZCode 默认亮色内容背景一致。
+- 引用该 token 的内容面（会话框、新会话、side-panel、review、composer 等）自动跟随；卡片与 shell 同色后靠现有圆角 + `elevation-raised` 投影区分。
+
+### 不变
+
+- 仅 `oc-2-translucent` 亮色；暗色、`oc-2`、其他主题不动。
+- 根背景（`context.tsx`、index.html fallback）本来就是 `#fafafa`；artifact iframe 的 `bg-white` 是文档画布，保留。
