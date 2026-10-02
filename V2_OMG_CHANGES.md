@@ -79,7 +79,9 @@
 - `packages/desktop`：`bun typecheck` 中无 desktop 源码错误。
 - `oxlint` 对改动目录 0 警告 0 错误。
 
-## 2. 桌面端关闭自动更新
+## 2. 桌面端自动更新（本节已被 §12 取代，历史记录保留）
+
+> 本节记录早期状态（曾完全关闭更新器）。现已恢复：prod 渠道从本仓库 GitHub Releases 自动更新，见 [§12](#12-桌面端自动更新指向-fork-releases)。
 
 结论：关闭后不再检查更新、不再出现任何更新提示；发布包同样不内置更新源。
 
@@ -175,8 +177,9 @@
 | `packages/core/src/config.ts`                              | `Config.update` 应用 provider 补丁       |
 | `packages/core/test/config/config.test.ts`                 | provider patch 测试                      |
 | `packages/client/src/**`（生成文件）                       | 随协议变更重新生成                       |
-| `packages/desktop/src/main/constants.ts`                   | `UPDATER_ENABLED` 固定关闭               |
-| `packages/desktop/electron-builder.config.ts`              | 移除 beta/prod publish，不再生成 app-update.yml |
+| `packages/desktop/src/main/constants.ts`                   | `UPDATER_ENABLED` 仅 prod 渠道开启（见 §12） |
+| `packages/desktop/scripts/make-latest-mac-yml.ts`          | 新增备用：手动补生成 `dist/latest-mac.yml`（见 §12） |
+| `packages/desktop/electron-builder.config.ts`              | prod 配 github publish（omegod/opencode），生成 app-update.yml（见 §12） |
 
 ## 6. 合并上游 v2.0.17 / v2.0.18
 
@@ -291,3 +294,36 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 
 - 仅 `oc-2-translucent` 亮色；暗色、`oc-2`、其他主题不动。
 - 根背景（`context.tsx`、index.html fallback）本来就是 `#fafafa`；artifact iframe 的 `bg-white` 是文档画布，保留。
+
+## 12. 桌面端自动更新指向 fork Releases
+
+### 背景
+
+第 2 节曾把桌面更新器完全关闭（`UPDATER_ENABLED = false` + 移除 publish）。现在恢复：prod 渠道从本仓库（`omegod/opencode`）的 GitHub Releases 自动更新；dev/beta/本地运行仍不检查（它们没有 publish 配置、打不出 `app-update.yml`）。
+
+### 机制（已验证 electron-updater 6.8.9 源码）
+
+- `packages/desktop/src/main/constants.ts`：`UPDATER_ENABLED = CHANNEL === "prod"`。dev/local/beta 打包不带更新源，开关保持关闭，避免无更新源时启动报错。
+- `packages/desktop/electron-builder.config.ts`：prod 配 `publish: { provider: "github", owner: "omegod", repo: "opencode", channel: "latest" }`。打包（即使 `--publish never`）也会生成：包内 `Contents/Resources/app-update.yml`（更新源，标准机制）+ `dist/latest-mac.yml`（渠道清单）。注意 `publish` 必须显式存在：直接删掉 electron-builder 会回退读根 `package.json` 的 `repository` 字段（指向上游 `anomalyco/opencode`）并照样嵌入一个指错地方的 `app-update.yml`。
+- `packages/desktop/scripts/make-latest-mac-yml.ts`：备用脚本，手动补生成与 electron-builder 同格式的 `dist/latest-mac.yml`（正常打包已自动生成，不用每次跑；校验或补发时用）。
+- 检查流程：启动 + 每 10 分钟轮询。先读 `releases.atom`，再取 `releases/latest`（GitHub 按**创建时间**、排除 prerelease/draft 的最新 release，与 semver 无关），从 `releases/download/<tag>/latest-mac.yml` 读版本号与文件清单，再按 `latest-mac.yml` 版本与当前版本比较（相等则无更新；不等则提示，`allowDowngrade = true` 使降级也提示）。
+- macOS 安装经 Squirrel.Mac：下载 zip（sha512 校验）→ 用户确认 → 退出时替换。签名必须与已安装包一致（始终用同一 `RedixDevCert`，有效期到 2036）。
+- 用户确认制：`autoDownload = false`，先提示再下载、下载完再提示重启；设置页「更新」区块与 What's New 随更新器状态自动出现（`highlights.tsx` 拉的是 `opencode.ai/changelog.json`，显示上游更新说明，属已知 cosmetic 差异）。
+
+### 版本号约定
+
+- fork 发布用 `<上游版本>-fork.<N>` 后缀：`2.0.21` → `2.0.21-fork.1` → `2.0.21-fork.2`；合并上游 `2.0.22` 后用 `2.0.22-fork.1`（主版本占优，单调递增成立）。
+- 当前 store 安装的 `2.0.21` 包内无 `app-update.yml`，永远不会自动检查，需要**最后手动安装一次**带更新器的包，之后进入自动更新。
+- 版本号不在仓库里递增：`packages/desktop/package.json` 保持 `2.0.21`（`bun.lock` 不动），打包时用 `-c.extraMetadata.version=<版本>` 注入（electron-builder 的 `extraMetadata` 在 `AppInfo` 构造前 merge，Info.plist、`latest-mac.yml`、asar 内 package.json、`app.getVersion()` 全都一致）。`OPENCODE_VERSION` 环境变量同步传同一值（renderer sentry 标签用）。
+
+### 发版资产清单（每个 GitHub Release 必备）
+
+1. tag 即版本号（如 `v2.0.21-fork.1`），release **不要勾 prerelease/draft**（否则 `releases/latest` 取不到，更新器报 `ERR_UPDATER_CHANNEL_FILE_NOT_FOUND`）。
+2. 附件必须包含 `dist/latest-mac.yml`（打包自动生成；`make-latest-mac-yml.ts` 可手动补生成/校验）+ `opencode-desktop-mac-arm64.zip` + `opencode-desktop-mac-arm64.zip.blockmap`（差分下载用；缺 blockmap 回退全量，一般直接一起传）。dmg 供手动安装，可附带。
+3. `latest-mac.yml` 的版本号/sha512 必须与**同一次构建**的 zip 严格对应：一次构建、原样上传，不要重新打包。
+4. 新 release 按创建时间成为 `latest`：发版顺序保持版本单调递增；不要事后给旧版本建 release（会把它变成 latest 导致回滚提示）。
+
+### 不变 / 范围外
+
+- CLI 更新器（`packages/cli/src/services/updater.ts`）硬编码 `opencode.ai`，本次不动；终端用 fork CLI 如被提示官方更新，可配 `"update": "disable"`（或 `OPENCODE_DISABLE_AUTOUPDATE`）屏蔽。
+- 打包仍用 `electron-builder.local.ts`（`RedixDevCert` 自签、`hardenedRuntime: false`、`notarize: false`），签名身份不变是自动更新的前提。

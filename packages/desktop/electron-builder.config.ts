@@ -157,8 +157,11 @@ const getBase = (appId: string): Configuration => ({
   },
 })
 
-// No `publish` on any channel: this fork ships without the desktop updater, and a publish
-// target would make electron-builder embed an app-update.yml update feed in every package.
+// Only the prod channel embeds an update feed: its publish target makes electron-builder write
+// app-update.yml (the updater's feed) into every package, plus latest-mac.yml into dist. (Do not
+// just delete the publish block: without it electron-builder falls back to the root package.json
+// `repository` field and would still embed an app-update.yml pointing at upstream.) Dev and beta
+// stay unpublished so their packages carry no feed.
 function getConfig() {
   const appId = APP_IDS[channel]
   const base = getBase(appId)
@@ -189,6 +192,12 @@ function getConfig() {
         appId,
         productName: "OpenCode",
         protocols: { name: "OpenCode", schemes: ["opencode"] },
+        publish: {
+          provider: "github",
+          owner: "omegod",
+          repo: "opencode",
+          channel: "latest",
+        },
         deb: { fpm: [metainfoFpm(appId), legacyDesktopEntryFpm] },
         rpm: { packageName: "opencode", fpm: [metainfoFpm(appId), legacyDesktopEntryFpm] },
       }
