@@ -338,3 +338,8 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
    - 修复：`project-group-add.tsx` 用 `onOpenChange` 记录是否打开过，并在 `Menu.Content` 输出 `data-opened`；`tab-nav.css` 拆成两条规则——首次打开前 `animation: none; visibility: hidden`（不播关闭动画，也不预支 `menu-v2-in`，首次打开仍正常淡入），打开过之后 `[data-closed][data-opened]` 才播关闭淡出。
 
 验证：`packages/app` `bun typecheck` 通过；`bun test src/shell/tabs src/shell/titlebar src/settings` 与修改前基线一致（3 个 import 期报错为仓库现有环境问题，与本次无关）；oxlint 改动文件 0 警告。手工验证：分组头菜单关闭 → 组内标签全关、其他项目不受影响、`mod+shift+t` 可逐个恢复；切换「按项目组分组」不再闪现弹层，点击 + 的打开/关闭动画正常。
+
+## 14. 分组侧栏：等待用户确认时保留 loading 并叠加蓝点
+
+- 现象：按项目分组时，会话等待权限请求 / question 表单（需要用户确认）期间行内没有任何标记。原因是非分组模式靠头像上的未读蓝点表达状态：`useSessionTabAvatarState` 在 `needsAttention` 时把 `loading` 置 false 切到头像；而分组行（`hideProjectAvatar`）没有头像槽，指示器随之消失。
+- 修复：`packages/app/src/shell/layout/project-avatar-state.ts` 在原有 `unread`/`loading` 之外暴露 `attention`（= `needsAttention`，仍受 `permissions.autoApprove` 抑制）；`packages/app/src/shell/titlebar/tab-nav.tsx` 的分组指示器改为 `loading() || attention()` 时显示，`attention()` 时在 spinner 右上角叠加 6px 强调色圆点（样式在 `tab-nav.css`，几何与头像未读点一致，用 `inset-inline-end` 随 RTL 镜像）。非分组模式与 Home 列表行为不变；折叠分组的聚合蓝点本次不做。

@@ -66,7 +66,8 @@ export function TabNavItem(props: {
     if (!session) return
     return serverCtx()?.projects.forSession(session)
   })
-  // Grouped lists hide the avatar slot, so the running indicator needs its own loading state.
+  // Grouped lists hide the avatar slot, so the running indicator carries its own loading state and
+  // the confirmation dot while a session waits for a permission or form answer.
   const avatarState = useSessionTabAvatarState(() => props.server, () => props.session?.id ?? "", () => true)
   const title = createMemo(() => {
     const session = props.session
@@ -232,12 +233,17 @@ export function TabNavItem(props: {
         closeTab(event)
       }}
     >
-      <Show when={props.hideProjectAvatar && props.session && avatarState.loading()}>
+      <Show
+        when={props.hideProjectAvatar && props.session && (avatarState.loading() || avatarState.attention())}
+      >
         <span
           data-slot="tab-running-indicator"
           class="absolute start-1.5 top-1/2 flex size-4 -translate-y-1/2 items-center justify-center"
         >
           <SessionProgressIndicatorV2 />
+          <Show when={avatarState.attention()}>
+            <span data-slot="tab-running-indicator-dot" aria-hidden="true" />
+          </Show>
         </span>
       </Show>
       <Menu.Context.Trigger
