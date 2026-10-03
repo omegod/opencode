@@ -1,0 +1,15 @@
+export default {
+  "command.title": "配对设备",
+  title: "配对",
+  connection: "本地网络",
+  "local.description": "查看连接详情和二维码，用于连接同一网络中的设备。",
+  "local.open": "显示详情",
+  "screenActive.title": "保持屏幕常亮",
+  "screenActive.description": "OpenCode 运行期间，防止这台电脑的显示器进入睡眠状态。",
+  "screenActive.error": "无法更新屏幕常亮设置，请重试。",
+  description: "将其他设备连接到本机的 OpenCode 服务器。",
+  qr: "配对二维码",
+  copy: "复制详情",
+  "copy.error": "无法复制配对详情，请重试。",
+  error: "无法更新配对详情，请重试。",
+}

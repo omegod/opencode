@@ -18,7 +18,6 @@ import { isProjectDirectory } from "@/workspaces/paths"
 import { TabStripEntry } from "./tab-entry"
 import { ProjectGroupAdd } from "./project-group-add"
 import { ProjectTabGroupHeader } from "./project-tab-group"
-import { isTabCloseTarget } from "./tab-gesture"
 import { adjacentTabKey, mergeVisibleTabOrder } from "./tab-order"
 import {
   groupTabEntries,
@@ -41,9 +40,8 @@ function activationSensor() {
         ? [new PointerActivationConstraints.Distance({ value: 8 })]
         : [new PointerActivationConstraints.Distance({ value: 4 })],
     preventActivation: (event) =>
-      isTabCloseTarget(event.target) ||
-      (event.target instanceof Element && !!event.target.closest("[data-action]")) ||
-      (event.target instanceof Element && !!event.target.closest('[contenteditable="true"]')),
+      event.target instanceof Element &&
+      !!event.target.closest('[data-slot="tab-close"], [data-action], [contenteditable="true"]'),
   })
 }
 

@@ -303,7 +303,7 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 
 ### 机制（已验证 electron-updater 6.8.9 源码）
 
-- `packages/desktop/src/main/constants.ts`：`UPDATER_ENABLED = CHANNEL === "prod"`。dev/local/beta 打包不带更新源，开关保持关闭，避免无更新源时启动报错。
+- 运行时门控（v2.0.22 合并后）：上游 `packages/gui-extensions/src/updater/main.ts` 用 `app.packaged && app.channel !== "dev"` 决定是否加载更新器；fork 原 `UPDATER_ENABLED` 常量已随合并删除。对 fork 实际发布的渠道行为不变：prod 打包启用；dev/本地不打包、不启用。
 - `packages/desktop/electron-builder.config.ts`：prod 配 `publish: { provider: "github", owner: "omegod", repo: "opencode", channel: "latest" }`。打包（即使 `--publish never`）也会生成：包内 `Contents/Resources/app-update.yml`（更新源，标准机制）+ `dist/latest-mac.yml`（渠道清单）。注意 `publish` 必须显式存在：直接删掉 electron-builder 会回退读根 `package.json` 的 `repository` 字段（指向上游 `anomalyco/opencode`）并照样嵌入一个指错地方的 `app-update.yml`。
 - `packages/desktop/scripts/make-latest-mac-yml.ts`：备用脚本，手动补生成与 electron-builder 同格式的 `dist/latest-mac.yml`（正常打包已自动生成，不用每次跑；校验或补发时用）。
 - 检查流程：启动 + 每 10 分钟轮询。先读 `releases.atom`，再取 `releases/latest`（GitHub 按**创建时间**、排除 prerelease/draft 的最新 release，与 semver 无关），从 `releases/download/<tag>/latest-mac.yml` 读版本号与文件清单，再按 `latest-mac.yml` 版本与当前版本比较（相等则无更新；不等则提示，`allowDowngrade = true` 使降级也提示）。
@@ -343,3 +343,40 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 
 - 现象：按项目分组时，会话等待权限请求 / question 表单（需要用户确认）期间行内没有任何标记。原因是非分组模式靠头像上的未读蓝点表达状态：`useSessionTabAvatarState` 在 `needsAttention` 时把 `loading` 置 false 切到头像；而分组行（`hideProjectAvatar`）没有头像槽，指示器随之消失。
 - 修复：`packages/app/src/shell/layout/project-avatar-state.ts` 在原有 `unread`/`loading` 之外暴露 `attention`（= `needsAttention`，仍受 `permissions.autoApprove` 抑制）；`packages/app/src/shell/titlebar/tab-nav.tsx` 的分组指示器改为 `loading() || attention()` 时显示，`attention()` 时在 spinner 右上角叠加 6px 强调色圆点（样式在 `tab-nav.css`，几何与头像未读点一致，用 `inset-inline-end` 随 RTL 镜像）。非分组模式与 Home 列表行为不变；折叠分组的聚合蓝点本次不做。
+
+## 15. 合并上游 v2.0.22（GUI 功能内置扩展化）
+
+上游 `v2.0.21..v2.0.22` 共 76 个提交，核心是 #52369 把 SSH 连接、浏览器面板、更新器 UI、debug bar 等 GUI 功能搬进新包 `packages/gui-extensions/`（内置扩展），另有 ACP Effect 化、一批 provider/ai 修复。合并原则：以 fork 新增特性为主，破坏性取舍经确认：更新器 UI 跟随上游扩展结构，vibrancy 取色在新扩展中重写。
+
+### 冲突与解决（109 个文件）
+
+- **37 × `package.json` + `bun.lock`**：版本行 `2.0.21` vs `2.0.22`，取上游后 `bun install` 重生成 lock（fork 对 package.json 无提交改动）。
+- **63 × i18n**：上游删除 `ssh.*` 等键族，fork 有新增键（provider 表单、分组侧栏、project picker 等）。用键级三路合并处理：上游删除生效、fork 新键回填、fork 改值保留；`zh.ts` 额外清掉 12 个上游已删除的失效 `pair.*` 键与 `command.server.pair`。
+- **8 个代码文件**：
+  - `desktop/src/main/constants.ts`：删除 fork 的 `UPDATER_ENABLED`（上游已移除该常量；运行时门控改由 `gui-extensions/src/updater/main.ts` 的 `app.packaged && app.channel !== "dev"` 承担，对 fork 发布渠道行为一致）。
+  - `settings/model.tsx`：保 `groupTabsByProject` 默认值（schema/默认/store 三处）。
+  - `settings/workspaces/workspaces.tsx`：保 `useClock()`（相对时间刷新）+ 上游 `useExtensionServices()`。
+  - `shell/shell.tsx`：保 fork 垂直标签顶部拖拽区 + 取上游 `ExtensionServerCover`。
+  - `titlebar.tsx`：取上游（update pill 移除、`TitlebarStatusItems` 接管）；fork 分组侧栏分支完整保留。
+  - `tab-strip.tsx`：保留 fork 结构，套用上游两处改动（`isTabCloseTarget` → `[data-slot="tab-close"], [data-action], [contenteditable="true"]` 选择器）。
+  - `settings/general/general.tsx`：取上游（`UpdatesSection` 移除、`ExtensionSettingSections` 接管）。
+  - `session/browser/pane.tsx`：上游删除（面板搬迁），接受删除。
+
+### 合并后的适配（自动合并但接口已变）
+
+1. **更新器「禁用时隐藏」修复废弃**：上游移除 `platform.updater`，更新区块改由 `gui-extensions/src/updater` 扩展渲染（按钮禁用而非隐藏）。`search.tsx` / `search-index.ts` / `highlights.tsx` / `search-results.test.ts` 中 fork 的 `updatesEnabled` 逻辑随上游移除。
+2. **vibrancy 取色移植**：旧 pane 的圆角背景取色随文件删除；在 `gui-extensions/src/browser/panel.tsx` 用官方 `SurfaceProps.background` 重写——vibrancy（`data-vibrancy="true"`，macOS）时读 `[data-slot="shell-root"]` 的 computed background-color（半透明 chrome 色），由 `MutationObserver` 跟踪 `data-theme`/`data-color-scheme`/`data-vibrancy` 变化重算；非 vibrancy 返回 `undefined` 走宿主默认，其他主题行为不变。
+3. **迁移符号修正**：`displayName` / `getProjectAvatarSource` / `getProjectAvatarVariant` 从 `@/shell/layout/helpers` 改从 `@opencode/ui/project-avatar` 导入（`tab-groups.ts`、`project-group-add.tsx`）；`tab-gesture.ts` 被上游删除，`project-tab-list.tsx` 的关闭按钮守卫改用内联选择器（与 tab-strip 一致）。
+4. **zh 简体中文补全（合并后）**：上游 `settings.guiExtensions.*`（设置「Extensions」页）与 `gui-extensions/src/pairing`（设置「配对」页）只有 en（其余扩展均为全语言），补齐 `app/src/runtime/i18n/zh.ts` 7 键；新增 `gui-extensions/src/pairing/i18n/zh.ts`（沿用旧 fork `pair.*` 译法）并在 `pairing/index.ts` 注册按需加载。
+
+### fork 特性保留清单（已核对）
+
+分组侧栏全链（分组/折叠/相对时间/蓝点/批量关闭/加项目）、electron-builder `omegod/opencode` prod feed（更新门控随上游移入 `gui-extensions/src/updater`）、oc-2 与 OpenCode2 主题、灰气泡、vibrancy 样式与 `data-vibrancy` 标记、`tabs.groups` 折叠持久化、client `ConfigUpdate.provider`（provider 表单数据通道）、provider 自定义表单与 zh 翻译。
+
+### 环境注意
+
+上游 v2.0.22 新增 `script/oxlint/anti-slop` 的 `.ts` JS 插件，`bun run check` 的 lint 步骤需要 **node ≥ 24**（本机默认 nvm v22.16 会报 `ERR_UNKNOWN_FILE_EXTENSION`，用 `nvm use 24` 后可过；与合并本身无关）。lint 通过为 0 error（约 1.7 万条 warning 为上游 anti-slop 基线）。
+
+### 验证
+
+`bun run typecheck` 全 36 workspace 通过；`bun run lint` 0 error；`packages/app` 单测 738 pass、`packages/gui-extensions` 单测 94 pass + 1 skip。桌面端手工冒烟（更新入口、SSH 扩展、浏览器面板圆角、分组侧栏、OpenCode2 主题）待验收后提交。

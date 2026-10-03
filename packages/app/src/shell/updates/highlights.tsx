@@ -208,9 +208,6 @@ export const { use: useHighlights, provider: HighlightsProvider } = createSimple
       if (!ready()) return
       if (!settings.ready()) return
       if (!platform.version) return
-      // Builds with the updater disabled never show release highlights: there is no update
-      // the notes could accompany, so the changelog fetch is skipped entirely.
-      if (platform.updater?.state().status === "disabled") return
       state.started = true
 
       const previous = store.version

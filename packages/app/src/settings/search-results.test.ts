@@ -19,7 +19,6 @@ function index(input: Partial<Parameters<typeof settingsSearchIndex>[0]> = {}) {
     desktop: false,
     browser: false,
     mobile: false,
-    updatesEnabled: true,
     translate: (key) => strings[key],
     ...input,
   })

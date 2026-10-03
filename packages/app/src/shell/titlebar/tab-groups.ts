@@ -1,5 +1,5 @@
 import type { ServerConnection } from "@/runtime/server/registry"
-import { displayName } from "@/shell/layout/helpers"
+import { displayName } from "@opencode/ui/project-avatar"
 import type { LocalProject } from "@/shell/state/layout"
 import type { Tab } from "@/shell/tabs/tabs"
 

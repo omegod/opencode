@@ -9,13 +9,12 @@ import { Menu } from "@opencode/ui/menu"
 import { useGlobal, useServerCtx } from "@/runtime/server/runtime"
 import { useLanguage } from "@/runtime/i18n/language"
 import { ServerConnection, serverName, useServers } from "@/runtime/server/registry"
-import { displayName } from "@/shell/layout/helpers"
+import { displayName } from "@opencode/ui/project-avatar"
 import { SessionTabAvatar } from "@/shell/layout/session-tab-avatar"
 import { useSessionTabAvatarState } from "@/shell/layout/project-avatar-state"
 import { SessionProgressIndicatorV2 } from "@opencode/session-ui/v2/session-progress-indicator-v2"
 import type { SessionInfo } from "@opencode/client/promise"
 import { sessionTabTitle } from "./tab-title"
-import { canOpenTabRename, forwardTabRef } from "./tab-gesture"
 import { TabPreviewPopover } from "./tab-popover"
 import { clockNow, useClock } from "@/shell/clock"
 import { getRelativeTime } from "@/shell/time"
@@ -160,7 +159,7 @@ export function TabNavItem(props: {
   const openRename = (event?: MouseEvent) => {
     event?.preventDefault()
     event?.stopPropagation()
-    if (!canOpenTabRename(props.dragging, editing(), rename.isPending)) return
+    if (props.dragging || editing() || rename.isPending) return
     const session = props.session
     if (!session) return
     titleEl.textContent = session.title ?? ""
@@ -211,7 +210,7 @@ export function TabNavItem(props: {
     <div
       ref={(el) => {
         tabRoot = el
-        forwardTabRef(props.ref, el)
+        if (typeof props.ref === "function") props.ref(el)
       }}
       data-titlebar-tab
       data-slot="titlebar-tab-item"
@@ -439,7 +438,9 @@ export function DraftTabItem(props: {
   }
   return (
     <div
-      ref={(el) => forwardTabRef(props.ref, el)}
+      ref={(el) => {
+        if (typeof props.ref === "function") props.ref(el)
+      }}
       data-titlebar-tab
       data-slot="titlebar-tab-item"
       data-orientation={props.orientation ?? "horizontal"}

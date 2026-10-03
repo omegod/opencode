@@ -9,7 +9,6 @@ import { arrayMove } from "@dnd-kit/helpers"
 import { tabKey, type Tab } from "@/shell/tabs/tabs"
 import { useCommand } from "@/shell/commands/command"
 import { useSettings } from "@/settings/model"
-import { isTabCloseTarget } from "./tab-gesture"
 import { adjacentTabKey, mergeVisibleTabOrder } from "./tab-order"
 import { ProjectTabList } from "./project-tab-list"
 import { TabStripEntry } from "./tab-entry"
@@ -89,9 +88,8 @@ export function TitlebarTabStrip(props: {
                       ? [new PointerActivationConstraints.Distance({ value: 8 })]
                       : [new PointerActivationConstraints.Distance({ value: 4 })],
                   preventActivation: (event) =>
-                    isTabCloseTarget(event.target) ||
-                    (event.target instanceof Element && !!event.target.closest("[data-action]")) ||
-                    (event.target instanceof Element && !!event.target.closest('[contenteditable="true"]')),
+                    event.target instanceof Element &&
+                    !!event.target.closest('[data-slot="tab-close"], [data-action], [contenteditable="true"]'),
                 }),
               ]}
               modifiers={[
