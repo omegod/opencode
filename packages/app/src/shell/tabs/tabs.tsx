@@ -472,7 +472,7 @@ export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
         for (const key of removed) {
           memory.remove(key)
           removeInfo(key)
-          removePanes(key)
+          removeRegions(key)
         }
         for (const tab of closingTabs) {
           if (tab.type === "draft") removeDraftPersisted(tab.draftID)

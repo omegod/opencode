@@ -26,9 +26,19 @@ const icons = {
     viewBox: "0 0 16 16",
     body: `<path d="M7.5 13.3333H1.5V2H6.83333L8.83333 4H14.8333V6M10.1667 11.3333H15.5M12.8333 8.66667V14" stroke="currentColor" stroke-miterlimit="10" stroke-linecap="square"/>`,
   },
+  // Codicons folder (MIT, microsoft/vscode-codicons), squared corners.
   folder: {
     viewBox: "0 0 16 16",
-    body: `<path d="M1.33337 2V13.3333H14.6667V4H8.66671L6.66671 2H1.33337Z" stroke="currentColor" stroke-miterlimit="10" stroke-linecap="square"/>`,
+    body: `<path fill="currentColor" d="M2 4.5L2 6L5.586 6L5.793 6L5.939 5.854L7.293 4.5L5.939 3.146L5.793 3L5.586 3L3.5 3L2 3L2 4.5ZM1 4.5L1 2L3.5 2L5.586 2L6.207 2L6.646 2.439L8.207 4L12.5 4L15 4L15 6.5L15 11.5L15 14L12.5 14L3.5 14L1 14L1 11.5L1 4.5ZM2 7L2 11.5L2 13L3.5 13L12.5 13L14 13L14 11.5L14 6.5L14 5L12.5 5L8.207 5L6.646 6.561L6.207 7L5.586 7L2 7Z"/>`,
+  },
+  // Element Plus folder-opened (MIT, element-plus/element-plus-icons).
+  "folder-opened": {
+    viewBox: "0 0 1024 1024",
+    body: `<path fill="currentColor" d="M878.08 448H241.92l-96 384h636.16l96-384zM832 384v-64H485.76L357.504 192H128v448l57.92-231.744A32 32 0 0 1 216.96 384H832zm-24.96 512H96a32 32 0 0 1-32-32V160a32 32 0 0 1 32-32h287.872l128.384 128H864a32 32 0 0 1 32 32v96h23.04a32 32 0 0 1 31.04 39.744l-112 448A32 32 0 0 1 807.04 896z"/>`,
+  },
+  "outline-dots-vertical": {
+    viewBox: "0 0 16 16",
+    body: `<path d="M7.5 2.5H8.5V3.5H7.5V2.5Z" stroke="currentColor"/><path d="M7.5 7.5H8.5V8.5H7.5V7.5Z" stroke="currentColor"/><path d="M7.5 12.5H8.5V13.5H7.5V12.5Z" stroke="currentColor"/>`,
   },
   branch: {
     viewBox: "0 0 16 16",

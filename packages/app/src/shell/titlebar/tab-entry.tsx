@@ -139,9 +139,11 @@ function SessionTabEntry(props: {
       () =>
         void Promise.allSettled([
           ctx.data.session.sync(value.id, { children: true }),
-          // The selected timeline loads transcript and inbox data; inactive tabs need only attention and metadata.
+          // The selected timeline loads the transcript; inactive tabs need attention, metadata, and the inbox,
+          // whose waiting work keeps the tab busy.
           ctx.data.session.permission.sync(value.id),
           ctx.data.session.form.sync(value.id),
+          ctx.data.session.pending.sync(value.id),
         ]),
       300 + props.index * 50,
     )
