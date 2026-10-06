@@ -409,4 +409,4 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 
 ### 验证
 
-`bun run check` 全 36 workspace 通过（lint 0 error）；fork CLI 已重打包 `packages/cli/dist/cli-darwin-arm64`（`0.0.0-v2-omg-202610060843`，供下次 prod 打包使用）；dev:desktop 冒烟（OpenCode2 亮/暗、分组侧栏、tab 脉冲、provider 表单、灰气泡、/btw tab）待用户验收。
+`bun run check` 全 36 workspace 通过（lint 0 error）；fork CLI 已重打包 `packages/cli/dist/cli-darwin-arm64`（`0.0.0-latest-202610061920`，供下次 prod 打包使用）。**注意：新后台服务架构下，CLI 构建必须显式 `OPENCODE_CHANNEL=latest`** — 服务注册文件名由烤进二进制的 channel 决定（`latest` → `~/.local/state/opencode/service.json`），桌面端只读该文件；首次打包漏设 channel（回落为分支名 `v2-omg`），服务注册到 `service-v2-omg.json`、桌面端读不到，报 "Timed out waiting for the background service to start" 卡启动页，重建后修复。版本号刻意与官方 CLI（`2.0.24`）区分，避免 fork 桌面误领养官方服务。打包版启动已验收正常。
