@@ -13,7 +13,10 @@ export function getRelativeTime(date: string | number, t: Translate, now = Date.
   const diffDays = Math.floor(diffHours / 24)
 
   if (diffSeconds < 60) return t("common.time.justNow")
+
   if (diffMinutes < 60) return t("common.time.minutesAgo.short", { count: diffMinutes })
+
   if (diffHours < 24) return t("common.time.hoursAgo.short", { count: diffHours })
+
   return t("common.time.daysAgo.short", { count: diffDays })
 }

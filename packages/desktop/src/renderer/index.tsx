@@ -15,10 +15,13 @@ import { desktopVersion, initializeSentry } from "./startup/sentry"
 if (navigator.userAgent.includes("Mac")) document.documentElement.dataset.vibrancy = "true"
 
 const root = requireRendererRoot()
+
 const version = desktopVersion()
 
 startDesktopMenu(api)
+
 startDeepLinks(api)
 
 render(() => <DesktopApp api={api} version={version} />, root)
+
 void initializeSentry(version)

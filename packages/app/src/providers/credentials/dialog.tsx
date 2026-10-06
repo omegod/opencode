@@ -126,6 +126,7 @@ export function CustomProviderForm(props: { autofocus?: boolean; edit?: string }
 
   const setField = (key: "name" | "baseURL" | "apiKey", value: string) => {
     setForm(key, value)
+
     if (key === "apiKey") return
     setForm("err", key, undefined)
   }
@@ -157,6 +158,7 @@ export function CustomProviderForm(props: { autofocus?: boolean; edit?: string }
       disabledProviders: [],
       existingProviderIDs,
     })
+
     batch(() => {
       setForm("err", output.err)
       output.models.forEach((model, index) => {
@@ -172,6 +174,7 @@ export function CustomProviderForm(props: { autofocus?: boolean; edit?: string }
       })
       output.headers.forEach((err, index) => setForm("headers", index, "err", err))
     })
+
     return output.result
   }
 
@@ -204,9 +207,11 @@ export function CustomProviderForm(props: { autofocus?: boolean; edit?: string }
 
   const save = (e: SubmitEvent) => {
     e.preventDefault()
+
     if (saveMutation.isPending) return
 
     const result = validate()
+
     if (!result) return
     saveMutation.mutate(result)
   }
