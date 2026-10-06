@@ -380,3 +380,33 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 ### 验证
 
 `bun run typecheck` 全 36 workspace 通过；`bun run lint` 0 error；`packages/app` 单测 738 pass、`packages/gui-extensions` 单测 94 pass + 1 skip。桌面端手工冒烟（更新入口、SSH 扩展、浏览器面板圆角、分组侧栏、OpenCode2 主题）待验收后提交。
+
+## 16. 合并上游 v2.0.23 / v2.0.24
+
+上游 `v2.0.22..v2.0.24` 共约 181 个提交（v2.0.23 ≈130 个：ACP 大改造、core v1 清理与 noUnusedLocals、PTY 修复、Cohere/Venice/Bedrock Mantle 等 provider 接入；v2.0.24 ≈50 个：OpenAI OAuth→Codex 改名、AI SDK v6 providers 默认安装、Vercel AI Gateway、gui-extensions Point→Registry、tab prompt 脉冲、pending 用户消息中性样式）。上游 main 与 v2.0.22 tag 线 diverged（behind 1，tag commit 不在 main 线），版本字段冲突与 v2.0.19 合并同模式。
+
+### 冲突与解决（52 个文件）
+
+- **38 × `package.json` + `bun.lock`**：版本字段，全取上游（fork 对这些文件无提交改动）。
+- **13 个代码文件 + 1 文档**：
+  - `ui/src/theme/context.tsx`：保 fork 默认主题 `oc-2-translucent`。
+  - `desktop/src/main/windows/appearance.ts`：保 fork 的 `frameBackgroundColor()` 取色包装（上游仅空行）。
+  - `ui/src/icons/icon/icon.tsx` + 新 `ui/src/icons/catalog.ts`：上游把图标表搬进 catalog 并改用 sprite；icon.tsx 取上游新结构，fork 图标并入 catalog（平方化 Codicon `folder` + 新增 `folder-opened`、`outline-dots-vertical`，其余 58 键上游已内置）。
+  - `gui-extensions/src/browser/panel.tsx`：保 fork 改动，import 清掉未使用的 `createEffect`/`untrack`（上游新 anti-slop 规则禁止扩展代码直接用 createEffect）。
+  - `gui-extensions/src/pairing/index.ts`：采用上游新 SDK 结构（`provides`/`stores`），保留 fork 的 zh 按需加载；`README.md` sdk-docs 校验块同步。
+  - `shell/tabs/schema.ts`：保 fork `GroupCollapse` 持久化。
+  - `shell/layout/project-avatar-state.ts`：保 fork `attention` 返回值。
+  - `titlebar/tab-nav.tsx`：保 fork 运行指示器（loading+确认蓝点），并入上游 `promptPulse`（后台 tab 收到 prompt 时脉冲一次，`session.inbox.enqueued` 驱动）。
+  - `titlebar/tab-strip.tsx`：整体取 fork 重写版（上游仅改旧内联结构与格式）；其行为变化移植进 fork 的 `tab-entry.tsx`：非激活 tab 额外 `pending.sync`（等待中的工作让 tab 保持 busy）。
+  - `titlebar/titlebar.tsx`：保 fork 分组侧栏 `Show` 结构 + 取上游 `titlebarItems` 改名；#53297 iOS 状态栏 blur 自动并入。
+  - `providers/credentials/form.ts`：取 fork（上游仅 #53444 格式化空行）。
+  - `settings/workspaces/workspaces.tsx`：取上游 `useHostApis()`（原 `useExtensionServices` 改名），保 fork `useClock()`/`clockNow()` 相对时间刷新与 store 结构。
+  - `shell/tabs/tabs.tsx`（合并后适配）：fork 批量关闭里的 `removePanes` → 上游改名 `removeRegions`。
+
+### 合并后 zh 补全
+
+上游本窗口新 UI 文案仅出 en：`app` 20 键（session.location.*、session.running.*、session.queue.reverted、prompt.toast.unqueueable、settings.guiExtensions.status.blocked）与 `ui` 5 键（compaction.queued、moveToQueue、pending、deletePending、modelVariant），已按既有译法回填两处 `zh.ts`；其余 60 语言走英文回退（与上游发布一致）。
+
+### 验证
+
+`bun run check` 全 36 workspace 通过（lint 0 error）；fork CLI 已重打包 `packages/cli/dist/cli-darwin-arm64`（`0.0.0-v2-omg-202610060843`，供下次 prod 打包使用）；dev:desktop 冒烟（OpenCode2 亮/暗、分组侧栏、tab 脉冲、provider 表单、灰气泡、/btw tab）待用户验收。
