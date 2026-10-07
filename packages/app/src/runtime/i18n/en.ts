@@ -696,7 +696,7 @@ export const dict = {
   "settings.appearance.row.tabs.groupByProject.description": "Group session tabs under their project directories",
   "tab.group.projects": "Projects ({{count}})",
   "tab.group.openFolder": "Open Folder",
-  "tab.group.sessions": "Sessions",
+  "tab.group.sessions": "All Sessions",
   "tab.group.collapse": "Collapse project sessions",
   "tab.group.expand": "Expand project sessions",
   "settings.notifications.description": "Choose when to receive notifications and hear sounds",

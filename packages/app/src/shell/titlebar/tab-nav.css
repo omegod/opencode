@@ -100,7 +100,8 @@
    the session row's close button and the group header's more-options trigger. The Icon component
    sizes via width/height attributes, which these declarations override. */
 [data-tab-grouped="true"] [data-slot="tab-close"] svg[data-slot="icon-svg"],
-[data-tab-grouped="true"] [data-action="tab-group-menu"] svg[data-slot="icon-svg"] {
+[data-tab-grouped="true"] [data-action="tab-group-menu"] svg[data-slot="icon-svg"],
+[data-tab-grouped="true"] [data-action="tab-group-new-session"] svg[data-slot="icon-svg"] {
   width: 14px;
   height: 14px;
 }

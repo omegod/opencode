@@ -7,7 +7,7 @@ import { useLanguage } from "@/runtime/i18n/language"
 import { useSettingsSurface } from "@/settings/surface"
 import { useLayout } from "@/shell/state/layout"
 import type { TabGroup } from "./tab-groups"
-import type { Tab } from "@/shell/tabs/tabs"
+import { useTabs, type Tab } from "@/shell/tabs/tabs"
 
 export function ProjectTabGroupHeader(props: {
   group: TabGroup
@@ -23,6 +23,7 @@ export function ProjectTabGroupHeader(props: {
   const surface = useSettingsSurface()
   const layout = useLayout()
   const navigate = useNavigate()
+  const tabs = useTabs()
 
   const edit = () => {
     if (!props.group.project) return
@@ -40,6 +41,10 @@ export function ProjectTabGroupHeader(props: {
 
   const close = () => {
     props.onCloseAll(props.group.tabs)
+  }
+
+  const newSession = () => {
+    void tabs.newDraft({ server: props.group.server, directory: props.group.directory })
   }
 
   return (
@@ -98,6 +103,17 @@ export function ProjectTabGroupHeader(props: {
           </Menu.Content>
         </Menu.Portal>
       </Menu>
+      <Tooltip placement="bottom" value={language.t("command.session.new")} class="ms-1">
+        <IconButton
+          data-action="tab-group-new-session"
+          variant="ghost-muted"
+          size="small"
+          class="hover-reveal group-hover/tab-group:opacity-100 focus-visible:opacity-100"
+          icon={<Icon name="edit" />}
+          aria-label={language.t("command.session.new")}
+          onClick={newSession}
+        />
+      </Tooltip>
     </div>
   )
 }

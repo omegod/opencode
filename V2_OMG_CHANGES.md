@@ -21,11 +21,11 @@
 开启后，垂直会话列表：
 
 - 会话行不再显示「首字母 + 颜色」的方形项目头像。
-- 分组标题为「目录图标 + 目录名 + 竖向省略号菜单」，整行可点击收起/展开该目录的会话。
+- 分组标题为「目录图标 + 目录名 + 竖向省略号菜单 + 新建会话按钮」，整行可点击收起/展开该目录的会话。
 - 收起态用 `folder`，展开态用 `folder-opened`（VS Code Codicons，MIT，四角改为锐角）；标题默认用会话的非激活样式，hover/pressed 复用会话标签的 overlay 效果。
 - 收起状态持久化（与标签顺序同一存储，同一窗口内共享，刷新/重启后保留）。
 - 分组内的会话行缩进一级：缩进做在行内 padding（`ps-7`）上，背景/hover/激活高亮仍是整行宽度，水平与非分组模式不受影响。
-- 每个项目分组标题右侧有竖向省略号菜单：编辑 / 会话 / 关闭。
+- 每个项目分组标题右侧有竖向省略号菜单：编辑 / 所有会话 / 关闭。
 - 分组标题支持拖动排序。
 
 菜单行为：
@@ -102,7 +102,7 @@
 
 - `settings.appearance.row.tabs.groupByProject.title` → 「按项目分组」
 - `settings.appearance.row.tabs.groupByProject.description` → 「将会话标签归入各自的项目目录」
-- `tab.group.sessions` → 「会话」
+- `tab.group.sessions` → 「所有会话」（en 源 `Sessions` → `All Sessions`）
 - `tab.group.collapse` / `tab.group.expand` → 「收起项目会话」/「展开项目会话」
 
 顺带修正既有误译（简体 `zh.ts`）：
