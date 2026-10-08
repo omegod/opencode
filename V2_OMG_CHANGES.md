@@ -410,3 +410,58 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 ### 验证
 
 `bun run check` 全 36 workspace 通过（lint 0 error）；fork CLI 已重打包 `packages/cli/dist/cli-darwin-arm64`（`0.0.0-latest-202610061920`，供下次 prod 打包使用）。**注意：新后台服务架构下，CLI 构建必须显式 `OPENCODE_CHANNEL=latest`** — 服务注册文件名由烤进二进制的 channel 决定（`latest` → `~/.local/state/opencode/service.json`），桌面端只读该文件；首次打包漏设 channel（回落为分支名 `v2-omg`），服务注册到 `service-v2-omg.json`、桌面端读不到，报 "Timed out waiting for the background service to start" 卡启动页，重建后修复。版本号刻意与官方 CLI（`2.0.24`）区分，避免 fork 桌面误领养官方服务。打包版启动已验收正常。
+
+## 17. 合并上游 v2.0.25
+
+- fork 起点：`848cc9a338`；目标为官方 tag `v2.0.25`（`b44eea9e204024db2b480a136ece29d790d5f593`）。
+- merge-base 为 `32a67d2d0aae927d5cab5a471b43192cbff1199f`，基线至 tag 共 98 个提交、728 个文件、+21687/−4009。`v2.0.24` 的 release 提交不在目标 tag 的祖先线上，因此版本字段再次冲突。
+- 仅合并已发布 tag；`upstream/v2 @ a67cf4c3` 独有的 7 个提交不在本轮范围。版本号随官方更新到 `2.0.25`。
+- 上游重点：最近关闭标签右键菜单、移除可配置默认服务器、配对链接与 OpenTunnel、Office 预览、浏览器栏重设计、外部凭证与工具策略、`fs.read` HTTP Range。
+
+### 冲突解决与适配
+
+- 39 个版本文件（38 个 `package.json` 和 `bun.lock`）：采用上游版本；fork 相对 merge-base 仅改动版本字段。
+- 50 个 app 语言包：采用上游删除的默认服务器文案；初次解冲突保留 fork 的 `dialog.project.edit.title` 短标题，后按下述维护策略仅在英语、简中保留。
+- `providers/connect/dialog.tsx`：保留 provider 编辑的 `edit` 状态及 reset 语义，采用上游 store 类型写法。
+- `shell/tabs/tabs.tsx`：保留批量关闭 `closeTabs`，采用上游 `reopenClosedTab(target?, options?)`；批量关闭保存 `info`，供最近关闭菜单展示。
+- `titlebar/tab-strip.tsx`：保留 fork 抽取后的组件结构；上游 `rememberSessionInfo` 的用户消息标记移植到共享 `tab-entry.tsx`。
+- `titlebar/titlebar.tsx`：保留分组侧栏；未分组竖排与横排采用上游 `RecentlyClosedTabsMenu`。左键新建、右键显示最近关闭；菜单仅列出有用户消息标记的会话，草稿不入栈。
+- `gui-extensions/src/browser/panel.tsx`：合并 `createSignal` 与 `JSX` import，保留 fork backdrop 与上游新浏览器栏。
+
+### 中文补全与审查
+
+- app runtime 补齐本轮 30 个新键；pairing 新增 18 键并将 `copy` 更新为 `copyLink`。保持英文源文案、占位符、代码命令和产品名称。
+- 术语参照 VS Code `vscode-loc` 简体中文语料（复制链接、服务器、许可证、隧道），Firefox `firefox-l10n` 的简体中文 preferences/connection 语料（链接、代理、服务器），以及《Rust 程序设计语言》简体中文版第 7.1 节（保留 crate）。
+- 中文基数复数依照 Unicode CLDR `zh` 的 `other` 类；字典仍沿用本分支 `.one`/`.other` 同译惯例，调用方保持 `language.plural`。
+- 本轮未改历史误译。第三方声明的完整句式与配对提示仍待用户界面审阅。
+
+### 验证记录
+
+- 合并前定向单测：app tabs/titlebar/settings 101 项通过；core config 40 项通过。
+- 合并后 `bun install` 未额外改变 lock；`packages/client` 执行 `bun run generate` 后与合并结果一致。
+- Node 24 下根目录 `bun run check` 通过，36 个 workspace 全部成功；app tabs/titlebar/settings 108 项通过，core config 41 项通过。
+- 初次合并相对官方 tag 恰好 123 个差异文件，均在既有 fork 文件集合内；后续收敛语言定制移除其中 61 个文件的差异。app 本轮 30 个新键已译，pairing 中英文 31 键及占位符一致，已删除键无代码引用。
+- `git diff --check v2.0.25` 通过。相对旧 HEAD 的检查发现上游原样带入的许可证文本行尾空格及 ACP 测试文件末尾空行，保留上游原文。
+- 严格 `lint:changed` 仍报告历史 fork 风格警告（以 merge-base 为默认基准，覆盖整个 fork 差异）；根目录正式 lint/typecheck 通过。本轮 browser/panel 与新增适配处的空行警告已修正，未扩大为历史代码重构。
+- 生产构建的标签切换性能基线与合并后各跑 5 个场景（每场景一次），全部通过、错误目标样本均为 0。稳定显示耗时（ms，合并前 → 后）：冷缓存/关闭 review 167.3 → 149.2，冷缓存/打开 review 164.9 → 190.9，暖缓存/关闭 review 62.8 → 62.6，暖缓存/打开 review 92.1 → 95.5，暖缓存/调整 review 94.1 → 94.8。单次采样仅作粗略比较，不据此判断性能提升或回退。
+- 性能与检查原始日志保存在临时目录 `T/opencode/merge-250-{benchmark-before,benchmark-after,check,lint-changed}.log`；开发版通过 `bun run dev:desktop` 启动，使用 local 渠道及独立服务器。
+- 合并与后续修复先保持未提交供用户验收；用户已完成 Desktop 测试并授权提交、推送及发布 `v2.0.25`。
+
+### fork i18n 维护策略
+
+- fork 定制文案仅维护英语（`en`）和简体中文（`zh`）；其他语言（含繁体中文 `zht`）随上游，不添加或覆盖 fork 文案，缺少的 fork 新功能键使用既有英语回退。
+- 将 app runtime 的其余 61 个语言包恢复为官方 `v2.0.25` 原版，撤销 `dialog.project.edit.title` 短标题定制，减少后续合并冲突。
+- 保留 app 英语、简中定制，以及 pairing 和 UI 的简中补全。全仓 i18n 相对 tag 的差异仅剩这 4 个文件。
+- 验证：61 个语言包与 tag 逐字节一致，4 个英语/简中差异文件保持原样；`git diff --check v2.0.25` 与 Node 24 下 `bun run check`（36 个 workspace）通过。
+
+### 分组侧栏滚动边缘色块修复
+
+- `project-group-sidebar.tsx` 移除上下 36px 的 `backdrop-filter: blur(6px)` 覆盖层，仅保留滚动内容的 24px 动态透明渐隐。避免局部背景模糊层与半透明 shell、macOS 原生 vibrancy 叠加造成条带色差；参考 ZCode `WorkspaceSidebar.tsx` 的纯 mask 实现。
+- 已通过现有 OpenCode Dev 热更新验证：顶部仅底部渐隐，中间双边渐隐，底部仅顶部渐隐；临时隐藏内容模拟无溢出时 mask 为 none，随后恢复原内容与滚动位置。所有状态额外 backdrop-filter 层均为 0。
+- 根 `bun run check` 36 个 workspace 通过，修改组件 oxlint 0 warning / 0 error，差异空白检查通过；用户已完成界面验收。
+
+### v2.0.25 发布
+
+- fork Release/tag 使用 `v2.0.25`，指向本轮验收后的合并提交；官方 tag 的来源提交仍为本节记录的 `b44eea9e204024db2b480a136ece29d790d5f593`。
+- 安装包版本通过构建参数注入 `2.0.25-fork.1`，仓库版本保持上游 `2.0.25`。内置 CLI 同步使用 `2.0.25-fork.1` 及 `latest` 服务渠道。
+- 沿用 macOS arm64、prod 更新源 `omegod/opencode` 与本地 `RedixDevCert` 签名，发布 DMG、ZIP、各自 blockmap 及 `latest-mac.yml`。

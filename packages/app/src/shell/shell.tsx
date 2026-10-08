@@ -32,9 +32,12 @@ export default function Layout(props: ParentProps) {
         data-slot="shell-root"
         class="relative bg-[var(--shell-surface)] flex-1 min-h-0 min-w-0 flex flex-col select-none [&_input]:select-text [&_textarea]:select-text [&_[contenteditable]]:select-text"
         style={{
-          // Native Windows chrome supplies the gap; retain paint clearance for the panels' outer outlines.
+          // Mobile panels only need clearance for their outer border.
+          "--shell-inline-inset": mobile() ? "1px" : "8px",
+          // A bottom mobile titlebar leaves main's top edge to the safe area. Native Windows chrome supplies the gap;
+          // retain outer-outline clearance.
           "--shell-top-inset": bottomTitlebar()
-            ? "max(0px, calc(8px - env(safe-area-inset-top, 0px)))"
+            ? "0px"
             : platform.platform === "desktop" && platform.os === "windows"
               ? "1px"
               : "8px",
@@ -77,7 +80,6 @@ export default function Layout(props: ParentProps) {
               "--settings-bottom-inset": bottomTitlebar()
                 ? "40px"
                 : "var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))",
-              "--settings-top-inset": mobile() && !bottomTitlebar() ? "0px" : "var(--shell-top-inset, 8px)",
             }}
           >
             <Show when={verticalTabs() && platform.platform === "desktop" && platform.os !== "windows"}>

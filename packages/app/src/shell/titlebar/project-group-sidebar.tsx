@@ -1,4 +1,4 @@
-import { createMemo, onCleanup, onMount, Show } from "solid-js"
+import { createMemo, onCleanup, onMount } from "solid-js"
 import { createStore } from "solid-js/store"
 import { Icon } from "@opencode/ui/icon"
 import { useCommand } from "@/shell/commands/command"
@@ -36,14 +36,17 @@ export function ProjectGroupSidebar(props: {
     updateFades()
   })
 
-  // Alpha-fade band at each overflowing edge, mirroring the horizontal tab strip fades.
+  // Fade only the list content. Backdrop-filter overlays also composite the translucent shell,
+  // creating visible bands over the native window vibrancy.
   const scrollMask = createMemo(() => {
     if (!fades.top && !fades.bottom) return
+
     const gradient = fades.top
       ? fades.bottom
         ? "linear-gradient(to bottom, transparent 0, black 24px, black calc(100% - 24px), transparent 100%)"
         : "linear-gradient(to bottom, transparent 0, black 24px, black 100%)"
       : "linear-gradient(to bottom, black 0, black calc(100% - 24px), transparent 100%)"
+
     return { "-webkit-mask-image": gradient, "mask-image": gradient }
   })
 
@@ -70,18 +73,6 @@ export function ProjectGroupSidebar(props: {
             />
           </div>
         </div>
-        <Show when={fades.top}>
-          <div
-            aria-hidden="true"
-            class="pointer-events-none absolute inset-x-0 top-0 z-10 h-9 [-webkit-backdrop-filter:blur(6px)] [-webkit-mask-image:linear-gradient(to_bottom,black,transparent)] [backdrop-filter:blur(6px)] [mask-image:linear-gradient(to_bottom,black,transparent)]"
-          />
-        </Show>
-        <Show when={fades.bottom}>
-          <div
-            aria-hidden="true"
-            class="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-9 [-webkit-backdrop-filter:blur(6px)] [-webkit-mask-image:linear-gradient(to_top,black,transparent)] [backdrop-filter:blur(6px)] [mask-image:linear-gradient(to_top,black,transparent)]"
-          />
-        </Show>
       </div>
     </div>
   )
@@ -91,6 +82,7 @@ function ProjectGroupSidebarHome(props: { onToggle: () => void }) {
   const layout = useLayout()
   const command = useCommand()
   const language = useLanguage()
+
   return (
     <button
       type="button"
@@ -114,6 +106,7 @@ function ProjectGroupSidebarHome(props: { onToggle: () => void }) {
 function ProjectGroupSidebarNewSession(props: { onNew: () => void }) {
   const command = useCommand()
   const language = useLanguage()
+
   return (
     <button
       type="button"
