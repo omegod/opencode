@@ -465,3 +465,26 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - fork Release/tag 使用 `v2.0.25`，指向本轮验收后的合并提交；官方 tag 的来源提交仍为本节记录的 `b44eea9e204024db2b480a136ece29d790d5f593`。
 - 安装包版本通过构建参数注入 `2.0.25-fork.1`，仓库版本保持上游 `2.0.25`。内置 CLI 同步使用 `2.0.25-fork.1` 及 `latest` 服务渠道。
 - 沿用 macOS arm64、prod 更新源 `omegod/opencode` 与本地 `RedixDevCert` 签名，发布 DMG、ZIP、各自 blockmap 及 `latest-mac.yml`。
+
+## 18. 合并上游 v2.0.27
+
+- fork 起点：`e1dd6f4e9f`；目标为官方 tag `v2.0.27`（`1f4d07a4a519185955ae8ab2ea3607805509e386`）。
+- merge-base 为 `434f7b2a3670dd932794688bee5e34029e546630`（10-08），基线至 tag 共 1460 个提交、1007 个文件、+90573/−23392。
+- `v2.0.27` 于 10-10 经过 `chore: promote v2 to dev` 线路合并，历史包含另一条开发线（提交日期 6/26–10/12），因此体积远大于常规补丁：约 7.6 万行集中在 console/web/stats/官网，桌面运行时相关包合计约 +1.4 万行。
+- `v2.0.26` 内容包含在 `v2.0.27` 中：Vertex Google Cloud 凭据、会话快照性能与恢复、可点击转录链接与 OSC 8 超链接、Step 5 Preview Free、untracked 文件与批量选择 git diff、远程访问随机子域、release notes 写入 CHANGELOG 的流程。
+- 仅合并已发布 tag；`upstream/v2 @ 4617210822` 已是该 tag 的祖先，无未发布提交。版本号随官方更新到 `2.0.27`。
+
+### 冲突解决与适配
+
+- 39 个版本文件（38 个 `package.json` 与 `bun.lock`）：采用上游版本；fork 相对 merge-base 仅改动版本字段。
+- 与 fork 定制重叠的 10 个文件全部自动合并成功：`settings/model.tsx`、`shell/commands/dialog.tsx`、4 个 client 生成文件、`core/src/config.ts` 及测试、`gui-extensions/README.md`、`browser/panel.tsx`。fork 的 provider 配置补丁（schema `Config.Patch` 的 `provider` 字段、core 逐条应用 JSONC 编辑、client 生成类型）与浏览器面板 backdrop 定制均保留。
+- `desktop/scripts/dev.ts` 采用上游改动：web UI 构建改为启动期间低优先级后台进行（不再阻塞冷启动），并移除启动前的版本打印。
+- 上游删除 33 个文件（console zen 代理工具、stats athena/ingest、infra lake 等），不含 fork 定制文件；新增 90 个文件，含 Vertex Mistral/Interactions 路由、console inference-proxy、根 `CHANGELOG.md` 等。
+- `bun install` 未额外改变 lock；`packages/client` 执行 `bun run generate` 后与合并结果一致。
+
+### 验证记录
+
+- Node 24 下根 `bun run check` 通过：36 个 workspace 全部成功（无缓存，约 52s）。
+- app 定向单测 `src/settings` + `src/shell` 161 项通过（含 tabs、titlebar、model 设置）；core `test/config/config.test.ts` 43 项通过。
+- 本轮上游未改动 app runtime i18n、配对与 UI 简中、分组侧栏、tabs/titlebar、主题文件；fork 定制与上游改动无交集的部分保持原样。
+- 合并先保持未提交供用户验收；Desktop 由用户验证后再提交、推送与发布。
