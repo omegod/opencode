@@ -7,6 +7,10 @@ import base from "./electron-builder.config"
 //
 // `hardenedRuntime` stays off: with a teamless certificate the runtime flag makes dyld reject
 // framework loads, and notarization (which needs a Developer ID) is skipped as well.
+//
+// `timestamp: "none"` skips the secure timestamp: it only matters for notarization, and codesign
+// fails the whole build with "A timestamp was expected but was not found" whenever Apple's
+// timestamp service is unreachable from the build network (observed on this machine, 2026-10-12).
 export default {
   ...base,
   mac: {
@@ -14,5 +18,6 @@ export default {
     identity: "RedixDevCert",
     hardenedRuntime: false,
     notarize: false,
+    timestamp: "none",
   },
 }

@@ -487,4 +487,10 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - Node 24 下根 `bun run check` 通过：36 个 workspace 全部成功（无缓存，约 52s）。
 - app 定向单测 `src/settings` + `src/shell` 161 项通过（含 tabs、titlebar、model 设置）；core `test/config/config.test.ts` 43 项通过。
 - 本轮上游未改动 app runtime i18n、配对与 UI 简中、分组侧栏、tabs/titlebar、主题文件；fork 定制与上游改动无交集的部分保持原样。
-- 合并先保持未提交供用户验收；Desktop 由用户验证后再提交、推送与发布。
+- 合并先保持未提交供用户验收；Desktop 验证通过后提交为 `92ace754f8`，并推送分支与 tag `v2.0.27`。
+
+### 构建与发布
+
+- 本地打包遇到 `codesign --timestamp` 失败：Apple 时间戳服务不可达时 codesign 直接报 `A timestamp was expected but was not found` 并中断打包。自签名、不公证的本地构建不需要安全时间戳，`electron-builder.local.ts` 增加 `timestamp: "none"`；本次发布先用 `-c.mac.timestamp=none` 覆盖完成打包，随后将同一设置落到本地配置。
+- 打包后核验：应用与内置 CLI 版本均为 `2.0.27-fork.1`，更新源为 `omegod/opencode` prod 渠道，`codesign --verify --deep --strict` 通过，`latest-mac.yml` 中 SHA-512 与大小同 DMG/ZIP 产物一致。
+- 发布沿用 macOS arm64：DMG、ZIP、各自 blockmap 与 `latest-mac.yml` 一并上传，Release/tag 使用 `v2.0.27`。
