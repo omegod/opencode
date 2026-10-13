@@ -56,11 +56,15 @@ export function ProjectGroupSidebar(props: {
       <ProjectGroupSidebarNewSession onNew={props.onNewSession} />
       <div class="h-4 w-full shrink-0" aria-hidden="true" />
       <div class="relative flex min-h-0 flex-1 flex-col">
+        {/* Deliberately no [app-region:no-drag] here. app-region is inherited in Chromium 152+, and
+            the rows' unclipped no-drag rects would punch the draggable spacer above the list out of
+            the window hit-test region as soon as the list scrolls. The container sits outside every
+            drag region, so it needs no exclusion. */}
         <div
           ref={scrollRef}
           onScroll={updateFades}
           style={scrollMask()}
-          class="no-scrollbar [app-region:no-drag] flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden pb-4 [scroll-padding-block-end:16px]"
+          class="no-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden pb-4 [scroll-padding-block-end:16px]"
         >
           <div ref={contentRef}>
             <ProjectTabList

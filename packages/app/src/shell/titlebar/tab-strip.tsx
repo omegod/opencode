@@ -71,8 +71,12 @@ export function TitlebarTabStrip(props: {
     >
       <div
         data-slot={vertical() ? "vertical-tabs-scroll" : "titlebar-tabs-scroll"}
-        class="flex min-w-0 no-scrollbar [app-region:no-drag]"
+        class="flex min-w-0 no-scrollbar"
         classList={{
+          // Only the horizontal strip sits inside the draggable titlebar. Marking the vertical
+          // sidebar strip no-drag used to leak an inherited app-region (Chromium 152+) onto its
+          // rows, and their unclipped rects erased the draggable spacer once they scrolled.
+          "[app-region:no-drag]": !vertical(),
           "flex-row items-center gap-1.5 overflow-x-auto": !vertical(),
           "max-h-full flex-col overflow-y-auto overflow-x-hidden": vertical(),
         }}

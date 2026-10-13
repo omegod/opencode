@@ -494,3 +494,29 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - 本地打包遇到 `codesign --timestamp` 失败：Apple 时间戳服务不可达时 codesign 直接报 `A timestamp was expected but was not found` 并中断打包。自签名、不公证的本地构建不需要安全时间戳，`electron-builder.local.ts` 增加 `timestamp: "none"`；本次发布先用 `-c.mac.timestamp=none` 覆盖完成打包，随后将同一设置落到本地配置。
 - 打包后核验：应用与内置 CLI 版本均为 `2.0.27-fork.1`，更新源为 `omegod/opencode` prod 渠道，`codesign --verify --deep --strict` 通过，`latest-mac.yml` 中 SHA-512 与大小同 DMG/ZIP 产物一致。
 - 发布沿用 macOS arm64：DMG、ZIP、各自 blockmap 与 `latest-mac.yml` 一并上传，Release/tag 使用 `v2.0.27`。
+
+## 19. 修复：分组侧栏滚动后顶部窗口拖动失效
+
+### 现象
+
+- 开启「按项目分组」并让左侧会话列表溢出后，向上滚动列表一定距离，顶部的窗口拖动区（macOS 交通灯下方的 28px spacer）失效；滚回顶部恢复。
+- 平铺竖排列表（未分组）是同一滚动结构，存在同一问题。
+
+### 根因（Electron 44.4.5 最小复现 + Chromium 152 源码确认）
+
+- Chromium 152 把 `app-region` 并入 `window-drag`：**是继承属性**（`default: none, inherited: true`），`app-region` 是它的 surrogate、`-webkit-app-region` 是其别名。
+- 渲染进程为每个 `app-region != none` 的盒子按**绝对坐标（不受滚动容器裁剪）**上报 drag/no-drag 矩形；Electron 按**布局树顺序**折叠合成，同点后出现的矩形覆盖先出现的。
+- 滚动容器上的 `[app-region:no-drag]` 被所有行/文本继承；列表向上滚动后，滚出视口的行矩形在坐标上盖住上方 spacer，把它从命中区域中减掉，顶部于是无法拖窗；滚回顶部矩形回位，区域恢复。
+- 探针日志（`ELECTRON_DEBUG_DRAGGABLE_REGIONS=1`）：滚动前命中区域 `2 rect(s), bounds 0,0 480x640`（顶部条 + 底部条），滚动后 `1 rect(s), bounds 0,622 480x18`（只剩底部条）；把拖动条移到 DOM 最后则滚动全程稳定。
+
+### 修复
+
+- `packages/app/src/shell/titlebar/project-group-sidebar.tsx`：去掉滚动容器的 `[app-region:no-drag]`——该容器不在任何 drag 区域内，本来冗余；去掉后行不再继承、不再上报矩形（也减少滚动时的区域合成开销）。
+- `packages/app/src/shell/titlebar/tab-strip.tsx`：`[app-region:no-drag]` 仅在横排保留（横排列表位于可拖动标题栏内，必须保留；移动抽屉由 `mobile-drawer-content` 的 no-drag 继承覆盖，不受影响）。
+- 备选兜底（探针已验证，未采用）：把顶部拖动条放到 Portal 最后并绝对定位，使其 drag 矩形最后生效。
+
+### 验证记录
+
+- `packages/app`：`bun typecheck` 通过；`src/shell/titlebar` 32 项测试通过。
+- 根 `bun run check` 36 个 workspace 通过。
+- Desktop dev 手工验证：分组 + 长列表滚动后顶部拖动正常（用户已验收通过）。
