@@ -14403,6 +14403,9 @@
           "package": {
             "type": "string"
           },
+          "compatibility": {
+            "$ref": "#/components/schemas/Provider.Compatibility"
+          },
           "settings": {
             "$ref": "#/components/schemas/Config.Provider.Settings"
           },
@@ -16597,6 +16600,10 @@
         "required": ["_tag", "sessionID", "messageID", "message"],
         "additionalProperties": false
       },
+      "Model.CacheFormat": {
+        "type": "string",
+        "enum": ["anthropic", "alibaba"]
+      },
       "Model.Capabilities": {
         "type": "object",
         "properties": {
@@ -16639,6 +16646,9 @@
           },
           "supportsPromptCacheKey": {
             "type": "boolean"
+          },
+          "cacheFormat": {
+            "$ref": "#/components/schemas/Model.CacheFormat"
           },
           "supportsThinkingBlockBinding": {
             "type": "boolean"
@@ -17718,6 +17728,33 @@
           }
         ]
       },
+      "Provider.Compatibility": {
+        "type": "object",
+        "properties": {
+          "reasoningField": {
+            "$ref": "#/components/schemas/Model.ReasoningField"
+          },
+          "requireReasoning": {
+            "type": "boolean"
+          },
+          "maxTokensField": {
+            "$ref": "#/components/schemas/Model.MaxTokensField"
+          },
+          "requireFinishReason": {
+            "type": "boolean"
+          },
+          "requireAssistantAfterTool": {
+            "type": "boolean"
+          },
+          "supportsPromptCacheKey": {
+            "type": "boolean"
+          },
+          "cacheFormat": {
+            "$ref": "#/components/schemas/Model.CacheFormat"
+          }
+        },
+        "additionalProperties": false
+      },
       "Provider.ID": {
         "type": "string"
       },
@@ -17742,6 +17779,9 @@
           },
           "package": {
             "type": "string"
+          },
+          "compatibility": {
+            "$ref": "#/components/schemas/Provider.Compatibility"
           },
           "settings": {
             "$ref": "#/components/schemas/Provider.Settings"

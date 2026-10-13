@@ -520,3 +520,28 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - `packages/app`：`bun typecheck` 通过；`src/shell/titlebar` 32 项测试通过。
 - 根 `bun run check` 36 个 workspace 通过。
 - Desktop dev 手工验证：分组 + 长列表滚动后顶部拖动正常（用户已验收通过）。
+
+## 20. 合并上游 v2.0.28
+
+### 上游内容
+
+- 应用：项目级 auto-accept 权限（项目设置可覆盖默认值，命令/提示/搜索同步）、未读状态改用服务端 viewed watermark、桌面会话成本计入子代理、审阅面板图片/音频、视频剧院模式、composer 清空同帧显示提交内容、对话框焦点栈修复、Working 显示在未投递 steer 之上。
+- 核心/模型：Gemini 响应续传、Anthropic `compatibility.cacheFormat`、provider 级 compatibility、请求体编码设置（zstd/gzip）、系统配置目录（含 macOS MDM plist）按最低优先级加载、Windows 无 PowerShell 解压 ripgrep、禁用 Bun fetch idle timeout。
+- 桌面/CLI/TUI：Windows ARM64 原生安装与按架构暂存 CLI（打包期新增原生架构校验）、WinGet 发布、TUI 更新后显示 release highlights、命令补全限制在提示开头。
+- 插件：Figma 插件与完整 skills、server 插件 `credential.activate`。
+- 基础设施清理（无 fork 影响）：console 旧数据库与 legacy Stripe 移除（`packages/console/{core,mail,support}` 整体删除）、`sst.config.ts` / `sst-env.d.ts` 移除、docs 大幅迁移。
+
+### 冲突与解决
+
+- 41 个冲突：38 个 `package.json` 加 `bun.lock` 取上游（`--theirs`）；`packages/console/{core,mail,support}/package.json` 为上游删除，接受删除并移除整个目录。
+- `packages/core/test/config/config.test.ts`：双方在同一锚点各自新增测试。取上游版本后，把 fork 的 `patches provider entries...` 测试原样插回，并恢复 `jsonc-parser` 的 `parse as parseJsonc` 导入。
+- `packages/desktop/electron-builder.config.ts`：保留上游重构（`getBase` 用 `getCurrentCli()`、`afterPack` 增加 `NativeArch.verify` 与 node-pty 校验、`export function getConfig()` 加 `resolveChannel()`），再把 fork 的更新源注释与 publish 定制（beta 不发布、prod 指向 `omegod/opencode`）挂回。
+- 自动合并并确认双方内容共存：`core/src/config.ts`（系统目录 + fork provider JSONC 编辑）、`project-avatar-state.ts`（`autoApproves(project)` 加 fork 额外返回的 `attention`）、`settings/model.tsx` 与 `model.test.ts`、`general.tsx`、`search-catalog.ts`、`en.ts`。
+
+### 验证记录
+
+- `bun install` 无额外 lock 变化；`packages/client` `bun run generate` 后与合并结果一致（fork provider 字段与上游新类型共存）。
+- 根 `bun run check`：36 个 workspace 全部通过。
+- `packages/core` `test/config/config.test.ts` 47 项通过；`packages/app` `src/settings` 加 `src/shell` 159 项通过（上游删除了 `notification-alert.test.ts`）。
+- `git diff v2.0.28 --name-only` 恰好为 fork 定制文件集（62 个），其余与上游完全一致；`git diff --check` 无空白与冲突标记问题。
+- 合并先保持未提交供用户验收；Desktop 验证通过后再提交与发布。

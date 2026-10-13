@@ -106,7 +106,7 @@ describe("settings schema", () => {
         groupTabsByProject: false,
       },
       keybinds: {},
-      permissions: { autoApprove: false },
+      permissions: { autoApprove: false, autoApproveProjects: {} },
       workspaces: { defaultDestination: "last-used", lastUsed: {} },
       notifications: { agent: true, permissions: true, errors: false },
       sounds: {
@@ -130,7 +130,7 @@ describe("settings schema", () => {
         followUpBehavior: "invalid",
       },
       appearance: { fontSize: "large", mono: "Custom Mono", tabLayout: "vertical", showProjectName: true },
-      permissions: { autoApprove: true },
+      permissions: { autoApprove: true, autoApproveProjects: { on: true, off: false, bad: "yes" } },
       workspaces: { defaultDestination: "new", lastUsed: { good: "workspace", bad: true } },
       keybinds: { good: "ctrl+k", bad: 3 },
       notifications: { agent: false, permissions: "yes", errors: true },
@@ -151,7 +151,7 @@ describe("settings schema", () => {
       tabLayout: "vertical",
       groupTabsByProject: false,
     })
-    expect(settings.permissions.autoApprove).toBe(true)
+    expect(settings.permissions).toEqual({ autoApprove: true, autoApproveProjects: { on: true, off: false } })
     expect(settings.workspaces).toEqual({ defaultDestination: "new", lastUsed: { good: "workspace" } })
     expect(settings.keybinds).toEqual({ good: "ctrl+k" })
     expect(settings.notifications).toEqual({ agent: false, permissions: true, errors: true })

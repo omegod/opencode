@@ -380,7 +380,7 @@ export const dict = {
   "go.faq.a5.gptRetention":
     "Журнали моніторингу зловживань створюються для всіх випадків використання функцій API та зберігаються до 30 днів.",
   "go.faq.a5.learnMore": "Докладніше",
-  "go.faq.a5.deepseekRetention": "Угода ZDR поновлюється щомісяця. Поточна угода дійсна до 30 вересня 2026 року.",
+  "go.faq.a5.deepseekRetention": "Угода ZDR поновлюється щомісяця. Поточна угода дійсна до 31 жовтня 2026 року.",
   "go.faq.a5.museRetention":
     "Значно знижені ціни на токени в обмін на дозвіл використовувати ваші промпти та відповіді для навчання майбутніх моделей Meta.",
 
@@ -746,6 +746,7 @@ export const dict = {
   "download.platform.macosAppleSilicon": "macOS (Apple Silicon)",
   "download.platform.macosIntel": "macOS (Intel)",
   "download.platform.windowsX64": "Windows (x64)",
+  "download.platform.windowsArm64": "Windows (ARM64)",
   "download.platform.linuxDeb": "Linux (.deb)",
   "download.platform.linuxRpm": "Linux (.rpm)",
 
