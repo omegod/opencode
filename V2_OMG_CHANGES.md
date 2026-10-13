@@ -544,4 +544,11 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - 根 `bun run check`：36 个 workspace 全部通过。
 - `packages/core` `test/config/config.test.ts` 47 项通过；`packages/app` `src/settings` 加 `src/shell` 159 项通过（上游删除了 `notification-alert.test.ts`）。
 - `git diff v2.0.28 --name-only` 恰好为 fork 定制文件集（62 个），其余与上游完全一致；`git diff --check` 无空白与冲突标记问题。
-- 合并先保持未提交供用户验收；Desktop 验证通过后再提交与发布。
+- 合并先保持未提交供用户验收；Desktop 验证通过后提交为 `2f874936b8`，推送分支与 tag `v2.0.28`。
+
+### 构建与发布
+
+- 内置 CLI 与安装包版本 `2.0.28-fork.1`；prod 渠道更新源仍为 `omegod/opencode`，本地 `electron-builder.local.ts` 的 `timestamp: "none"` 生效，未再触发时间戳失败。
+- 上游新增的打包校验（`afterPack` 的 `NativeArch.verify` 与 node-pty 检查）在本地 arm64 构建通过。
+- 打包后核验：应用与内置 CLI 版本一致、更新源正确、`codesign --verify --deep --strict` 通过、`latest-mac.yml` 中 SHA-512 与大小同 DMG/ZIP 产物一致。
+- 发布沿用 macOS arm64：DMG、ZIP、各自 blockmap 与 `latest-mac.yml` 一并上传，Release/tag 使用 `v2.0.28`。
