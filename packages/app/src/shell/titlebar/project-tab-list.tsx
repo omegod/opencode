@@ -229,7 +229,7 @@ export function ProjectTabList(props: {
     >
       <div
         ref={listRef}
-        data-titlebar-tab-list
+        data-grouped-tab-list
         data-orientation="vertical"
         class="flex w-full min-w-0 flex-col items-stretch"
       >
@@ -375,6 +375,7 @@ function ProjectGroupTabs(props: {
                 current={props.current}
                 shortcutIndex={props.shortcutIndex(id)}
                 sortableIndex={sortableIndex(id)}
+                grouped
                 indent
                 hideProjectAvatar
                 showSessionTime={props.showSessionTime}

@@ -255,6 +255,8 @@ const source = {
   "ui.message.modelVariant": "{{model}} ({{variant}})",
   "ui.sessionTimeline.notice.model": "Model",
   "ui.sessionTimeline.notice.modelSwitched": "Switched to {{model}}",
+  "ui.sessionTimeline.notice.variantSwitched": "Switched variant to {{variant}}",
+  "ui.sessionTimeline.notice.variantDefault": "Switched variant to Default",
   "ui.sessionTimeline.notice.agentChanged": "Agent changed",
   "ui.sessionTimeline.notice.movedTo": "Moved to",
   "ui.sessionTimeline.notice.movedTooltip": "Session working directory changed",
@@ -277,6 +279,7 @@ const source = {
   "ui.question.multiHint": "Select all answers that apply",
   "ui.question.singleHint": "Select one answer",
   "ui.question.custom.placeholder": "Type your answer…",
+  "ui.question.custom.answerPlaceholder": "Type your own answer…",
 } satisfies Record<string, string>
 
 export type Key = keyof typeof source

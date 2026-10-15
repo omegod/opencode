@@ -2,6 +2,7 @@ import { createEffect, createMemo, createResource, onCleanup, Show } from "solid
 import { useSortable } from "@dnd-kit/solid/sortable"
 import { tabHref, tabKey, type SessionTab, type Tab } from "@/shell/tabs/tabs"
 import { DraftTabItem, TabNavItem } from "@/shell/titlebar/tab-nav"
+import { GroupedDraftTabItem, GroupedTabItem } from "@/shell/titlebar/grouped-tab-item"
 import { useGlobal, useServerCtx, type ServerCtx } from "@/runtime/server/runtime"
 import { useLanguage } from "@/runtime/i18n/language"
 import { useCommand } from "@/shell/commands/command"
@@ -17,8 +18,9 @@ function SessionTabSlot(props: {
   id: string
   index: number
   indent?: boolean
-  hideProjectAvatar: boolean
-  showSessionTime: boolean
+  hideProjectAvatar?: boolean
+  showSessionTime?: boolean
+  grouped?: boolean
   active: boolean
   orientation: "horizontal" | "vertical"
   session: SessionInfo | undefined
@@ -41,7 +43,8 @@ function SessionTabSlot(props: {
   return (
     <div
       ref={sortable.ref}
-      data-titlebar-tab-slot
+      data-titlebar-tab-slot={props.grouped ? undefined : ""}
+      data-grouped-tab-slot={props.grouped ? "" : undefined}
       data-tab-key={props.id}
       data-active={props.active}
       data-orientation={props.orientation}
@@ -51,25 +54,47 @@ function SessionTabSlot(props: {
         "w-full shrink-0": props.orientation === "vertical",
       }}
     >
-      <TabNavItem
-        ref={(el) => {
-          ref = el
-        }}
-        href={tabHref(props.tab)}
-        server={props.tab.server}
-        session={props.session}
-        preparing={props.preparing}
-        fallbackTitle={props.fallbackTitle}
-        onRename={props.onRename}
-        onNavigate={() => props.onNavigate(ref)}
-        onClose={props.onClose}
-        active={props.active}
-        dragging={sortable.isDragSource()}
-        orientation={props.orientation}
-        hideProjectAvatar={props.hideProjectAvatar}
-        indent={props.indent}
-        showSessionTime={props.showSessionTime}
-      />
+      <Show
+        when={props.grouped}
+        fallback={
+          <TabNavItem
+            ref={(el) => {
+              ref = el
+            }}
+            href={tabHref(props.tab)}
+            server={props.tab.server}
+            session={props.session}
+            preparing={props.preparing}
+            fallbackTitle={props.fallbackTitle}
+            onRename={props.onRename}
+            onNavigate={() => props.onNavigate(ref)}
+            onClose={props.onClose}
+            active={props.active}
+            dragging={sortable.isDragSource()}
+            orientation={props.orientation}
+          />
+        }
+      >
+        <GroupedTabItem
+          ref={(el) => {
+            ref = el
+          }}
+          href={tabHref(props.tab)}
+          server={props.tab.server}
+          session={props.session}
+          preparing={props.preparing}
+          fallbackTitle={props.fallbackTitle}
+          onRename={props.onRename}
+          onNavigate={() => props.onNavigate(ref)}
+          onClose={props.onClose}
+          active={props.active}
+          dragging={sortable.isDragSource()}
+          orientation={props.orientation}
+          hideProjectAvatar={props.hideProjectAvatar}
+          indent={props.indent}
+          showSessionTime={props.showSessionTime}
+        />
+      </Show>
     </div>
   )
 }
@@ -79,8 +104,9 @@ function SessionTabEntry(props: {
   id: string
   index: number
   indent?: boolean
-  hideProjectAvatar: boolean
-  showSessionTime: boolean
+  hideProjectAvatar?: boolean
+  showSessionTime?: boolean
+  grouped?: boolean
   active: boolean
   orientation: "horizontal" | "vertical"
   serverCtx: ServerCtx | undefined
@@ -175,6 +201,7 @@ function SessionTabEntry(props: {
         indent={props.indent}
         hideProjectAvatar={props.hideProjectAvatar}
         showSessionTime={props.showSessionTime}
+        grouped={props.grouped}
         active={props.active}
         orientation={props.orientation}
         session={session()}
@@ -197,7 +224,8 @@ function DraftTabSlot(props: {
   id: string
   index: number
   indent?: boolean
-  hideProjectAvatar: boolean
+  hideProjectAvatar?: boolean
+  grouped?: boolean
   active: boolean
   orientation: "horizontal" | "vertical"
   title: string
@@ -217,7 +245,8 @@ function DraftTabSlot(props: {
   return (
     <div
       ref={sortable.ref}
-      data-titlebar-tab-slot
+      data-titlebar-tab-slot={props.grouped ? undefined : ""}
+      data-grouped-tab-slot={props.grouped ? "" : undefined}
       data-tab-key={props.id}
       data-active={props.active}
       data-orientation={props.orientation}
@@ -227,20 +256,38 @@ function DraftTabSlot(props: {
         "w-full shrink-0": props.orientation === "vertical",
       }}
     >
-      <DraftTabItem
-        ref={(el) => {
-          ref = el
-        }}
-        href={tabHref(props.tab)}
-        title={props.title}
-        onNavigate={() => props.onNavigate(ref)}
-        onClose={props.onClose}
-        active={props.active}
-        dragging={sortable.isDragSource()}
-        orientation={props.orientation}
-        indent={props.indent}
-        hideProjectAvatar={props.hideProjectAvatar}
-      />
+      <Show
+        when={props.grouped}
+        fallback={
+          <DraftTabItem
+            ref={(el) => {
+              ref = el
+            }}
+            href={tabHref(props.tab)}
+            title={props.title}
+            onNavigate={() => props.onNavigate(ref)}
+            onClose={props.onClose}
+            active={props.active}
+            dragging={sortable.isDragSource()}
+            orientation={props.orientation}
+          />
+        }
+      >
+        <GroupedDraftTabItem
+          ref={(el) => {
+            ref = el
+          }}
+          href={tabHref(props.tab)}
+          title={props.title}
+          onNavigate={() => props.onNavigate(ref)}
+          onClose={props.onClose}
+          active={props.active}
+          dragging={sortable.isDragSource()}
+          orientation={props.orientation}
+          indent={props.indent}
+          hideProjectAvatar={props.hideProjectAvatar}
+        />
+      </Show>
     </div>
   )
 }
@@ -252,8 +299,9 @@ export function TabStripEntry(props: {
   shortcutIndex: number
   sortableIndex: number
   indent?: boolean
-  hideProjectAvatar: boolean
+  hideProjectAvatar?: boolean
   showSessionTime?: boolean
+  grouped?: boolean
   onVisibleChange: (key: string, visible: boolean) => void
   onNavigate: (tab: Tab, element: HTMLDivElement) => void
   onClose: (tab: Tab) => void
@@ -277,6 +325,7 @@ export function TabStripEntry(props: {
         indent={props.indent}
         hideProjectAvatar={props.hideProjectAvatar}
         showSessionTime={props.showSessionTime ?? false}
+        grouped={props.grouped}
         active={props.current === props.tab}
         orientation={props.orientation}
         serverCtx={serverCtx()}
@@ -297,6 +346,7 @@ export function TabStripEntry(props: {
       index={props.sortableIndex}
       indent={props.indent}
       hideProjectAvatar={props.hideProjectAvatar}
+      grouped={props.grouped}
       active={props.current === props.tab}
       orientation={props.orientation}
       title={language.t("session.tab.session")}

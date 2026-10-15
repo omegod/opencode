@@ -11,14 +11,12 @@ import { useServerCtx } from "@/runtime/server/runtime"
 import { useLanguage } from "@/runtime/i18n/language"
 import { ServerConnection, serverName, useServers } from "@/runtime/server/registry"
 import { displayName } from "@opencode/ui/project-avatar"
-import { SessionTabAvatar } from "@/shell/layout/session-tab-avatar"
+import { SessionTabAvatarView } from "@/shell/layout/session-tab-avatar"
 import { useSessionTabAvatarState } from "@/shell/layout/project-avatar-state"
 import { SessionProgressIndicatorV2 } from "@opencode/session-ui/v2/session-progress-indicator-v2"
 import type { SessionInfo } from "@opencode/client/promise"
 import { sessionTabTitle } from "./tab-title"
 import { TabPreviewPopover } from "./tab-popover"
-import { clockNow, useClock } from "@/shell/clock"
-import { getRelativeTime } from "@/shell/time"
 import "./tab-nav.css"
 
 // MouseEvent.button uses 1 for the middle/wheel button.
@@ -40,12 +38,8 @@ export function TabNavItem(props: {
   pressed?: boolean
   hidden?: boolean
   orientation?: "horizontal" | "vertical"
-  hideProjectAvatar?: boolean
-  indent?: boolean
-  showSessionTime?: boolean
 }) {
   const language = useLanguage()
-  useClock()
   const [menu, setMenu] = createStore({ open: false, rename: false })
   const [editing, setEditing] = createSignal(false)
   const [titleOverflowing, setTitleOverflowing] = createSignal(false)
@@ -63,6 +57,14 @@ export function TabNavItem(props: {
   const servers = useServers()
   const serverCtx = useServerCtx(() => servers.list.find((item) => ServerConnection.key(item) === props.server))
 
+  const avatar = useSessionTabAvatarState(
+    () => props.server,
+    () => props.session?.id ?? "",
+    () => true,
+  )
+
+  const unread = () => !!props.session && !props.active && avatar.unread() && !avatar.loading()
+
   const project = createMemo(() => {
     const session = props.session
 
@@ -70,9 +72,7 @@ export function TabNavItem(props: {
 
     return serverCtx()?.projects.forSession(session)
   })
-  // Grouped lists hide the avatar slot, so the running indicator carries its own loading state and
-  // the confirmation dot while a session waits for a permission or form answer.
-  const avatarState = useSessionTabAvatarState(() => props.server, () => props.session?.id ?? "", () => true)
+
   const title = createMemo(() => {
     const session = props.session
 
@@ -226,23 +226,6 @@ export function TabNavItem(props: {
     onCleanup(cleanup)
   })
 
-  // Only rows that actually render a relative time trade the active row's always-visible close
-  // button for the hover reveal; pending or missing sessions keep the close button.
-  // `time.idle` records the last execution terminal, so restored tabs keep a time before their
-  // transcript loads; loaded messages add the fresher timestamp while a turn is running.
-  const sessionTime = () => {
-    if (!props.showSessionTime) return
-    const session = props.session
-    if (!session) return
-    const last = serverCtx()?.data.session.message.list(session.id).at(-1)
-    const messageTime = last
-      ? last.type === "assistant"
-        ? (last.time.completed ?? last.time.created)
-        : last.time.created
-      : 0
-    return Math.max(session.time.idle ?? 0, messageTime) || undefined
-  }
-
   const tab = () => (
     <div
       ref={(el) => {
@@ -255,9 +238,10 @@ export function TabNavItem(props: {
       data-orientation={props.orientation ?? "horizontal"}
       data-title-overflow={titleOverflowing()}
       data-editing={editing()}
-      class="group relative flex h-7 w-full min-w-0 select-none flex-row items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-[6px] [container-type:inline-size]"
-      classList={{ invisible: props.hidden, "ps-7": !!props.indent, "ps-1.5": !props.indent, "pe-1.5": true }}
+      class="group relative flex h-7 w-full min-w-0 select-none flex-row items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-[6px] px-1.5 [container-type:inline-size]"
+      classList={{ invisible: props.hidden }}
       data-active={props.active}
+      data-unread={unread()}
       data-dragging={props.dragging}
       data-state={props.active || props.pressed ? "pressed" : undefined}
       onMouseDown={(event) => {
@@ -272,17 +256,6 @@ export function TabNavItem(props: {
     >
       <Show when={promptPulse()} keyed>
         <span data-slot="tab-prompt-pulse" aria-hidden="true" onAnimationEnd={() => setPromptPulse(0)} />
-      </Show>
-      <Show when={props.hideProjectAvatar && props.session && (avatarState.loading() || avatarState.attention())}>
-        <span
-          data-slot="tab-running-indicator"
-          class="absolute start-1.5 top-1/2 flex size-4 -translate-y-1/2 items-center justify-center"
-        >
-          <SessionProgressIndicatorV2 />
-          <Show when={avatarState.attention()}>
-            <span data-slot="tab-running-indicator-dot" aria-hidden="true" />
-          </Show>
-        </span>
       </Show>
       <Menu.Context.Trigger
         as="a"
@@ -319,33 +292,34 @@ export function TabNavItem(props: {
         }}
         class="flex h-full min-w-0 flex-1 flex-row items-center gap-1.5 text-[13px] font-medium text-v2-text-text-faint group-data-[active='true']:text-v2-text-text-base group-data-[editing='true']:text-v2-text-text-base [-webkit-user-drag:none]"
       >
-        <Show when={!props.hideProjectAvatar || !props.session}>
-          <span data-slot="project-avatar-slot" class="flex size-4 shrink-0 items-center justify-center">
-            <Show
-              when={props.session}
-              keyed
-              fallback={
-                <Show
-                  when={props.preparing}
-                  fallback={
-                    <span class="block size-4 rounded-[3px] border border-v2-border-border-muted" aria-hidden="true" />
-                  }
-                >
-                  <SessionProgressIndicatorV2 />
-                </Show>
-              }
-            >
-              {(session) => (
-                <SessionTabAvatar
-                  project={project()}
-                  directory={session.location.directory}
-                  sessionId={session.id}
-                  server={props.server}
-                />
-              )}
-            </Show>
-          </span>
-        </Show>
+        <span data-slot="project-avatar-slot" class="flex size-4 shrink-0 items-center justify-center">
+          <Show
+            when={props.session}
+            keyed
+            fallback={
+              <Show
+                when={props.preparing}
+                fallback={
+                  <span class="block size-4 rounded-[3px] border border-v2-border-border-muted" aria-hidden="true" />
+                }
+              >
+                <SessionProgressIndicatorV2 />
+              </Show>
+            }
+          >
+            {(session) => (
+              <SessionTabAvatarView
+                project={project()}
+                directory={session.location.directory}
+                unread={false}
+                loading={avatar.loading()}
+              />
+            )}
+          </Show>
+          <Show when={unread()}>
+            <span data-slot="tab-avatar-unread-dot" aria-hidden="true" />
+          </Show>
+        </span>
         <span
           ref={(el) => {
             titleEl = el
@@ -388,26 +362,16 @@ export function TabNavItem(props: {
         />
       </Menu.Context.Trigger>
 
-      {/* Relative last-activity time. Swaps with the close button via display, like ZCode's task
-          rows: no width animation, the title simply extends into the freed space on hover. */}
-      <Show when={sessionTime()}>
-        {(time) => (
-          <span
-            data-slot="tab-time"
-            class="shrink-0 text-[11px] leading-text-compact text-v2-text-text-faint group-hover:hidden group-data-[editing=true]:hidden [@media(hover:none)]:hidden"
-          >
-            {getRelativeTime(time(), language.t, clockNow())}
-          </span>
-        )}
-      </Show>
-
       <div data-slot="tab-close">
+        <Show when={unread()}>
+          <span data-slot="tab-unread-slot" aria-hidden="true">
+            <span data-slot="tab-unread-dot" />
+          </span>
+        </Show>
         <IconButton
           size="small"
           variant="ghost-muted"
-          class={`hover-reveal relative z-10 group-hover:opacity-100 group-data-[editing=true]:opacity-100 ${
-            sessionTime() ? "" : "group-data-[active=true]:opacity-100"
-          }`}
+          class="hover-reveal relative z-10 group-hover:opacity-100 group-has-[:focus-visible]:opacity-100 group-data-[active=true]:opacity-100 group-data-[editing=true]:opacity-100"
           onPointerDown={(event) => {
             event.preventDefault()
             event.stopPropagation()
@@ -475,8 +439,6 @@ export function DraftTabItem(props: {
   pressed?: boolean
   hidden?: boolean
   orientation?: "horizontal" | "vertical"
-  indent?: boolean
-  hideProjectAvatar?: boolean
 }) {
   const language = useLanguage()
 
@@ -497,8 +459,8 @@ export function DraftTabItem(props: {
       data-active={props.active}
       data-dragging={props.dragging}
       data-state={props.active || props.pressed ? "pressed" : undefined}
-      class="group relative flex h-7 w-full min-w-0 flex-row items-center gap-1.5 overflow-hidden rounded-[6px] [container-type:inline-size] whitespace-nowrap"
-      classList={{ invisible: props.hidden, "ps-7": !!props.indent, "ps-1.5": !props.indent, "pe-1.5": true }}
+      class="group relative flex h-7 w-full min-w-0 flex-row items-center gap-1.5 overflow-hidden rounded-[6px] px-1.5 [container-type:inline-size] whitespace-nowrap"
+      classList={{ invisible: props.hidden }}
       onMouseDown={(event) => {
         if (event.button !== MIDDLE_MOUSE_BUTTON) return
         event.preventDefault()
@@ -536,24 +498,22 @@ export function DraftTabItem(props: {
         }}
         class="flex h-full min-w-0 flex-1 flex-row items-center gap-1.5 text-[13px] font-medium text-v2-text-text-faint group-data-[active='true']:text-v2-text-text-base [-webkit-user-drag:none]"
       >
-        <Show when={!props.hideProjectAvatar}>
-          <span class="flex size-4 shrink-0 items-center justify-center">
-            <svg
-              class="text-v2-icon-icon-muted group-data-[active='true']:text-v2-icon-icon-base"
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <path
-                d="M9.00002 13.5H14M2.60419 10.9167V13.3958H5.08335L13.3959 5.08333L10.9167 2.60416L2.60419 10.9167Z"
-                stroke="currentColor"
-              />
-            </svg>
-          </span>
-        </Show>
+        <span class="flex size-4 shrink-0 items-center justify-center">
+          <svg
+            class="text-v2-icon-icon-muted group-data-[active='true']:text-v2-icon-icon-base"
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <path
+              d="M9.00002 13.5H14M2.60419 10.9167V13.3958H5.08335L13.3959 5.08333L10.9167 2.60416L2.60419 10.9167Z"
+              stroke="currentColor"
+            />
+          </svg>
+        </span>
         <span
           data-titlebar-tab-title
           class="min-w-0 flex-1 overflow-hidden text-clip whitespace-nowrap outline-none leading-4"

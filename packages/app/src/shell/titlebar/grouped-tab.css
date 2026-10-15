@@ -1,0 +1,389 @@
+/* Grouped tab row styles — fork-owned. Every selector either targets the grouped-only
+   `data-grouped-tab*` namespace or a slot scoped under it, so upstream `tab-nav.css` /
+   `titlebar.css` changes can no longer restyle or suppress these rules.
+   Sections 2-9 port the baseline the rows used to receive from the upstream
+   `[data-titlebar-tab]` rules; sections 10+ are the fork customizations that previously lived
+   inside the upstream files. */
+
+/* 1. Surface. Rows paint on the window-chrome surface and let the native vibrancy blur through
+   when the desktop window is drawn over it. Previously fork edits inside tab-nav.css; re-homed
+   here (scoped to the shell root) so the upstream file stays pristine. */
+[data-slot="shell-root"] [data-titlebar-tab],
+[data-slot="shell-root"] [data-titlebar-tab-action],
+[data-slot="shell-root"] [data-grouped-tab] {
+  --tab-base: var(--shell-surface);
+}
+
+:root[data-vibrancy="true"] [data-slot="shell-root"] [data-titlebar-tab],
+:root[data-vibrancy="true"] [data-slot="shell-root"] [data-titlebar-tab-action],
+:root[data-vibrancy="true"] [data-slot="shell-root"] [data-grouped-tab] {
+  --tab-base: transparent;
+}
+
+/* 2. Row paint + hover/pressed overlays (ported from the upstream [data-titlebar-tab] rules). */
+[data-grouped-tab] {
+  --tab-overlay: transparent;
+  background: linear-gradient(var(--tab-overlay), var(--tab-overlay)), var(--tab-base);
+}
+
+[data-grouped-tab]:not(:where([data-slot="mobile-tabs-drawer"] *)):is(
+    :hover,
+    :has(> [data-grouped-tab-link]:focus-visible)
+  ):not([data-state="pressed"]):not([data-dragging="true"]):not([data-editing="true"]) {
+  --tab-overlay: var(--v2-overlay-simple-overlay-hover);
+}
+
+[data-grouped-tab]:is([data-state="pressed"], [data-dragging="true"], [data-editing="true"]) {
+  --tab-overlay: var(--v2-overlay-simple-overlay-pressed);
+}
+
+/* 3. Row inset. The row owns the inline padding, exactly like the pre-merge `ps-1.5`/`pe-1.5`
+   classes did: 6px keeps the right gap between the time label and the row edge, and indented
+   session rows align the title with the project header title — 16px avatar + 6px gap = 28px —
+   leaving the 6px..22px groove free for the running indicator. */
+[data-grouped-tab] {
+  padding-inline: 6px;
+}
+
+[data-grouped-tab][data-indent="true"] {
+  padding-inline-start: 1.75rem;
+}
+
+/* 4. Close control. Positions over the trailing inset, centres on the vertical row, hides while
+   renaming, and stays a plain ghost-muted IconButton: the wrapper never paints a backdrop chip. */
+[data-grouped-tab] [data-slot="tab-close"] {
+  position: absolute;
+  top: 4px;
+  inset-inline-end: 4px;
+  display: flex;
+  height: 20px;
+  width: 20px;
+  align-items: center;
+  justify-content: center;
+  background: none;
+}
+
+[data-grouped-tab][data-orientation="vertical"] [data-slot="tab-close"] {
+  top: 0;
+  bottom: 0;
+  margin-block: auto;
+}
+
+[data-grouped-tab][data-editing="true"] [data-slot="tab-close"] {
+  display: none;
+}
+
+/* 5. Dots. The avatar slot stays hidden in grouped rows, so the close position carries the unread
+   dot and the running indicator carries the confirmation dot while a session waits for a
+   permission or form answer (same geometry as the project avatar's unread dot). */
+[data-grouped-tab] :is([data-slot="tab-unread-dot"], [data-slot="tab-avatar-unread-dot"]) {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: var(--v2-background-bg-accent);
+  pointer-events: none;
+}
+
+[data-grouped-tab] [data-slot="tab-unread-slot"] {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  display: flex;
+  margin-block: auto;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  [data-grouped-tab]:not(:where([data-slot="mobile-tabs-drawer"] *)):is(:hover, :has(:focus-visible))
+    [data-slot="tab-unread-slot"] {
+    display: none;
+  }
+}
+
+[data-grouped-tab] [data-slot="tab-running-indicator-dot"] {
+  position: absolute;
+  top: -3px;
+  inset-inline-end: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--v2-background-bg-accent);
+  pointer-events: none;
+}
+
+/* 6. Title editing behaviour (ported): scrolls instead of clipping while renaming. */
+[data-grouped-tab] [data-slot="tab-title"] {
+  min-width: 0;
+}
+
+[data-grouped-tab][data-editing="true"] [data-slot="tab-title"] {
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: none;
+}
+
+[data-grouped-tab][data-editing="true"] [data-slot="tab-title"]::-webkit-scrollbar {
+  display: none;
+}
+
+/* 7. Title fade under the close control (ported; offsets match the pre-merge values — the row
+   inset is part of the row box, so the fade offsets stay flat like before the merge). */
+[data-grouped-tab][data-title-overflow="true"]:not([data-editing="true"]) [data-grouped-tab-link],
+[data-grouped-tab]:is(:hover, :has(:focus-visible), [data-active="true"], [data-unread="true"]):not(
+    [data-editing="true"]
+  )
+  [data-grouped-tab-link] {
+  --tab-title-fade-offset: 4px;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    black 0,
+    black calc(100% - var(--tab-title-fade-offset) - 16px),
+    transparent calc(100% - var(--tab-title-fade-offset)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    black 0,
+    black calc(100% - var(--tab-title-fade-offset) - 16px),
+    transparent calc(100% - var(--tab-title-fade-offset)),
+    transparent 100%
+  );
+}
+
+[data-grouped-tab][data-title-overflow="true"]:not([data-editing="true"]):dir(rtl) [data-grouped-tab-link],
+[data-grouped-tab]:is(:hover, :has(:focus-visible), [data-active="true"], [data-unread="true"]):not(
+    [data-editing="true"]
+  ):dir(rtl)
+  [data-grouped-tab-link] {
+  -webkit-mask-image: linear-gradient(
+    to left,
+    black 0,
+    black calc(100% - var(--tab-title-fade-offset) - 16px),
+    transparent calc(100% - var(--tab-title-fade-offset)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to left,
+    black 0,
+    black calc(100% - var(--tab-title-fade-offset) - 16px),
+    transparent calc(100% - var(--tab-title-fade-offset)),
+    transparent 100%
+  );
+}
+
+[data-grouped-tab]:is(:hover, :has(:focus-visible), [data-active="true"], [data-unread="true"]):not(
+    [data-editing="true"]
+  )
+  [data-grouped-tab-link] {
+  --tab-title-fade-offset: 24px;
+}
+
+/* Grouped rows show the relative time instead of a persistent close button, so an active row
+   that is not hovered fades its title with the resting offset rather than the button offset. */
+[data-tab-grouped="true"] [data-grouped-tab][data-active="true"]:not(:hover) [data-grouped-tab-link] {
+  --tab-title-fade-offset: 4px;
+}
+
+/* 8. Touch devices: the close control is always visible, so every row reserves its offset. */
+@media (hover: none) {
+  [data-grouped-tab] [data-slot="tab-unread-slot"] {
+    inset-inline-end: 20px;
+  }
+
+  [data-grouped-tab]:not([data-editing="true"]) [data-grouped-tab-link],
+  [data-grouped-tab][data-title-overflow="true"]:not([data-editing="true"]) [data-grouped-tab-link] {
+    --tab-title-fade-offset: 24px;
+    --tab-title-fade-direction: to right;
+    -webkit-mask-image: linear-gradient(
+      var(--tab-title-fade-direction),
+      black 0,
+      black calc(100% - var(--tab-title-fade-offset) - 16px),
+      transparent calc(100% - var(--tab-title-fade-offset)),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      var(--tab-title-fade-direction),
+      black 0,
+      black calc(100% - var(--tab-title-fade-offset) - 16px),
+      transparent calc(100% - var(--tab-title-fade-offset)),
+      transparent 100%
+    );
+  }
+
+  [data-grouped-tab]:dir(rtl) [data-grouped-tab-link] {
+    --tab-title-fade-direction: to left;
+  }
+
+  [data-grouped-tab][data-unread="true"]:not([data-editing="true"]) [data-grouped-tab-link] {
+    --tab-title-fade-offset: 44px;
+  }
+}
+
+/* 9. Mobile drawer mirrors (from titlebar.css): touch-sized rows for the grouped sidebar when it
+   renders inside the drawer. */
+[data-slot="mobile-tabs-drawer"] [data-grouped-tab] {
+  min-height: 44px;
+}
+
+[data-slot="mobile-tabs-drawer"] [data-grouped-tab] [data-slot="tab-close"] {
+  inset-inline-end: 0;
+  width: 44px;
+  height: 44px;
+}
+
+[data-slot="mobile-tabs-drawer"] [data-grouped-tab] [data-slot="tab-unread-slot"] {
+  inset-inline-end: 44px;
+}
+
+[data-slot="mobile-tabs-drawer"] [data-grouped-tab] [data-grouped-tab-link] {
+  padding-inline-end: 38px;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+[data-slot="mobile-tabs-drawer"] [data-grouped-tab][data-unread="true"] [data-grouped-tab-link] {
+  padding-inline-end: 58px;
+}
+
+[data-slot="mobile-tabs-drawer"] [data-grouped-tab] [data-slot="tab-title"] {
+  color: var(--v2-text-text-base);
+  font-weight: 530;
+}
+
+/* 10. Grouped sidebar customizations (moved out of tab-nav.css). */
+/* Every session row renders in the primary text color instead of the faint tab color; the
+   project label and group headers keep their gray. */
+[data-grouped-tab] [data-grouped-tab-link] {
+  color: var(--v2-text-text-base);
+}
+
+/* Grouped sidebar icon buttons keep their small button chrome but render the small (14px) icon:
+   the session row's close button and the group header's more-options trigger. The Icon component
+   sizes via width/height attributes, which these declarations override. */
+[data-grouped-tab] [data-slot="tab-close"] svg[data-slot="icon-svg"],
+[data-tab-grouped="true"] [data-action="tab-group-menu"] svg[data-slot="icon-svg"],
+[data-tab-grouped="true"] [data-action="tab-group-new-session"] svg[data-slot="icon-svg"] {
+  width: 14px;
+  height: 14px;
+}
+
+/* Grouped list gaps (ported; the grouped list owns its own list attribute now). */
+[data-grouped-tab-list] {
+  gap: 6px;
+}
+
+[data-grouped-tab-list][data-orientation="vertical"] {
+  gap: 2px;
+}
+
+[data-slot="vertical-tabs-sidebar"] [data-grouped-tab-list][data-orientation="vertical"] {
+  gap: 4px;
+}
+
+/* 11. Collapse + add-menu motion (moved out of tab-nav.css). */
+[data-slot="tab-group-motion"] {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  padding-top: 4px;
+  transition:
+    grid-template-rows 150ms ease-out,
+    padding-top 150ms ease-out,
+    opacity 120ms ease-out;
+}
+
+[data-slot="tab-group-motion"][data-collapsed="true"] {
+  grid-template-rows: minmax(0, 0fr);
+  padding-top: 0;
+  opacity: 0;
+}
+
+[data-slot="tab-group-motion"] > [data-slot="tab-group-items"] {
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="tab-group-motion"] {
+    transition: none;
+  }
+}
+
+/* forceMount keeps this menu mounted, so the close fade runs via data-closed
+   instead of relying on Kobalte's presence race; forwards hides it at the end.
+   Before the first open, hide the closed state without any animation: a close
+   animation declared on the initial stylesheet state also plays at mount (from
+   opacity 1) and would flash a ghost popup whenever the grouped list mounts.
+   `animation: none` also leaves menu-v2-in unplayed, so the first open still
+   fades in. */
+[data-slot="tab-list-add-content"][data-component="menu-v2-content"][data-closed]:not([data-opened]) {
+  animation: none;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+[data-slot="tab-list-add-content"][data-component="menu-v2-content"][data-closed][data-opened] {
+  animation: titlebar-project-add-close 150ms ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes titlebar-project-add-close {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+    visibility: hidden;
+  }
+}
+
+/* 12. Prompt pulse (ported; owns its keyframes so an upstream refactor cannot strand it). */
+[data-grouped-tab] [data-slot="tab-prompt-pulse"] {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow: inset 0 0 0 1px var(--v2-border-border-strong);
+  animation: grouped-tab-prompt-pulse 900ms ease-out;
+}
+
+@keyframes grouped-tab-prompt-pulse {
+  20% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-grouped-tab] [data-slot="tab-prompt-pulse"] {
+    animation: none;
+  }
+}
+
+/* 13. Item slot mirrors (from titlebar.css). */
+[data-slot="grouped-tab-item"] {
+  user-select: none;
+}
+
+[data-slot="grouped-tab-item"] a {
+  outline: none;
+}
+
+[data-slot="grouped-tab-item"]
+  [data-component="icon-button-v2"]:is(:focus-visible, [data-state="focus"]):not(:disabled) {
+  opacity: 1;
+}

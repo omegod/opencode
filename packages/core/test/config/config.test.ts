@@ -24,6 +24,7 @@ import { Provider } from "@opencode/core/provider"
 import { AbsolutePath } from "@opencode/core/schema"
 import { WellKnown } from "@opencode/core/wellknown"
 import { KV } from "@opencode/core/kv"
+import { ManagedPolicy } from "@opencode/core/managed-policy"
 import { Integration } from "@opencode/schema/integration"
 import { emptyCredentialNode, emptyWellknownNode } from "../fixture/config-nodes"
 import { location } from "../fixture/location"
@@ -77,6 +78,8 @@ function testLayer(
   // memoized instance the built graph uses.
   return Layer.mergeAll(built, watcher)
 }
+
+const tool = (effect: "allow" | "deny") => ({ action: "tool.use", resource: "shell:*", effect })
 
 const provider = {
   package: "native",
@@ -203,7 +206,7 @@ describe("Config", () => {
     ),
   )
 
-  it.live("loads system configuration at lowest priority", () =>
+  it.live("loads system configuration at highest priority", () =>
     Effect.acquireDisposable(Effect.promise(() => tmpdir())).pipe(
       Effect.flatMap((tmp) => {
         const system = path.join(tmp.path, "system")
@@ -215,10 +218,13 @@ describe("Config", () => {
           await fs.mkdir(project, { recursive: true })
           await fs.writeFile(
             path.join(system, "opencode.json"),
-            JSON.stringify({ shell: "system", username: "system-user" }),
+            JSON.stringify({ shell: "system", username: "system-user", experimental: { policies: [tool("deny")] } }),
           )
           await fs.writeFile(path.join(global, "opencode.json"), JSON.stringify({ shell: "global" }))
-          await fs.writeFile(path.join(project, "opencode.json"), JSON.stringify({ shell: "project" }))
+          await fs.writeFile(
+            path.join(project, "opencode.json"),
+            JSON.stringify({ shell: "project", experimental: { policies: [tool("allow")] } }),
+          )
         }).pipe(
           Effect.andThen(
             Effect.gen(function* () {
@@ -226,13 +232,16 @@ describe("Config", () => {
               const entries = yield* config.entries()
               expect(
                 entries.flatMap((entry) => (entry.type === "document" && entry.info.shell ? [entry.info.shell] : [])),
-              ).toEqual(["system", "global", "project"])
+              ).toEqual(["global", "project", "system"])
               expect(entries.flatMap((entry) => (entry.type === "directory" ? [entry.path] : []))).toEqual([
-                AbsolutePath.make(system),
                 AbsolutePath.make(global),
+                AbsolutePath.make(system),
               ])
-              expect(Config.latest(entries, "shell")).toBe("project")
+              expect(Config.latest(entries, "shell")).toBe("system")
               expect(Config.latest(entries, "username")).toBe("system-user")
+              expect(
+                ManagedPolicy.decision(ManagedPolicy.statements(entries, { statements: [] }), "tool.use", "shell:ls"),
+              ).toBe("deny")
             }).pipe(
               Effect.provide(
                 testLayer(project, global, project, undefined, undefined, emptyCredentialNode, emptyWellknownNode, {
@@ -747,7 +756,7 @@ describe("Config", () => {
         const project = path.join(tmp.path, "project")
         const remote = (entries: readonly Entry[]) => ({
           provider: Config.latest(entries, "providers")?.remote?.package,
-          policies: Config.latest(entries, "experimental")?.policies,
+          policies: Config.latest(entries, "policies"),
         })
         const loaded = {
           provider: "aisdk:@ai-sdk/openai-compatible",
@@ -1004,14 +1013,14 @@ describe("Config", () => {
       migrateV1({
         enabled_providers: ["anthropic", "openai"],
         disabled_providers: ["openai"],
-      }).experimental?.policies,
+      }).policies,
     ).toEqual([
       { action: "provider.use", resource: "*", effect: "deny" },
       { action: "provider.use", resource: "anthropic", effect: "allow" },
       { action: "provider.use", resource: "openai", effect: "allow" },
       { action: "provider.use", resource: "openai", effect: "deny" },
     ])
-    expect(migrateV1({ enabled_providers: [] }).experimental?.policies).toEqual([
+    expect(migrateV1({ enabled_providers: [] }).policies).toEqual([
       { action: "provider.use", resource: "*", effect: "deny" },
     ])
   })
@@ -1069,7 +1078,7 @@ describe("Config", () => {
     expect(migrated.model).toEqual({ providerID: "azure", model: "deployment" })
     expect(migrated.agents?.reviewer?.model).toEqual({ providerID: "google-vertex", model: "claude-sonnet" })
     expect(migrated.commands?.review?.model).toEqual({ providerID: "azure", model: "deployment" })
-    expect(migrated.experimental?.policies).toEqual([
+    expect(migrated.policies).toEqual([
       { action: "provider.use", resource: "*", effect: "deny" },
       { action: "provider.use", resource: "google-vertex", effect: "allow" },
       { action: "provider.use", resource: "azure", effect: "deny" },

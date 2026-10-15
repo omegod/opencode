@@ -147,7 +147,6 @@ export function TitlebarTabStrip(props: {
                         current={props.currentTab}
                         shortcutIndex={visibleIndex(id)}
                         sortableIndex={visibleIndex(id)}
-                        hideProjectAvatar={false}
                         onVisibleChange={(key, value) => setVisibility(key, value)}
                         onNavigate={props.onNavigate}
                         onClose={props.onClose}

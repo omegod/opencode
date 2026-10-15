@@ -208,6 +208,7 @@ export const dict = {
   "ui.question.multiHint": "选择所有适用的答案",
   "ui.question.singleHint": "选择一个答案",
   "ui.question.custom.placeholder": "输入你的答案…",
+  "ui.question.custom.answerPlaceholder": "输入你自己的答案…",
 
   "ui.fileSearch.placeholder": "查找",
   "ui.fileSearch.previousMatch": "上一个",
@@ -248,6 +249,8 @@ export const dict = {
   "ui.tool.shell.cancelled": "命令已取消",
   "ui.message.thought": "思考",
   "ui.sessionTimeline.notice.modelSwitched": "已切换到 {{model}}",
+  "ui.sessionTimeline.notice.variantSwitched": "已切换变体为 {{variant}}",
+  "ui.sessionTimeline.notice.variantDefault": "已切换变体为默认",
   "ui.sessionTurn.retry.attemptLabel": "第 {{attempt}} 次尝试",
   "ui.sessionTurn.retry.attemptRetrying": "尝试 {{attempt}} - {{line}}",
   "ui.messagePart.context.notice.one": "{{count}} 通知",
