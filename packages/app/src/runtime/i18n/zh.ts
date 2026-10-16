@@ -107,6 +107,10 @@ export const dict = {
   "command.palette": "命令面板",
 
   "command.session.new": "新建会话",
+  "command.session.previous": "上一个会话",
+  "command.session.next": "下一个会话",
+  "command.session.previous.unseen": "上一个未读会话",
+  "command.session.next.unseen": "下一个未读会话",
   "command.session.import": "导入会话",
 
   "command.file.open": "打开文件",
@@ -730,6 +734,8 @@ export const dict = {
   "settings.extensions.availableAll": "可用于所有项目",
   "settings.extensions.manageConfig": "在 opencode.json 中管理",
   "settings.extensions.addSkills": "如何添加技能",
+  "project.settings.folderMissing.title": "找不到项目文件夹",
+  "project.settings.folderMissing.description": "恢复该文件夹，或关闭此项目。",
   "project.settings.extensions.description": "查看此项目可用的扩展",
   "project.settings.extensions.tab.lsps": "LSP",
   "project.settings.extensions.added": "已添加到此项目",
@@ -904,6 +910,8 @@ export const dict = {
   "settings.timeline.description.text-only": "隐藏所有活动。仅显示消息。",
   "settings.timeline.description.custom": "为每个活动类别使用您选择的位置和详细信息。",
   "settings.timeline.custom": "自定义",
+  "settings.timeline.row.turnDiffs.title": "更改的文件",
+  "settings.timeline.row.turnDiffs.description": "在轮次结束时列出该轮次更改的文件",
   "settings.timeline.advanced": "高级",
   "settings.timeline.advanced.description": "设置每个活动类别的位置和详细信息。",
   "settings.timeline.category.shell": "命令",

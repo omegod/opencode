@@ -141,12 +141,9 @@ export const dict = {
   "home.faq.a6":
     "OpenCode est 100% gratuit. Il inclut aussi des modèles gratuits. Des coûts supplémentaires peuvent s'appliquer si vous connectez un autre fournisseur.",
   "home.faq.q7": "Qu'en est-il des données et de la confidentialité ?",
-  "home.faq.a7.p1":
-    "Vos données ne sont stockées que lorsque vous utilisez nos modèles gratuits ou créez des liens partageables.",
+  "home.faq.a7.p1": "Vos données ne sont stockées que lorsque vous utilisez nos modèles gratuits.",
   "home.faq.a7.p2.beforeModels": "En savoir plus sur",
   "home.faq.a7.p2.modelsLink": "nos modèles",
-  "home.faq.a7.p2.and": "et",
-  "home.faq.a7.p2.shareLink": "les pages de partage",
   "home.faq.q8": "OpenCode est-il open source ?",
   "home.faq.a8.p1": "Oui, OpenCode est entièrement open source. Le code source est public sur",
   "home.faq.a8.p2": "sous la",
@@ -309,7 +306,6 @@ export const dict = {
     "Des journaux de surveillance des abus sont générés pour toute utilisation des fonctionnalités API et conservés pendant un maximum de 30 jours.",
   "go.faq.a5.museRetention":
     "Des tarifs de tokens fortement réduits en échange de l’autorisation d’utiliser vos prompts et vos complétions pour entraîner de futurs modèles Meta.",
-  "go.faq.a5.catJamRetention": "Pendant sa période gratuite, les données collectées peuvent être utilisées pour améliorer le modèle.",
   "go.faq.a5.geminiRetention":
     "Vos prompts et vos complétions peuvent être utilisés pour entraîner de futurs modèles Google.",
   "go.faq.a5.learnMore": "En savoir plus",
@@ -384,11 +380,6 @@ export const dict = {
   "download.faq.a5.p2.beforeZen":
     "Les coûts supplémentaires viendront de votre abonnement à un fournisseur de modèle. Même si OpenCode fonctionne avec n'importe quel fournisseur, nous recommandons d'utiliser",
   "download.faq.a5.p2.afterZen": ".",
-
-  "download.faq.a6.p1":
-    "Vos données et informations ne sont stockées que lorsque vous créez des liens partageables dans OpenCode.",
-  "download.faq.a6.p2.beforeShare": "En savoir plus sur",
-  "download.faq.a6.shareLink": "les pages de partage",
 
   "enterprise.title": "OpenCode | Solutions entreprise pour votre organisation",
   "enterprise.meta.description": "Contactez OpenCode pour des solutions entreprise",

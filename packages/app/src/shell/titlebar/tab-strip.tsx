@@ -8,6 +8,7 @@ import { RestrictToElement } from "@dnd-kit/dom/modifiers"
 import { arrayMove } from "@dnd-kit/helpers"
 import { tabKey, type Tab } from "@/shell/tabs/tabs"
 import { useCommand } from "@/shell/commands/command"
+import { useLanguage } from "@/runtime/i18n/language"
 import { useSettings } from "@/settings/model"
 import { adjacentTabKey, mergeVisibleTabOrder } from "./tab-order"
 import { ProjectTabList } from "./project-tab-list"
@@ -22,11 +23,13 @@ export function TitlebarTabStrip(props: {
   onReorder: (keys: string[]) => void
 }) {
   const command = useCommand()
+  const language = useLanguage()
   const preferences = useSettings()
   const vertical = () => props.orientation === "vertical"
   const grouped = () => vertical() && preferences.appearance.groupTabsByProject()
   let listRef!: HTMLDivElement
   const [visibility, setVisibility] = createStore<Record<string, boolean>>({})
+  const [unread, setUnread] = createStore<Record<string, boolean>>({})
 
   const visibleTabs = createMemo(() => props.tabs.filter((tab) => tab.type === "draft" || visibility[tabKey(tab)]))
   const visibleTabIds = () => visibleTabs().map(tabKey)
@@ -52,12 +55,40 @@ export function TitlebarTabStrip(props: {
         hidden: true,
         onSelect: () => selectAdjacentTab(1),
       },
+      {
+        id: "session.previous",
+        category: language.t("command.category.session"),
+        title: language.t("command.session.previous"),
+        keybind: "alt+arrowup",
+        onSelect: () => selectAdjacentTab(-1),
+      },
+      {
+        id: "session.next",
+        category: language.t("command.category.session"),
+        title: language.t("command.session.next"),
+        keybind: "alt+arrowdown",
+        onSelect: () => selectAdjacentTab(1),
+      },
+      {
+        id: "session.previous.unseen",
+        category: language.t("command.category.session"),
+        title: language.t("command.session.previous.unseen"),
+        keybind: "shift+alt+arrowup",
+        onSelect: () => selectAdjacentTab(-1, (key) => !!unread[key]),
+      },
+      {
+        id: "session.next.unseen",
+        category: language.t("command.category.session"),
+        title: language.t("command.session.next.unseen"),
+        keybind: "shift+alt+arrowdown",
+        onSelect: () => selectAdjacentTab(1, (key) => !!unread[key]),
+      },
     ]
   })
 
-  function selectAdjacentTab(offset: -1 | 1) {
+  function selectAdjacentTab(offset: -1 | 1, include?: (key: string) => boolean) {
     const current = props.currentTab
-    const key = adjacentTabKey(visibleTabIds(), current ? tabKey(current) : undefined, offset)
+    const key = adjacentTabKey(visibleTabIds(), current ? tabKey(current) : undefined, offset, include)
     const next = props.tabs.find((tab) => tabKey(tab) === key)
     if (next) props.onNavigate(next)
   }
@@ -148,6 +179,7 @@ export function TitlebarTabStrip(props: {
                         shortcutIndex={visibleIndex(id)}
                         sortableIndex={visibleIndex(id)}
                         onVisibleChange={(key, value) => setVisibility(key, value)}
+                        onUnreadChange={(key, value) => setUnread(key, value)}
                         onNavigate={props.onNavigate}
                         onClose={props.onClose}
                       />

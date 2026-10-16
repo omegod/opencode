@@ -135,11 +135,9 @@ export const dict = {
   "home.faq.q6": "OpenCode 多少钱？",
   "home.faq.a6": "OpenCode 是 100% 免费使用的。它还自带一组免费模型。如果您连接其他提供商，可能会产生额外费用。",
   "home.faq.q7": "数据和隐私如何？",
-  "home.faq.a7.p1": "只有当您使用我们的免费模型或创建分享链接时，您的数据和信息才会被存储。",
+  "home.faq.a7.p1": "只有当您使用我们的免费模型时，您的数据和信息才会被存储。",
   "home.faq.a7.p2.beforeModels": "了解更多关于",
   "home.faq.a7.p2.modelsLink": "我们的模型",
-  "home.faq.a7.p2.and": "和",
-  "home.faq.a7.p2.shareLink": "分享页面",
   "home.faq.q8": "OpenCode 是开源的吗？",
   "home.faq.a8.p1": "是的，OpenCode 是完全开源的。源代码公开在",
   "home.faq.a8.p2": "遵循",
@@ -288,7 +286,6 @@ export const dict = {
     "ZDR 会禁用依赖所存储数据的重要 API 功能，包括有状态的 Responses API、Files and Collections 和 Batch API。",
   "go.faq.a5.gptRetention": "所有 API 功能的使用都会生成滥用监控日志，并最多保留 30 天。",
   "go.faq.a5.museRetention": "以允许使用你的提示词和补全结果训练未来的 Meta 模型为交换，token 价格可获得大幅折扣。",
-  "go.faq.a5.catJamRetention": "在免费期间，收集的数据可能会用于改进模型。",
   "go.faq.a5.geminiRetention": "你的提示词和模型输出可能会被用于训练未来的 Google 模型。",
   "go.faq.a5.learnMore": "了解更多",
   "go.faq.a5.deepseekRetention": "ZDR 协议每月续签。当前协议有效期至 2026 年 10 月 31 日。",
@@ -358,10 +355,6 @@ export const dict = {
   "download.faq.a5.p2.beforeZen":
     "任何额外费用都来自您对模型提供商的订阅。虽然 OpenCode 支持任何模型提供商，但我们建议使用",
   "download.faq.a5.p2.afterZen": "。",
-
-  "download.faq.a6.p1": "只有当您在 OpenCode 中创建分享链接时，您的数据和信息才会被存储。",
-  "download.faq.a6.p2.beforeShare": "了解更多关于",
-  "download.faq.a6.shareLink": "分享页面",
 
   "enterprise.title": "OpenCode | 面向组织的 OpenCode 企业版解决方案",
   "enterprise.meta.description": "联系 OpenCode 获取企业版解决方案",

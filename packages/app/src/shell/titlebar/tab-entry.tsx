@@ -3,6 +3,7 @@ import { useSortable } from "@dnd-kit/solid/sortable"
 import { tabHref, tabKey, type SessionTab, type Tab } from "@/shell/tabs/tabs"
 import { DraftTabItem, TabNavItem } from "@/shell/titlebar/tab-nav"
 import { GroupedDraftTabItem, GroupedTabItem } from "@/shell/titlebar/grouped-tab-item"
+import { useSessionTabAvatarState } from "@/shell/layout/project-avatar-state"
 import { useGlobal, useServerCtx, type ServerCtx } from "@/runtime/server/runtime"
 import { useLanguage } from "@/runtime/i18n/language"
 import { useCommand } from "@/shell/commands/command"
@@ -25,6 +26,8 @@ function SessionTabSlot(props: {
   orientation: "horizontal" | "vertical"
   session: SessionInfo | undefined
   preparing: boolean
+  unread: boolean
+  loading: boolean
   fallbackTitle?: string
   onRename: (title: string) => Promise<void>
   onNavigate: (element: HTMLDivElement) => void
@@ -65,6 +68,8 @@ function SessionTabSlot(props: {
             server={props.tab.server}
             session={props.session}
             preparing={props.preparing}
+            unread={props.unread}
+            loading={props.loading}
             fallbackTitle={props.fallbackTitle}
             onRename={props.onRename}
             onNavigate={() => props.onNavigate(ref)}
@@ -111,6 +116,7 @@ function SessionTabEntry(props: {
   orientation: "horizontal" | "vertical"
   serverCtx: ServerCtx | undefined
   onVisibleChange: (visible: boolean) => void
+  onUnreadChange: (unread: boolean) => void
   onNavigate: (element: HTMLDivElement) => void
   onClose: () => void
 }) {
@@ -120,6 +126,13 @@ function SessionTabEntry(props: {
   const pending = createMemo(() => tabs.pendingSession(props.tab.server, props.tab.sessionId))
   const cachedSession = createMemo(() => props.serverCtx?.data.session.get(props.tab.sessionId))
   const persisted = createMemo(() => tabs.info[props.id])
+  const status = useSessionTabAvatarState(
+    () => props.tab.server,
+    () => props.tab.sessionId,
+    () => true,
+  )
+  // A busy session shows its progress indicator instead of the unread dot.
+  const unread = createMemo(() => status.unread() && !status.loading())
   const [loadedSession] = createResource(
     () => {
       if (pending()) return null
@@ -156,6 +169,7 @@ function SessionTabEntry(props: {
   }
 
   createEffect(() => props.onVisibleChange(visible()))
+  createEffect(() => props.onUnreadChange(unread()))
 
   createEffect(() => {
     const ctx = props.serverCtx
@@ -206,6 +220,8 @@ function SessionTabEntry(props: {
         orientation={props.orientation}
         session={session()}
         preparing={!!pending()}
+        unread={unread()}
+        loading={status.loading()}
         fallbackTitle={
           pending()
             ? language.t("session.tab.session")
@@ -303,6 +319,7 @@ export function TabStripEntry(props: {
   showSessionTime?: boolean
   grouped?: boolean
   onVisibleChange: (key: string, visible: boolean) => void
+  onUnreadChange?: (key: string, unread: boolean) => void
   onNavigate: (tab: Tab, element: HTMLDivElement) => void
   onClose: (tab: Tab) => void
 }) {
@@ -330,6 +347,7 @@ export function TabStripEntry(props: {
         orientation={props.orientation}
         serverCtx={serverCtx()}
         onVisibleChange={(visible) => props.onVisibleChange(id, visible)}
+        onUnreadChange={(unread) => props.onUnreadChange?.(id, unread)}
         onNavigate={(element) => {
           ref = element
           props.onNavigate(props.tab, element)

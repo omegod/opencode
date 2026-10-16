@@ -140,11 +140,9 @@ export const dict = {
   "home.faq.a6":
     "OpenCodeは100%無料で使えます。無料モデルも含まれています。他のプロバイダーに接続する場合は追加費用が発生することがあります。",
   "home.faq.q7": "データとプライバシーは？",
-  "home.faq.a7.p1": "無料モデルを使う場合や共有リンクを作成する場合にのみ、データが保存されます。",
+  "home.faq.a7.p1": "無料モデルを使う場合にのみ、データが保存されます。",
   "home.faq.a7.p2.beforeModels": "詳しくは",
   "home.faq.a7.p2.modelsLink": "モデルのプライバシー",
-  "home.faq.a7.p2.and": "と",
-  "home.faq.a7.p2.shareLink": "共有ページのプライバシー",
   "home.faq.q8": "OpenCodeはオープンソースですか？",
   "home.faq.a8.p1": "はい、OpenCodeは完全にオープンソースです。ソースコードは",
   "home.faq.a8.p2": "の",
@@ -302,7 +300,6 @@ export const dict = {
   "go.faq.a5.gptRetention": "不正使用監視ログはすべてのAPI機能の使用時に生成され、最大30日間保持されます。",
   "go.faq.a5.museRetention":
     "将来のMetaモデルのトレーニングにプロンプトと生成結果を使用する許可と引き換えに、トークン料金が大幅に割引されます。",
-  "go.faq.a5.catJamRetention": "無料提供期間中、収集されたデータはモデルの改善に使用される場合があります。",
   "go.faq.a5.geminiRetention": "プロンプトと生成結果は、将来のGoogleモデルのトレーニングに使用される場合があります。",
   "go.faq.a5.learnMore": "詳しく見る",
   "go.faq.a5.deepseekRetention": "ZDR契約は毎月更新されます。現在の契約は2026年10月31日まで有効です。",
@@ -374,10 +371,6 @@ export const dict = {
   "download.faq.a5.p2.beforeZen":
     "追加コストはモデルプロバイダーのサブスクリプションから発生します。OpenCodeはどのモデルプロバイダーでも利用できますが、",
   "download.faq.a5.p2.afterZen": "の利用をおすすめします。",
-
-  "download.faq.a6.p1": "あなたのデータと情報は、OpenCodeで共有リンクを作成したときにのみ保存されます。",
-  "download.faq.a6.p2.beforeShare": "詳しくは",
-  "download.faq.a6.shareLink": "共有ページ",
 
   "enterprise.title": "OpenCode | 組織向けエンタープライズソリューション",
   "enterprise.meta.description": "エンタープライズソリューションについてOpenCodeに問い合わせる",

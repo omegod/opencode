@@ -141,11 +141,9 @@ export const dict = {
   "home.faq.a6":
     "OpenCode er 100% gratis å bruke. Det kommer også med et sett gratis modeller. Det kan være ekstra kostnader hvis du kobler til en annen leverandør.",
   "home.faq.q7": "Hva med data og personvern?",
-  "home.faq.a7.p1": "Dataene dine lagres kun når du bruker våre gratis modeller eller lager delbare lenker.",
+  "home.faq.a7.p1": "Dataene dine lagres kun når du bruker våre gratis modeller.",
   "home.faq.a7.p2.beforeModels": "Les mer om",
   "home.faq.a7.p2.modelsLink": "våre modeller",
-  "home.faq.a7.p2.and": "og",
-  "home.faq.a7.p2.shareLink": "delingssider",
   "home.faq.q8": "Er OpenCode åpen kildekode?",
   "home.faq.a8.p1": "Ja, OpenCode er fullt open source. Kildekoden er offentlig på",
   "home.faq.a8.p2": "under",
@@ -302,7 +300,6 @@ export const dict = {
     "ZDR deaktiverer viktige API-funksjoner som er avhengige av lagrede data, inkludert den tilstandsbaserte Responses API, Files and Collections og Batch API.",
   "go.faq.a5.gptRetention":
     "Logger for overvåking av misbruk genereres for all bruk av API-funksjoner og oppbevares i opptil 30 dager.",
-  "go.faq.a5.catJamRetention": "I gratisperioden kan innsamlede data brukes til å forbedre modellen.",
   "go.faq.a5.geminiRetention": "Ledetekstene og fullføringene dine kan brukes til å trene fremtidige Google-modeller.",
   "go.faq.a5.learnMore": "Les mer",
   "go.faq.a5.deepseekRetention":
@@ -377,10 +374,6 @@ export const dict = {
   "download.faq.a5.p2.beforeZen":
     "Eventuelle ekstra kostnader kommer fra abonnementet ditt hos en modellleverandør. Selv om OpenCode fungerer med enhver modellleverandør, anbefaler vi å bruke",
   "download.faq.a5.p2.afterZen": ".",
-
-  "download.faq.a6.p1": "Dataene og informasjonen din lagres bare når du oppretter delbare lenker i OpenCode.",
-  "download.faq.a6.p2.beforeShare": "Les mer om",
-  "download.faq.a6.shareLink": "delingssider",
 
   "enterprise.title": "OpenCode | Enterprise-løsninger for din organisasjon",
   "enterprise.meta.description": "Kontakt OpenCode for enterprise-løsninger",
