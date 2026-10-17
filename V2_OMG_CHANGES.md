@@ -619,3 +619,20 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - 打包流程沿用 v2.0.28：先构建内置 CLI（`OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.0.30-fork.1`、`--single`），再以 `OPENCODE_CHANNEL=prod` + `OPENCODE_CLI_DIST` 打包桌面（`electron-builder.local.ts`、`-c.extraMetadata.version=2.0.30-fork.1`、`--publish never`），仓库版本保持官方 `2.0.30`。
 - 打包后核验：应用与内置 CLI 版本均为 `2.0.30-fork.1`，`app-update.yml` 更新源为 `omegod/opencode` prod 渠道，`codesign --verify --deep --strict` 通过，`latest-mac.yml` 的 SHA-512 与大小同同次构建的 ZIP（264739774 B）与 DMG（274051342 B）一致。
 - 发布沿用 macOS arm64：DMG、ZIP、各自 blockmap 与 `latest-mac.yml` 五个资产；Release/tag `v2.0.30` 指向本轮发布提交，先创建 draft、上传并核对资产，再发布；随后核对 `releases/latest` 与 `releases/download/v2.0.30/latest-mac.yml` 下载。
+
+## 25. 合并上游 v2.0.31 / v2.0.32
+
+- 一次合并两个官方 tag：上游 dev 线 56 个提交、282 个文件（含 v2.0.31、v2.0.32 两次发版）；合并提交 `d5f4c18f1e`。
+- 实测上游 release tag 不在 dev 直线上：真实合并基点是 dev 线提交 `775d1d0d`（`v2.0.30` tag 提交只含 2.0.29→2.0.30 的版本同步，与 dev 线并行）。因此 v2.0.30 发版的版本号反转过来成为本轮 36 个版本冲突的一方。
+- 冲突仅 36 个版本文件（35 个 `package.json` + `bun.lock`），全部按上游 `2.0.32` 解决（fork 对这些文件零定制）；双方都改过的 6 个文件（`app/src/index.css` 的 vibrancy 变量、`core/test/config/config.test.ts` 的 provider 补丁测试、client 4 个生成文件）全部自动合并成功。
+- 上游重点：TUI 新设计实验与官方 opencode2 主题（`text.faint` token）、`/copy` 复制最后一条助手消息、从配置读取模型 reasoning、实验性 voice session 端点、虚拟列表滚动稳定性修复（`observe-element-offset`）、review 面板折叠动画修复、文件树长文件名边缘淡出、工具组计数改用 `AnimatedNumber`、env 配置转义修复、Gemini/Bedrock 修复、CLI 托管服务环境加载与 auth login 修复；发布设施删除 `finalize-latest-*.ts` 并下线独立 beta 发布仓库（fork 本地打包流程不引用，无影响）；新增 4 个测试技能与 `AGENTS.md` 测试条目。
+- 版本号随官方到 `2.0.32`（仓库根与全部 workspace 包）。
+- 合并后验证：Node 24 下根 `bun run check` 35/35；app `src/shell` 单测 108/108；`packages/client` `check:generated` exit 0（fork 的 `config.update` provider 补丁与上游 voice 生成代码同时生成）；时间线 e2e 75/76——唯一失败 `timeline-cache.spec.ts:163` 为本地 macOS 快捷键已知项（`ControlOrMeta` 在 macOS 发 Meta，CI 环境通过，按技能要求不修改测试）。
+
+## 26. v2.0.32 发布
+
+### 构建与发布
+
+- 打包流程与 v2.0.30 相同：先构建内置 CLI（`OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.0.32-fork.1`、`--single`），再以 `OPENCODE_CHANNEL=prod` + `OPENCODE_CLI_DIST` 打包桌面（`electron-builder.local.ts`、`-c.extraMetadata.version=2.0.32-fork.1`、`--publish never`），仓库版本保持官方 `2.0.32`。
+- 打包后核验：应用与内置 CLI 版本均为 `2.0.32-fork.1`，`app-update.yml` 更新源为 `omegod/opencode` prod 渠道，`codesign --verify --deep --strict` 通过，`latest-mac.yml` 的 SHA-512 与大小同同次构建的 ZIP（264810418 B）与 DMG（274141842 B）一致。
+- 发布沿用 macOS arm64：DMG、ZIP、各自 blockmap 与 `latest-mac.yml` 五个资产；Release/tag `v2.0.32` 指向本轮发布提交（即本节所在提交），先创建 draft、上传并核对资产，再发布；随后核对 `releases/latest` 与 `releases/download/v2.0.32/latest-mac.yml` 下载。
