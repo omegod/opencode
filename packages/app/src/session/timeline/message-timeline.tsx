@@ -9,7 +9,6 @@ import { IconButton } from "@opencode/ui/icon-button"
 import { InlineInput } from "@opencode/ui/inline-input"
 import { Keybind } from "@opencode/ui/keybind"
 import { Menu } from "@opencode/ui/menu"
-import { TextShimmer } from "@opencode/ui/text-shimmer"
 import type { BackgroundTask, MountedSession, SessionScreen } from "@opencode/gui-extensions/sdk"
 import { ExtensionSlot } from "@/runtime/extension/render"
 import { useLanguage } from "@/runtime/i18n/language"
@@ -19,6 +18,7 @@ import { Timeline } from "@opencode/session-ui/timeline/projection"
 import { createSessionTimelineRowRenderer } from "@opencode/session-ui/timeline/row"
 import { getReadyMarkdown, preloadMarkdown } from "@opencode/session-ui/markdown-cache"
 import { createTimelineController, type TimelineController, type TimelineSessionSource } from "./controller"
+import { SessionWorking } from "./session-working"
 import { createTimelineVirtualizer } from "./virtualizer"
 import { containsDirectory } from "@opencode/util/path"
 import { isWorkspaceDirectory } from "@/workspaces/paths"
@@ -408,9 +408,7 @@ function MessageTimelineView(
       >
         <div class={`flex h-9 items-center gap-2 pt-3 text-[13px] font-[530] leading-text-compact ${turnPadding()}`}>
           <Show when={showWorking()}>
-            <div data-component="session-working" role="status">
-              <TextShimmer text={language.t("session.timeline.working")} active />
-            </div>
+            <SessionWorking projection={projection} timelineDetail={props.data.timelineDetail} />
           </Show>
           <Show when={backgroundHintPresence.present()}>
             <div

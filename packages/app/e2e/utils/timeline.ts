@@ -575,6 +575,20 @@ export function partDelta(partID: string, delta: string, messageID = assistantID
   })
 }
 
+export function reasoningPartDelta(partID: string, delta: string, messageID = assistantID) {
+  const ref = scenario().partRefs.get(partID)
+
+  if (!ref || ref.type !== "reasoning" || ref.ordinal === undefined)
+    throw new Error(`Unknown reasoning part: ${partID}`)
+
+  return makeEvent("session.reasoning.delta", {
+    sessionID,
+    assistantMessageID: messageID,
+    ordinal: ref.ordinal,
+    delta,
+  })
+}
+
 export function messageUpdated(info: SessionMessageAssistant) {
   if (info.error)
     return makeEvent("session.step.failed", {

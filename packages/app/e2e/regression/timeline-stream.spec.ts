@@ -14,6 +14,7 @@ import {
   messageUpdated,
   partUpdated,
   reasoningPart,
+  reasoningPartDelta,
   renderedPartID,
   session,
   sessionID,
@@ -601,6 +602,44 @@ test.describe("Working", () => {
     await expect(group).toBeVisible()
     await expect(group).toHaveAttribute("data-timeline-part-ids", `${assistantID}:reasoning:0,prt_after_thought`)
     await expect(working).toBeVisible()
+  })
+
+  test("shows the scrolling thought line in place of Working while grouped reasoning is the only activity", async ({
+    page,
+  }) => {
+    const timeline = await setupTimeline(page, {
+      messages: [
+        userMessage(),
+        assistantMessage([reasoningPart("prt_working_thought", "Reading the request.")], { completed: false }),
+      ],
+      viewport: { width: 390, height: 900 },
+      settings: { timelineDetail: detailed },
+    })
+
+    const working = page.locator('[data-component="session-working"]')
+    const line = working.locator('[data-slot="session-working-thought"]')
+
+    await expect(working).toBeVisible()
+    await expect(working.locator('[data-component="text-shimmer"]')).toHaveAttribute("aria-label", "Thinking")
+    await expect(line).toHaveText("Reading the request.")
+
+    // A new thought line rolls the previous one out; at rest only the newest line is shown.
+    await timeline.send(
+      reasoningPartDelta(
+        "prt_working_thought",
+        "\nComparing both approaches before answering the question at hand",
+      ),
+    )
+    await expect(line).toHaveText("Comparing both approaches before answering the question at hand")
+
+    // The newest line scrolls into view instead of clipping its tail.
+    await expect.poll(() => line.evaluate((element) => element.scrollLeft)).not.toBe(0)
+
+    await timeline.send(
+      partUpdated(toolPart("prt_working_thought_read", "read", "running", { filePath: "package.json" })),
+    )
+    await expect(working.locator('[data-component="text-shimmer"]')).toHaveAttribute("aria-label", "Working")
+    await expect(line).toHaveCount(0)
   })
 
   for (const name of ["shell", "patch", "subagent"] as const) {

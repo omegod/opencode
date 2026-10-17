@@ -1,0 +1,100 @@
+/* Fork-only support for the bottom working indicator (see session-working.tsx). */
+[data-component="session-working"] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* The thought line yields to the background hint instead of squeezing it. */
+[data-component="session-working"] + [data-component="session-background-hint-row"] {
+  flex: none;
+}
+
+[data-slot="session-working-separator"] {
+  flex: none;
+  color: var(--v2-text-text-muted);
+}
+
+[data-slot="session-working-thought"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--v2-text-text-muted);
+}
+
+/* Fade both edges once the newest line is wider than the available space. */
+[data-slot="session-working-thought"][data-overflowing="true"] {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 16px,
+    black calc(100% - 16px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(to right, transparent 0, black 16px, black calc(100% - 16px), transparent 100%);
+}
+
+[data-slot="session-working-thought-track"] {
+  position: relative;
+  display: inline-block;
+  min-width: max-content;
+}
+
+[data-slot="session-working-thought-line"] {
+  display: block;
+}
+
+[data-slot="session-working-thought-line"][data-roll] {
+  animation-duration: 300ms; /* ROLL_TRANSITION_MS in session-working.tsx */
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-slot="session-working-thought-line"][data-roll="in"] {
+  animation-name: session-working-thought-in;
+}
+
+[data-slot="session-working-thought-line"][data-roll="out"] {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  animation-name: session-working-thought-out;
+  animation-fill-mode: forwards;
+}
+
+@keyframes session-working-thought-in {
+  from {
+    transform: translateY(0.8em);
+    opacity: 0;
+  }
+
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes session-working-thought-out {
+  from {
+    transform: none;
+    opacity: 1;
+  }
+
+  to {
+    transform: translateY(-0.8em);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="session-working-thought-line"][data-roll] {
+    animation: none;
+  }
+
+  /* The JS path drops the outgoing line immediately; without the animation it must not stay painted. */
+  [data-slot="session-working-thought-line"][data-roll="out"] {
+    display: none;
+  }
+}
