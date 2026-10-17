@@ -1,6 +1,6 @@
 {
   "name": "@opencode/console-app",
-  "version": "2.0.30",
+  "version": "2.0.32",
   "type": "module",
   "license": "MIT",
   "scripts": {
@@ -9,7 +9,8 @@
     "dev:enterprise": "bun --watch script/dev-enterprise.ts",
     "dev:remote": "bun sst shell --stage=dev bun dev",
     "build": "bun ./script/generate-sitemap.ts && vite build && bun ../../schema/script/config-schema.ts ./.output/public/config.json",
-    "start": "vite start"
+    "start": "vite start",
+    "test": "bun test --only-failures"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "1.15.2",
