@@ -552,3 +552,70 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - 上游新增的打包校验（`afterPack` 的 `NativeArch.verify` 与 node-pty 检查）在本地 arm64 构建通过。
 - 打包后核验：应用与内置 CLI 版本一致、更新源正确、`codesign --verify --deep --strict` 通过、`latest-mac.yml` 中 SHA-512 与大小同 DMG/ZIP 产物一致。
 - 发布沿用 macOS arm64：DMG、ZIP、各自 blockmap 与 `latest-mac.yml` 一并上传，Release/tag 使用 `v2.0.28`。
+
+## 21. 底部工作指示器：思考中显示「思考中 · 思考内容滚动行」
+
+### 背景
+
+- 上游 `#51090`（v2.0.28 起）之后，当思考被放进折叠分组（`timeline.detail.thinking.placement = "grouped"`，即默认的「精简」预设）且模型当前只在思考时，时间线不产出任何行，底部只有「工作中」，看不到正在思考的内容。
+- fork 决定不改抽屉、不改 `projection.ts`（避免与上游高频文件产生冲突面），改为在底部指示器上表达状态。
+
+### 做法
+
+- 新增 fork 组件 `packages/app/src/session/timeline/session-working.tsx`（样式同目录 `session-working.css`），替换上游内联的「工作中」节点：
+  - 仅当 `thinking.placement === "grouped"` 且当前轮最后一个 content 是未完成的 reasoning 时切换；`separate` / `hidden` 模式维持原样。
+  - 标签复用抽屉内推理块同款键 `ui.sessionTurn.status.thinking`（en `Thinking` / zh `思考中`）与 `TextShimmer` 流光；`·` 之后是思考文本的**最后一个非空行**。
+  - 单行视口滚动到最新 token（`scrollLeft = scrollWidth`，RTL 取负），溢出时两侧渐隐（`mask-image` 线性渐变）。
+  - 换行时复刻 ZCode `ai-elements/reasoning.tsx` + `QueuedSummaryContent.tsx` 的纵向 roll：300ms 过渡 + 500ms 保持、最多排队 2 条、定时器迟到 >250ms 只保留最后一条、同一行内增长原位刷新不重播；`prefers-reduced-motion` 关闭整个队列与动画。
+  - 性能：不做整段 `split`，从末尾反向扫描取最后一行（每 token O(尾部)）；滚动同步用 `requestAnimationFrame` 合并，避免每 token 强制布局。
+- 上游文件只改渲染一处：`message-timeline.tsx` 的 `session-working` 节点换成 `<SessionWorking … />`；`showWorking()` / `activity()` / `bottomSpacer` 判定保持不动。
+- 无障碍：保留 `data-component="session-working"` 与 `role="status"`（e2e 依赖），滚动行 `aria-hidden`，避免 `role=status` 逐 token 播报。
+
+### 变更文件
+
+- 新增：`packages/app/src/session/timeline/session-working.tsx`、`packages/app/src/session/timeline/session-working.css`
+- 修改：`packages/app/src/session/timeline/message-timeline.tsx`、`packages/app/e2e/regression/timeline-stream.spec.ts`
+
+### 验证记录
+
+- 类型/静态检查：`packages/app` `bun typecheck` 通过；根 `bun run check` 35/35 通过（`session-working.tsx` 等新文件无 anti-slop 告警）。
+- e2e（`packages/app`）：新增 Working 用例覆盖「grouped + 只有思考 → 思考中 + 最新行 + 已滚动到末尾」「工具开始运行 → 回到工作中」；`timeline-stream.spec.ts` + `timeline-geometry.spec.ts` 共 53 项通过（既有 `aria-label="Working"` 断言都落在 `separate` / 无思考场景，未受影响）。
+- 基准（`packages/app`，macOS arm64，中位数）：
+  - tab 切换 `bench:tabs`（每用例 20 次）：warm 用例基本重合（warm closed `firstCorrectObservedMs` 22.4 → 22.7ms、`stableObservedMs` 64.6 → 64.5ms）；cold 用例上移 2~6ms，落在基线自身 min–max 之内（cold open `stableObservedMs` 基线 136.8–181.1，改动后 138.2–190）。
+  - streaming 时间线（`session-timeline-benchmark.spec.ts`，3 用例 ×3 次）：`longTaskCount` 32→30 / 29→27 / 56→65，`longTaskTimeMs` 1961→1978 / 1989→1642 / 3540→4013，`rafGapP95Ms` 165.8→150.1 / 150→150 / 166.4→166.7，均在基线自身波动范围内（基线 `rafGapP50Ms` 自身跨度 33.7–49.8ms）。
+  - 这两个基准不覆盖「只有思考」的流式场景（tab 基准的会话为 idle；streaming 基准只流式 text），改动路径不在其测量范围内；实际观感由 Desktop 手工验收。
+- Desktop 手工：思考开头、工具运行、思考→工具→再思考、长行滚动、换行 roll、减少动效、RTL（用户已授权提交、推送与发布 v2.0.30）。
+
+## 22. 分组侧栏：未读蓝点与相对时间占用同一位置
+
+### 现象
+
+- 按项目分组时，会话执行结束后进入未读状态；行尾的未读蓝点与相对时间（如「刚刚」）叠在同一坐标：蓝点绝对定位在关闭按钮位（`inset-inline-end: 4px`）且不随 hover 隐藏，而相对时间是行尾的 flex 子项，只在 hover 时让位给关闭按钮。
+- 平铺行没有相对时间，因此只有分组组件出现该冲突。
+
+### 处理
+
+- `packages/app/src/shell/titlebar/grouped-tab-item.tsx`：未读行的相对时间不再渲染（`<Show when={unread() ? undefined : sessionTime()}>`），同一槽位只保留未读蓝点。hover 时蓝点沿用既有 CSS 隐藏、关闭按钮出现；标题按既有 `data-unread` 规则预留淡出偏移（指针 24px / touch 44px）。
+- `packages/app/src/shell/titlebar/grouped-tab.css`：仅同步注释，蓝点/槽位/`data-unread` 预留空间规则保持不变。touch 设备上蓝点继续左移 20px、与常显的关闭按钮错开。
+
+### 验证记录
+
+- `packages/app` `bun typecheck` 通过；`src/shell` 108 项测试通过；根 `bun run check` 35/35 通过。
+- 现有 e2e 不受影响：`tabs.spec.ts` 的未读断言都针对平铺行（`[data-titlebar-tab-slot]`），分组行无 e2e 覆盖。
+- Desktop 手工：分组模式未读行行尾只显示蓝点，hover 后换成关闭按钮；已读行仍显示「刚刚」；等待权限/表单的 attention 点不变（用户已授权提交、推送与发布 v2.0.30）。
+
+## 23. 合并上游 v2.0.29 / v2.0.30
+
+- 一次合并两个官方 tag：`v2.0.28..v2.0.29` 49 个提交、`v2.0.29..v2.0.30` 65 个提交，合并提交 `eb9b6e3b64`；版本号随官方更新到 `2.0.30`。
+- v2.0.29 重点：远程设备配对（设置 → 配对，OpenTunnel 与二维码/链接）、Provider 账号管理（连接弹窗与设置 → Providers 可切换/重命名/移除/新增）、输出达到 token 上限后自动续写、图片与 SVG 预览支持触控板捏合缩放与双指平移、会话上下文 token 与家族成本展示、策略配置键稳定为顶层 `policies`。
+- v2.0.30 重点：TUI 对话框统一布局系列重构（DialogHeader / DialogFooter / DialogLayout）、diff 侧栏默认打开与响应式 diff 查看器、会话分享后端下线、Windows 在项目目录打开 PowerShell、models.dev 快照刷新与多项 provider/ai 修复。
+- 相对官方 tag `v2.0.30` 的 fork 差异为 67 个文件（+5531/−737），全部落在既有 fork 定制文件与本轮新增文件内。
+- 合并后验证：Node 24 下根 `bun run check` 35/35 通过（v2.0.28 时为 36 个 workspace，上游本轮删除了 `packages/enterprise`）。
+
+## 24. v2.0.30 发布
+
+### 构建与发布
+
+- 打包流程沿用 v2.0.28：先构建内置 CLI（`OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.0.30-fork.1`、`--single`），再以 `OPENCODE_CHANNEL=prod` + `OPENCODE_CLI_DIST` 打包桌面（`electron-builder.local.ts`、`-c.extraMetadata.version=2.0.30-fork.1`、`--publish never`），仓库版本保持官方 `2.0.30`。
+- 打包后核验：应用与内置 CLI 版本均为 `2.0.30-fork.1`，`app-update.yml` 更新源为 `omegod/opencode` prod 渠道，`codesign --verify --deep --strict` 通过，`latest-mac.yml` 的 SHA-512 与大小同同次构建的 ZIP（264739774 B）与 DMG（274051342 B）一致。
+- 发布沿用 macOS arm64：DMG、ZIP、各自 blockmap 与 `latest-mac.yml` 五个资产；Release/tag `v2.0.30` 指向本轮发布提交，先创建 draft、上传并核对资产，再发布；随后核对 `releases/latest` 与 `releases/download/v2.0.30/latest-mac.yml` 下载。
