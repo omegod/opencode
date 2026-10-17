@@ -74,8 +74,9 @@
 }
 
 /* 5. Dots. The avatar slot stays hidden in grouped rows, so the close position carries the unread
-   dot and the running indicator carries the confirmation dot while a session waits for a
-   permission or form answer (same geometry as the project avatar's unread dot). */
+   dot (in place of the relative time, see grouped-tab-item.tsx) and the running indicator carries
+   the confirmation dot while a session waits for a permission or form answer (same geometry as the
+   project avatar's unread dot). */
 [data-grouped-tab] :is([data-slot="tab-unread-dot"], [data-slot="tab-avatar-unread-dot"]) {
   position: absolute;
   width: 7px;

@@ -411,8 +411,10 @@ export function GroupedTabItem(props: {
       </Menu.Context.Trigger>
 
       {/* Relative last-activity time. Swaps with the close button via display, like the flat
-          rows: no width animation, the title simply extends into the freed space on hover. */}
-      <Show when={sessionTime()}>
+          rows: no width animation, the title simply extends into the freed space on hover.
+          Unread rows show the unread dot in this slot instead of the time, so both cannot
+          paint over each other at the row end. */}
+      <Show when={unread() ? undefined : sessionTime()}>
         {(time) => (
           <span
             data-slot="tab-time"
