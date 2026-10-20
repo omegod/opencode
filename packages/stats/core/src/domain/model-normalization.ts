@@ -17,7 +17,7 @@ export const MODEL_AUTHOR_RULES = [
   { match: "qwen", author: "qwen" },
 ] as const
 export const EXCLUDED_MODELS = new Set(["alpha-gpt-next"])
-export const STEALTH_MODELS = new Set(["exo", "omen-alpha", "space-bunny", "union-alpha"])
+export const STEALTH_MODELS = new Set(["exo", "omen-alpha", "union-alpha"])
 export const FREE_MODELS = new Set(["gpt-5-nano", "grok-code", "big-pickle"])
 export const MODEL_NAME_MAX_LENGTH = 256
 export const MODEL_NAME_ALIASES: Record<string, string> = {
@@ -30,6 +30,7 @@ export const MODEL_NAME_ALIASES: Record<string, string> = {
   "opencode/union-alpha": "union-alpha",
   "ox-alpha": "glm-5.3-flash",
   "x-preview-f": "glm-5.3-flash",
+  "space-bunny": "minimax-m3.1-flash",
   "xiaomi/mimo-v2.5": "mimo-v2.5",
 }
 export const RETIRED_STAT_MODELS = ["big-pickle", ...Object.keys(MODEL_NAME_ALIASES)]

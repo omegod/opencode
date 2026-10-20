@@ -1,4 +1,4 @@
-import { Effect, type Redacted, Schema } from "effect"
+import { Clock, Effect, Redacted, Schema } from "effect"
 import { HttpClientRequest } from "effect/http"
 import { RequestExecutor } from "../route/executor.js"
 import { AIError, HttpContext, InvalidProviderOutputError, InvalidRequestError } from "../schema/index.js"
@@ -6,6 +6,7 @@ import { encodeJson } from "../utils/json.js"
 
 const OPENAI_BASE_URL = "https://api.openai.com/v1"
 const XAI_BASE_URL = "https://api.x.ai/v1"
+const GOOGLE_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
 
 export type RealtimeTransportInput =
   | { readonly type: "webrtc"; readonly sdp: string; readonly dcid?: number }
@@ -28,6 +29,7 @@ const engines = [
   { family: "gpt-live", id: "openai-live", provider: "openai" },
   { family: "gpt-realtime", id: "openai-realtime", provider: "openai" },
   { family: "grok-voice", id: "xai-realtime", provider: "xai" },
+  { family: "gemini-3.8-live", id: "gemini-live", provider: "google" },
 ] as const
 
 // Matches the bare family name (`gpt-realtime`) and its versions (`gpt-realtime-2.1`, `gpt-realtime-mini`).
@@ -73,6 +75,31 @@ export const connect = Effect.fn("Realtime.connect")(function* (input: RealtimeC
         return yield* invalidRequest("xAI Grok Voice only supports WebSocket transport")
       return yield* clientSecret(resolved.id, XAI_BASE_URL, input.model, input.apiKey)
     }
+    case "gemini-live": {
+      if (input.transport.type !== "websocket")
+        return yield* invalidRequest("Google Gemini Live only supports WebSocket transport")
+      const now = yield* Clock.currentTimeMillis
+      const expiresAt = now + 60_000
+      const data = yield* post(
+        resolved.id,
+        `${GOOGLE_BASE_URL}/auth_tokens`,
+        input.apiKey,
+        {
+          uses: 1,
+          expireTime: new Date(now + 30 * 60_000).toISOString(),
+          newSessionExpireTime: new Date(expiresAt).toISOString(),
+          bidiGenerateContentSetup: { ...input.session, model: `models/${input.model}` },
+        },
+        AuthTokenResponse,
+        "x-goog-api-key",
+      )
+      return {
+        type: "websocket" as const,
+        url: "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained",
+        token: data.name,
+        expiresAt: Math.floor(expiresAt / 1000),
+      }
+    }
   }
 })
 
@@ -97,6 +124,12 @@ const ClientSecretResponse = Schema.fromJsonString(
   }),
 )
 
+const AuthTokenResponse = Schema.fromJsonString(
+  Schema.Struct({
+    name: Schema.String,
+  }),
+)
+
 const invalidRequest = (message: string) => new AIError({ reason: new InvalidRequestError({ message }) })
 
 const post = <A>(
@@ -105,12 +138,15 @@ const post = <A>(
   apiKey: Redacted.Redacted,
   body: Record<string, unknown> | FormData,
   response: Schema.Codec<A, string>,
+  authHeader?: string,
 ) =>
   Effect.gen(function* () {
     const executor = yield* RequestExecutor.Service
     const res = yield* executor.execute(
       HttpClientRequest.post(url).pipe(
-        HttpClientRequest.bearerToken(apiKey),
+        authHeader
+          ? HttpClientRequest.setHeader(authHeader, Redacted.value(apiKey))
+          : HttpClientRequest.bearerToken(apiKey),
         body instanceof FormData
           ? HttpClientRequest.bodyFormData(body)
           : HttpClientRequest.bodyText(encodeJson(body), "application/json"),

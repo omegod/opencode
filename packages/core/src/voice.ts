@@ -60,10 +60,7 @@ export const layer = Layer.effect(
       if (credential?.type !== "key")
         return yield* new UnavailableError({
           service: engine.provider,
-          message:
-            engine.provider === "openai"
-              ? "Voice needs an OpenAI API key on the server (a stored key or OPENAI_API_KEY). ChatGPT sign-in can't start voice sessions."
-              : "Voice needs an xAI API key on the server (a stored key or XAI_API_KEY).",
+          message: missingKeyMessage[engine.provider],
         })
 
       return yield* Realtime.connect({ ...input, apiKey: Redacted.make(credential.key) }).pipe(
@@ -86,3 +83,11 @@ export const node = makeLocationNode({
   layer,
   deps: [Integration.node, requestExecutor],
 })
+
+const missingKeyMessage = {
+  openai:
+    "Voice needs an OpenAI API key on the server (a stored key or OPENAI_API_KEY). ChatGPT sign-in can't start voice sessions.",
+  xai: "Voice needs an xAI API key on the server (a stored key or XAI_API_KEY).",
+  google:
+    "Voice needs a Google API key on the server (a stored key, GEMINI_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, or GOOGLE_API_KEY).",
+} as const

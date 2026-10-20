@@ -64,6 +64,7 @@ import { useEditorContext } from "../../context/editor"
 import { useDialog } from "../../ui/dialog"
 import { DialogSelect } from "../../ui/dialog-select"
 import { DialogSessionRename } from "../../component/dialog-session-rename"
+import { TodoItem } from "../../component/todo-item"
 import { DialogImagePreview } from "../../component/dialog-image-preview"
 import { statusLabel } from "../../component/dialog-workspace-file-changes"
 import { DialogMessage } from "./dialog-message"
@@ -120,6 +121,7 @@ import { createSingleFlight } from "../../util/single-flight"
 import { createDelayedPresence } from "../../util/delayed-presence"
 import { SessionLocationMissing } from "./location-missing"
 import { isRecord } from "../../util/record"
+import { parseTodos } from "../../util/todo"
 import { createHistoryPrepend } from "./history"
 import { context, use, type PendingAction } from "./render-context"
 import { INLINE_TOOL_ICON_WIDTH, InlineToolRow, ReasoningPart, TextPart, toolDisplay } from "./message-parts"
@@ -233,6 +235,7 @@ export function Session(props: {
   })
   const disabled = createMemo(() => promptedPermissions().length > 0 || forms().length > 0)
 
+  const renderer = useRenderer()
   const dimensions = useTerminalDimensions()
   const thinkingMode = createMemo<ThinkingMode>(() => config.session?.thinking ?? "hide")
   const showScrollbar = createMemo(() => config.session?.scrollbar ?? false)
@@ -392,8 +395,8 @@ export function Session(props: {
 
   /** Runs after layout has settled (two frames), unless the transcript was torn down. */
   const afterLayout = (continuation: () => void) => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
+    renderer.requestAnimationFrame(() => {
+      renderer.requestAnimationFrame(() => {
         if (!scroll || scroll.isDestroyed) return
         continuation()
       })
@@ -405,7 +408,7 @@ export function Session(props: {
   // Renderable positions are still stale at that point; read the computed layout instead.
   let held: { node: Renderable; top: number } | undefined
   const layoutTop = (node: Renderable): number =>
-    node === scroll.content || !node.parent ? 0 : node.getLayoutNode().getComputedTop() + layoutTop(node.parent)
+    node === scroll.content || !node.parent ? 0 : node.getComputedLayout().top + layoutTop(node.parent)
   const holdAnchor = () => {
     if (held && !held.node.isDestroyed) scroll.scrollTo(layoutTop(held.node) - held.top)
   }
@@ -622,7 +625,6 @@ export function Session(props: {
     current.submit()
   })
   const dialog = useDialog()
-  const renderer = useRenderer()
   const runPendingAction = createSingleFlight<string>()
   const mutatePending = async (action: PendingAction, inboxID: string, failureLabel?: string) => {
     const result = await runPendingAction(inboxID, async () => {
@@ -684,7 +686,13 @@ export function Session(props: {
               void mutatePending("cancel", queued.id, "undo").then((undone) => {
                 if (!undone) return
                 target.setMode("normal")
-                target.set(appendPrompt(target.current, { ...projectedPromptInput(queued.payload), pasted: [] }))
+                target.set(
+                  appendPrompt(
+                    target.current,
+                    { ...projectedPromptInput(queued.payload), pasted: [] },
+                    renderer.widthMethod,
+                  ),
+                )
                 dialog.clear()
                 target.focus()
               })
@@ -2065,7 +2073,7 @@ function CompactionMessage(props: { message: Extract<SessionMessageInfo, { type:
             </Match>
           </Switch>
           <text fg={color()}>
-            {props.message.status === "completed" && props.message.providerContext
+            {props.message.status === "completed" && props.message.native?.messages
               ? "Provider compaction"
               : "Compaction"}
           </text>
@@ -2463,6 +2471,9 @@ function ToolPart(props: { part: SessionMessageAssistantTool; images?: boolean }
       </Match>
       <Match when={display() === "patch"}>
         <ApplyPatch {...toolprops} />
+      </Match>
+      <Match when={display() === "todowrite"}>
+        <TodoWrite {...toolprops} />
       </Match>
       <Match when={display() === "question"}>
         <Question {...toolprops} />
@@ -3455,6 +3466,32 @@ function ApplyPatch(props: ToolProps) {
           headerColor={props.part.state.status === "error" ? theme.text.feedback.error.base : undefined}
           errorColor={props.part.state.status === "error" ? theme.text.muted : undefined}
         />
+      </Match>
+    </Switch>
+  )
+}
+
+function TodoWrite(props: ToolProps) {
+  const theme = useTheme()
+  const todos = createMemo(() => parseTodos(props.input.todos))
+  return (
+    <Switch>
+      <Match when={props.part.state.status === "completed" && todos().length > 0}>
+        <BlockTool title="# Todos" part={props.part}>
+          <box>
+            <For each={todos()}>{(todo) => <TodoItem theme={theme} todo={todo} />}</For>
+          </box>
+        </BlockTool>
+      </Match>
+      <Match when={true}>
+        <InlineTool
+          icon="⚙"
+          pending="Updating todos…"
+          complete={props.part.state.status === "completed" || props.part.state.status === "error"}
+          part={props.part}
+        >
+          {props.part.state.status === "error" ? "Todo update failed" : "Cleared todos"}
+        </InlineTool>
       </Match>
     </Switch>
   )

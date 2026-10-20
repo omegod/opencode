@@ -524,12 +524,13 @@ describe("ConfigNormalize", () => {
         policies: [{ action: "provider.use", resource: "native", effect: "deny" }],
         experimental: {
           portable_shell_scanner: true,
+          todo: true,
           subagent_depth: 0,
           policies: [{ action: "provider.use", resource: "custom", effect: "allow" }],
         },
       }).encoded,
     ).toMatchObject({
-      experimental: { portable_shell_scanner: true, subagent_depth: 0 },
+      experimental: { portable_shell_scanner: true, todo: true, subagent_depth: 0 },
       policies: [
         { action: "provider.use", resource: "*", effect: "deny" },
         { action: "provider.use", resource: "anthropic", effect: "allow" },

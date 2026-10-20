@@ -144,7 +144,6 @@ describe("current session timeline rows", () => {
         status: "completed",
         reason: "auto",
         summary: "summary",
-        recent: "recent",
         time: { created: 11 },
       },
     ]
@@ -1338,7 +1337,6 @@ describe("current session timeline rows", () => {
         status: "completed",
         reason: "auto",
         summary: "summary",
-        recent: "recent",
         time: { created: 4 },
       },
       messages[2],

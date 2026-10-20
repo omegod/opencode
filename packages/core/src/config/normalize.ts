@@ -467,6 +467,15 @@ function normalizeExperimental(
         )
         if (value !== undefined) result.portable_shell_scanner = value
       }
+      if (own(experimental, "todo")) {
+        const value = decodeEncoded(
+          ConfigExperimental.Info.fields.todo,
+          experimental.todo,
+          ["experimental", "todo"],
+          diagnostics,
+        )
+        if (value !== undefined) result.todo = value
+      }
       if (own(experimental, "subagent_depth")) {
         const value = decodeEncoded(
           ConfigExperimental.Info.fields.subagent_depth,

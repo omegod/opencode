@@ -1,4 +1,4 @@
-import { Duration, Effect, Equal, Option, Schema, SchemaGetter, Scope, Semaphore, Stream } from "effect"
+import { Duration, Effect, Equal, FiberHandle, Option, Schema, SchemaGetter, Scope, Semaphore, Stream } from "effect"
 import type { IntegrationOAuthMethodRegistration } from "@opencode/plugin/effect/integration"
 import { define } from "@opencode/plugin/effect/plugin"
 import type { SessionHttpResponse } from "@opencode/plugin/effect/session"
@@ -302,6 +302,9 @@ export const OpencodePlugin = define<HttpClient.HttpClient | Bus.Service | Manag
             model.headers = Provider.mergeHeaders(model.headers, config.headers)
             model.body = Provider.mergeOverlay(model.body, config.body)
             if (config.limit !== undefined) model.limit = { ...model.limit, ...config.limit }
+          })
+          // Variants are spelled for the final package, which the update above normalizes from `aisdk:*`.
+          providers.models.update(providerID, modelID, (model) => {
             // The Console's reasoning replaces the base variants; its variants still overlay them below.
             if (config.capabilities?.reasoning !== undefined)
               model.variants = [
@@ -484,15 +487,23 @@ export const OpencodePlugin = define<HttpClient.HttpClient | Bus.Service | Manag
       )
     })
     yield* guard(snapshot)
-    yield* bus.subscribe(Credential.Event.Switched).pipe(
-      Stream.filter((event) => event.data.integrationID === Integration.ID.make("opencode")),
-      Stream.runForEach(refresh),
-      Effect.forkScoped({ startImmediately: true }),
-    )
 
     // Console config can change independently of local credential activity, so re-fetch
     // periodically and only rebuild the catalog and search providers when the snapshot differs.
-    yield* Effect.sleep(Duration.minutes(1)).pipe(Effect.andThen(check()), Effect.forever, Effect.forkScoped)
+    // Only while connected: a signed-out location runs no timer and no credential lookups.
+    const polling = yield* FiberHandle.make<void, never>()
+    const poll = Effect.fnUntraced(function* () {
+      if (!snapshot.connection) return yield* FiberHandle.clear(polling)
+      yield* FiberHandle.run(polling, Effect.sleep(Duration.minutes(1)).pipe(Effect.andThen(check()), Effect.forever), {
+        onlyIfMissing: true,
+      })
+    })
+    yield* bus.subscribe(Credential.Event.Switched).pipe(
+      Stream.filter((event) => event.data.integrationID === Integration.ID.make("opencode")),
+      Stream.runForEach(() => refresh().pipe(Effect.andThen(poll()))),
+      Effect.forkScoped({ startImmediately: true }),
+    )
+    yield* poll()
   }),
 })
 
