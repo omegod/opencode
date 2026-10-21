@@ -108,7 +108,13 @@ export type ToolTextContent = { type: "text"; text: string }
 
 export type ToolFileContent = { type: "file"; uri: string; mime: string; name?: string | null }
 
-export type SessionStructuredError = { type: string; message: string; status?: number; response?: { body: string } }
+export type SessionStructuredError = {
+  type: string
+  message: string
+  status?: number
+  response?: { body: string }
+  retryAfterMs?: number
+}
 
 export type SessionActive = { type: "running" }
 
@@ -2331,6 +2337,7 @@ export type ConfigEntry =
           portable_shell_scanner?: boolean
           todo?: boolean
           subagent_depth?: number
+          location_idle_timeout?: string | false
           policies?: Array<{
             action: "provider.use" | "tool.use" | "integration.use"
             resource: string

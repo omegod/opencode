@@ -19,7 +19,6 @@ declare module "sst" {
       "value": string
     }
     "Api": import("@cloudflare/workers-types").Service
-    "Bucket": import("@cloudflare/workers-types").R2Bucket
     "Console": {
       "type": "sst.cloudflare.SolidStart"
       "url": string
@@ -36,7 +35,6 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
-    "EnterpriseStorage": import("@cloudflare/workers-types").R2Bucket
     "FEISHU_APP_ID": {
       "type": "sst.sst.Secret"
       "value": string

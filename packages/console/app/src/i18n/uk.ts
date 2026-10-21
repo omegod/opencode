@@ -366,6 +366,7 @@ export const dict = {
   "enterprise.form.error.invalidEmailFormat": "Недійсний формат email.",
   "enterprise.form.error.invalidInferenceSpend": "Виберіть допустимий діапазон витрат на інференс.",
   "enterprise.form.error.internalServer": "Внутрішня помилка сервера.",
+  "enterprise.form.error.captcha": "Не вдалося пройти перевірку captcha. Спробуйте ще раз.",
   "enterprise.faq.title": "FAQ",
   "enterprise.faq.q1": "Що таке OpenCode Enterprise?",
   "enterprise.faq.a1":

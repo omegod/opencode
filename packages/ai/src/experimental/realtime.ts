@@ -1,7 +1,7 @@
 import { Clock, Effect, Redacted, Schema } from "effect"
 import { HttpClientRequest } from "effect/http"
 import { RequestExecutor } from "../route/executor.js"
-import { AIError, HttpContext, InvalidProviderOutputError, InvalidRequestError } from "../schema/index.js"
+import { AIError, InvalidProviderOutputError, InvalidRequestError } from "../schema/index.js"
 import { encodeJson } from "../utils/json.js"
 
 const OPENAI_BASE_URL = "https://api.openai.com/v1"
@@ -56,7 +56,10 @@ export const connect = Effect.fn("Realtime.connect")(function* (input: RealtimeC
     }
     case "openai-realtime": {
       if (input.transport.type === "websocket")
-        return yield* clientSecret(resolved.id, OPENAI_BASE_URL, input.model, input.apiKey, session)
+        return yield* clientSecret(resolved.id, OPENAI_BASE_URL, input.model, input.apiKey, {
+          expires_after: { anchor: "created_at", seconds: 60 },
+          session,
+        })
       const form = new FormData()
       form.append("sdp", input.transport.sdp)
       form.append("session", encodeJson(session))
@@ -73,7 +76,9 @@ export const connect = Effect.fn("Realtime.connect")(function* (input: RealtimeC
     case "xai-realtime": {
       if (input.transport.type !== "websocket")
         return yield* invalidRequest("xAI Grok Voice only supports WebSocket transport")
-      return yield* clientSecret(resolved.id, XAI_BASE_URL, input.model, input.apiKey)
+      return yield* clientSecret(resolved.id, XAI_BASE_URL, input.model, input.apiKey, {
+        expires_after: { seconds: 60 },
+      })
     }
     case "gemini-live": {
       if (input.transport.type !== "websocket")
@@ -115,7 +120,7 @@ const LiveSessionResponse = Schema.fromJsonString(
 )
 
 // xAI's ephemeral-token docs (https://docs.x.ai/developers/model-capabilities/audio/ephemeral-tokens)
-// document the request body (`{ expires_after: { seconds } }`) but not the response payload; we assume
+// document the request body (`{ expires_after: { seconds } }`, no `anchor` or `session`) but not the response payload; we assume
 // it mirrors OpenAI's `{ value, expires_at }` response shape.
 const ClientSecretResponse = Schema.fromJsonString(
   Schema.Struct({
@@ -152,7 +157,7 @@ const post = <A>(
           : HttpClientRequest.bodyText(encodeJson(body), "application/json"),
       ),
     )
-    const http = new HttpContext({ url: res.request.url, status: res.status, headers: res.headers })
+    const http = RequestExecutor.responseHttp(res)
     const fail = (message: string, cause?: unknown, raw?: string) =>
       new AIError({ reason: new InvalidProviderOutputError({ route, message, body: raw, http, cause }) })
     const text = yield* res.text.pipe(Effect.mapError((cause) => fail(`Failed to read ${route} response`, cause)))
@@ -166,15 +171,9 @@ const clientSecret = (
   baseURL: string,
   model: string,
   apiKey: Redacted.Redacted,
-  session?: Record<string, unknown>,
+  body: Record<string, unknown>,
 ) =>
-  post(
-    route,
-    `${baseURL}/realtime/client_secrets`,
-    apiKey,
-    { expires_after: { seconds: 60 }, session },
-    ClientSecretResponse,
-  ).pipe(
+  post(route, `${baseURL}/realtime/client_secrets`, apiKey, body, ClientSecretResponse).pipe(
     Effect.map(
       (data): RealtimeTransport => ({
         type: "websocket",

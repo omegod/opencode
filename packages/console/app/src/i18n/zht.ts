@@ -346,6 +346,7 @@ export const dict = {
   "enterprise.form.error.invalidEmailFormat": "無效的電子郵件格式。",
   "enterprise.form.error.invalidInferenceSpend": "請選擇有效的推論支出範圍。",
   "enterprise.form.error.internalServer": "內部伺服器錯誤。",
+  "enterprise.form.error.captcha": "驗證碼驗證失敗，請再試一次。",
   "enterprise.faq.title": "常見問題",
   "enterprise.faq.q1": "什麼是 OpenCode Enterprise？",
   "enterprise.faq.a1":

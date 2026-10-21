@@ -1451,6 +1451,63 @@ describe("current session timeline rows", () => {
     )
   })
 
+  test("marks the free usage limit and its reset time, whichever message records the failure", () => {
+    const error = { type: "provider.free-limit", message: "Free usage limit reached.", retryAfterMs: 60_000 }
+    const user = { id: "msg_user", type: "user", text: "prompt", time: { created: 1 } } satisfies SessionMessageInfo
+
+    const assistant = {
+      id: "msg_assistant",
+      type: "assistant",
+      agent: "build",
+      model: { id: "big-pickle", providerID: "opencode" },
+      content: [],
+      finish: "error",
+      error,
+      time: { created: 2, completed: 1_000 },
+    } satisfies SessionMessageAssistant
+
+    const step = [user, assistant] satisfies SessionMessageInfo[]
+
+    const idle = [
+      user,
+      { id: "msg_idle", type: "idle", outcome: "failed", error, time: { created: 2_000 } },
+    ] satisfies SessionMessageInfo[]
+
+    const quota = [
+      user,
+      { ...assistant, error: { type: "provider.quota", message: "Go usage limit exceeded", retryAfterMs: 60_000 } },
+    ] satisfies SessionMessageInfo[]
+
+    expect(Timeline.constructSessionMessageRows(step, true, { type: "idle" }).rows.at(-1)).toEqual(
+      new TimelineRow.Error({
+        userMessageID: "msg_user",
+        text: "Free usage limit reached.",
+        kind: "free-limit",
+        resetAt: 61_000,
+      }),
+    )
+    expect(Timeline.constructSessionMessageRows(idle, true, { type: "idle" }).rows.at(-1)).toMatchObject({
+      kind: "free-limit",
+      resetAt: 62_000,
+    })
+    expect(
+      Timeline.constructSessionMessageRows(
+        [user, { ...assistant, error: { ...error, retryAfterMs: 9_000_000_000_000_000 } }],
+        true,
+        { type: "idle" },
+      ).rows.at(-1),
+    ).toEqual(
+      new TimelineRow.Error({
+        userMessageID: "msg_user",
+        text: "Free usage limit reached.",
+        kind: "free-limit",
+      }),
+    )
+    expect(Timeline.constructSessionMessageRows(quota, true, { type: "idle" }).rows.at(-1)).toEqual(
+      new TimelineRow.Error({ userMessageID: "msg_user", text: "Go usage limit exceeded" }),
+    )
+  })
+
   test("summarizes a turn's changed files after the idle marker that ends it", () => {
     const step = (id: string, files?: string[]) =>
       ({

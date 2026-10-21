@@ -360,6 +360,7 @@ export const dict = {
   "enterprise.form.error.invalidEmailFormat": "تنسيق البريد الإلكتروني غير صالح.",
   "enterprise.form.error.invalidInferenceSpend": "اختر نطاقًا صالحًا للإنفاق على الاستدلال.",
   "enterprise.form.error.internalServer": "خطأ داخلي في الخادم.",
+  "enterprise.form.error.captcha": "فشل التحقق من captcha. يرجى المحاولة مرة أخرى.",
   "enterprise.faq.title": "الأسئلة الشائعة",
   "enterprise.faq.q1": "ما هو OpenCode Enterprise؟",
   "enterprise.faq.a1":

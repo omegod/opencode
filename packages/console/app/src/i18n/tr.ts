@@ -370,6 +370,7 @@ export const dict = {
   "enterprise.form.error.invalidEmailFormat": "Geçersiz e-posta formatı.",
   "enterprise.form.error.invalidInferenceSpend": "Geçerli bir çıkarım harcaması aralığı seçin.",
   "enterprise.form.error.internalServer": "İç sunucu hatası.",
+  "enterprise.form.error.captcha": "Captcha doğrulaması başarısız oldu. Lütfen tekrar deneyin.",
   "enterprise.faq.title": "SSS",
   "enterprise.faq.q1": "OpenCode Enterprise nedir?",
   "enterprise.faq.a1":

@@ -14324,6 +14324,17 @@
                 "type": "integer",
                 "minimum": 0
               },
+              "location_idle_timeout": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "boolean",
+                    "enum": [false]
+                  }
+                ]
+              },
               "policies": {
                 "type": "array",
                 "items": {

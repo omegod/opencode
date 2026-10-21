@@ -363,6 +363,7 @@ export const dict = {
   "enterprise.form.error.invalidEmailFormat": "รูปแบบอีเมลไม่ถูกต้อง",
   "enterprise.form.error.invalidInferenceSpend": "เลือกช่วงค่าใช้จ่ายด้าน inference ที่ถูกต้อง",
   "enterprise.form.error.internalServer": "เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์",
+  "enterprise.form.error.captcha": "การยืนยัน captcha ล้มเหลว โปรดลองอีกครั้ง",
   "enterprise.faq.title": "คำถามที่พบบ่อย",
   "enterprise.faq.q1": "OpenCode Enterprise คืออะไร?",
   "enterprise.faq.a1":

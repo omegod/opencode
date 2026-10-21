@@ -373,6 +373,7 @@ export const dict = {
   "enterprise.form.error.invalidEmailFormat": "Format d'e-mail invalide.",
   "enterprise.form.error.invalidInferenceSpend": "Sélectionnez une tranche de dépenses d'inférence valide.",
   "enterprise.form.error.internalServer": "Erreur interne du serveur.",
+  "enterprise.form.error.captcha": "La vérification captcha a échoué. Veuillez réessayer.",
   "enterprise.faq.title": "FAQ",
   "enterprise.faq.q1": "Qu'est-ce que OpenCode Enterprise ?",
   "enterprise.faq.a1":

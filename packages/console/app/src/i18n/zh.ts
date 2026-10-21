@@ -348,6 +348,7 @@ export const dict = {
   "enterprise.form.error.invalidEmailFormat": "邮箱格式无效。",
   "enterprise.form.error.invalidInferenceSpend": "请选择有效的推理支出范围。",
   "enterprise.form.error.internalServer": "内部服务器错误。",
+  "enterprise.form.error.captcha": "验证码验证失败，请重试。",
   "enterprise.faq.title": "常见问题",
   "enterprise.faq.q1": "什么是 OpenCode 企业版？",
   "enterprise.faq.a1":

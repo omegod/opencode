@@ -367,6 +367,7 @@ export const dict = {
   "enterprise.form.error.invalidEmailFormat": "Ugyldig e-postformat.",
   "enterprise.form.error.invalidInferenceSpend": "Velg et gyldig intervall for inferensforbruk.",
   "enterprise.form.error.internalServer": "Intern serverfeil.",
+  "enterprise.form.error.captcha": "Captcha-verifiseringen mislyktes. Prøv igjen.",
   "enterprise.faq.title": "FAQ",
   "enterprise.faq.q1": "Hva er OpenCode Enterprise?",
   "enterprise.faq.a1":

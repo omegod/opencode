@@ -357,6 +357,7 @@ export const dict = {
   "enterprise.form.error.invalidEmailFormat": "유효하지 않은 이메일 형식입니다.",
   "enterprise.form.error.invalidInferenceSpend": "유효한 추론 비용 범위를 선택하세요.",
   "enterprise.form.error.internalServer": "내부 서버 오류입니다.",
+  "enterprise.form.error.captcha": "캡차 인증에 실패했습니다. 다시 시도해 주세요.",
   "enterprise.faq.title": "FAQ",
   "enterprise.faq.q1": "OpenCode 엔터프라이즈란 무엇인가요?",
   "enterprise.faq.a1":

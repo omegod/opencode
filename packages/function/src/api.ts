@@ -1,127 +1,12 @@
 import { Hono } from "hono"
-import { DurableObject } from "cloudflare:workers"
 import { jwtVerify, createRemoteJWKSet } from "jose"
 import { createAppAuth } from "@octokit/auth-app"
 import { Octokit } from "@octokit/rest"
 import { Resource } from "sst"
 import { parseRepositoryClaim } from "./github"
 
-type Env = {
-  SYNC_SERVER: DurableObjectNamespace<SyncServer>
-  Bucket: R2Bucket
-}
-
-export class SyncServer extends DurableObject<Env> {
-  // oxlint-disable-next-line no-useless-constructor
-  constructor(ctx: DurableObjectState, env: Env) {
-    super(ctx, env)
-  }
-  async fetch() {
-    console.log("SyncServer subscribe")
-
-    const webSocketPair = new WebSocketPair()
-    const [client, server] = Object.values(webSocketPair)
-
-    this.ctx.acceptWebSocket(server)
-
-    const data = await this.ctx.storage.list()
-    Array.from(data.entries())
-      .filter(([key, _]) => key.startsWith("session/"))
-      .map(([key, content]) => server.send(JSON.stringify({ key, content })))
-
-    return new Response(null, {
-      status: 101,
-      webSocket: client,
-    })
-  }
-
-  async webSocketMessage(_ws, _message) {}
-
-  async webSocketClose(ws, code, _reason, _wasClean) {
-    ws.close(code, "Durable Object is closing WebSocket")
-  }
-
-  public async getData() {
-    const data = (await this.ctx.storage.list()) as Map<string, any>
-    return Array.from(data.entries())
-      .filter(([key, _]) => key.startsWith("session/"))
-      .map(([key, content]) => ({ key, content }))
-  }
-
-  private async getSessionID() {
-    return this.ctx.storage.get<string>("sessionID")
-  }
-
-  async clear() {
-    const sessionID = await this.getSessionID()
-    const list = await this.env.Bucket.list({
-      prefix: `session/message/${sessionID}/`,
-      limit: 1000,
-    })
-    for (const item of list.objects) {
-      await this.env.Bucket.delete(item.key)
-    }
-    await this.env.Bucket.delete(`session/info/${sessionID}`)
-    await this.ctx.storage.deleteAll()
-  }
-
-  static shortName(id: string) {
-    return id.substring(id.length - 8)
-  }
-}
-
-export default new Hono<{ Bindings: Env }>()
+export default new Hono()
   .get("/", (c) => c.text("Hello, world!"))
-  .post("/share_delete_admin", async (c) => {
-    const body = await c.req.json<{ sessionShortName: string; adminSecret: string }>()
-    const sessionShortName = body.sessionShortName
-    const adminSecret = body.adminSecret
-    if (adminSecret !== Resource.ADMIN_SECRET.value) throw new Error("Invalid admin secret")
-    const id = c.env.SYNC_SERVER.idFromName(sessionShortName)
-    const stub = c.env.SYNC_SERVER.get(id)
-    await stub.clear()
-    return c.json({})
-  })
-  .get("/share_poll", async (c) => {
-    const upgradeHeader = c.req.header("Upgrade")
-    if (!upgradeHeader || upgradeHeader !== "websocket") {
-      return c.text("Error: Upgrade header is required", { status: 426 })
-    }
-    const id = c.req.query("id")
-    console.log("share_poll", id)
-    if (!id) return c.text("Error: Share ID is required", { status: 400 })
-    const stub = c.env.SYNC_SERVER.get(c.env.SYNC_SERVER.idFromName(id))
-    return stub.fetch(c.req.raw)
-  })
-  .get("/share_data", async (c) => {
-    const id = c.req.query("id")
-    console.log("share_data", id)
-    if (!id) return c.text("Error: Share ID is required", { status: 400 })
-    const stub = c.env.SYNC_SERVER.get(c.env.SYNC_SERVER.idFromName(id))
-    const data = await stub.getData()
-
-    let info
-    const messages: Record<string, any> = {}
-    data.forEach((d) => {
-      const [root, type] = d.key.split("/")
-      if (root !== "session") return
-      if (type === "info") {
-        info = d.content
-        return
-      }
-      if (type === "message") {
-        messages[d.content.id] = {
-          parts: [],
-          ...d.content,
-        }
-      }
-      if (type === "part") {
-        messages[d.content.messageID].parts.push(d.content)
-      }
-    })
-
-    return c.json({ info, messages })
-  })
   .post("/feishu", async (c) => {
     const body = (await c.req.json()) as {
       challenge?: string
@@ -276,33 +161,4 @@ export default new Hono<{ Bindings: Env }>()
       return c.json({ error }, { status: 401 })
     }
   })
-  /**
-   * Used by the opencode CLI to check if the GitHub app is installed
-   */
-  .get("/get_github_app_installation", async (c) => {
-    const owner = c.req.query("owner")
-    const repo = c.req.query("repo")
-
-    const auth = createAppAuth({
-      appId: Resource.GITHUB_APP_ID.value,
-      privateKey: Resource.GITHUB_APP_PRIVATE_KEY.value,
-    })
-    const appAuth = await auth({ type: "app" })
-
-    // Lookup installation
-    const octokit = new Octokit({ auth: appAuth.token })
-    let installation
-    try {
-      const ret = await octokit.apps.getRepoInstallation({ owner, repo })
-      installation = ret.data
-    } catch (err) {
-      if (err instanceof Error && err.message.includes("Not Found")) {
-        // not installed
-      } else {
-        throw err
-      }
-    }
-
-    return c.json({ installation })
-  })
-  .all("*", (c) => c.text("Not Found"))
+  .all("*", (c) => c.text("Not Found", 404))
