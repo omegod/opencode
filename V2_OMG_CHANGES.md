@@ -636,3 +636,23 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - 打包流程与 v2.0.30 相同：先构建内置 CLI（`OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.0.32-fork.1`、`--single`），再以 `OPENCODE_CHANNEL=prod` + `OPENCODE_CLI_DIST` 打包桌面（`electron-builder.local.ts`、`-c.extraMetadata.version=2.0.32-fork.1`、`--publish never`），仓库版本保持官方 `2.0.32`。
 - 打包后核验：应用与内置 CLI 版本均为 `2.0.32-fork.1`，`app-update.yml` 更新源为 `omegod/opencode` prod 渠道，`codesign --verify --deep --strict` 通过，`latest-mac.yml` 的 SHA-512 与大小同同次构建的 ZIP（264810418 B）与 DMG（274141842 B）一致。
 - 发布沿用 macOS arm64：DMG、ZIP、各自 blockmap 与 `latest-mac.yml` 五个资产；Release/tag `v2.0.32` 指向本轮发布提交（即本节所在提交），先创建 draft、上传并核对资产，再发布；随后核对 `releases/latest` 与 `releases/download/v2.0.32/latest-mac.yml` 下载。
+
+## 27. 合并上游 v2.1.0 / v2.1.1 / v2.1.2 / v2.1.3 / v2.1.4
+
+- 本轮分三次合并：`v2.1.0` 与 `v2.1.1` 一次合并（`db15348db9`，738 个文件，+11573/−10147）；`v2.1.2`（`f7fd0f8bc3`，162 个文件，+4144/−1384）；`v2.1.4` 直接合并（`f18c6d79fa`，775 个文件，+14577/−8789）。`v2.1.4` 已包含 `v2.1.3` 的全部代码，因此本轮不单独合并 `v2.1.3`。
+- 官方 release tag 都是独立叶子提交，真实合并基点不是上一个 tag：`v2.1.2` 的合并基点是 `c600cddc68`，`v2.1.4` 的合并基点是 `37d973754b`。因此每轮都会出现 34 个 `package.json` 与 `bun.lock` 的版本冲突，全部按上游版本解决（fork 对 `package.json` 零定制）。
+- `v2.1.2` 重点：免费额度提示与 Go 订阅弹窗、提示词召回、`OPENCODE_DISABLE_FREE_MODELS`、`experimental.location_idle_timeout`、Electron 44.9.1、`~/.zshrc` 自动创建、opentunnel 0.4.1、models.dev 快照刷新。
+- `v2.1.3` 重点：代码高亮从 Shiki 切换到 `@pierre/highlights`（代码块、文件预览、diff 全部换引擎）；时间线拖动滚动条不再强制跟随底部；Tab 重命名粘贴纯文本；免费额度弹窗 Go 插图动效；Bun 1.4.4；RPM build-id 链接修复；models.dev 快照刷新。
+- `v2.1.4` 重点：MCP elicitation 表单（桌面与 Web 的输入框上方显示）；桌面命令面板新增「Capture heap snapshots」（app 与 server 堆快照、native memory 分解）；文件变更数量文案改为「N files changed」；会话没有模型时使用 agent 的模型；MCP server 启动去重、并行关闭、OAuth stray callback、远程请求 idle timeout、非根对象 output schema 等修复；compaction 边界与压缩顺序改进，新增实验性 `background_compaction`；隐藏 ChatGPT 账号拒绝的 Codex 模型，ChatGPT context caps 拆成独立插件；Linux AppImage 可执行文件名修复。
+- 冲突处理：`v2.1.2` 的 35 个冲突全部是版本文件；`v2.1.4` 的 37 个冲突中，34 个 `package.json` 与 `bun.lock` 取上游，`packages/app/src/shell/titlebar/tab-strip.tsx` 保留 fork 重写版并补 `plaintext-only`，`packages/app/src/providers/credentials/dialog.tsx` 保留 fork 重写版并把文档链接更新到 `https://opencode.ai/v2/docs/providers#custom`。
+- fork 侧同步：`project-tab-list.tsx`、`grouped-tab-item.tsx` 补齐 `plaintext-only`；`packages/ui/src/i18n/zh.ts` 补 3 个免费额度简中 key；`packages/app/src/runtime/i18n/zh.ts` 补 1 个 MCP elicitation key；`packages/gui-extensions/src/debug/i18n/zh.ts` 补 7 个堆快照 key。
+- fork 定制保留：provider 配置编辑补丁（`packages/client/src/effect/api/api.ts` 与生成文件、`packages/core/src/config.ts`、`packages/schema/src/config.ts`）、分组侧栏与未读蓝点、底部「思考中」滚动行、OpenCode2 毛玻璃主题、`electron-builder.local.ts` 本地打包与 `omegod` 更新源。
+- 验证记录：Node 24 + Bun 1.4.4 下根 `bun run check` 34/34 通过；`check:generated` exit 0；app 774、session-ui 252、ui 153、client 233、core 相关 1089、desktop 130、gui debug 7、server 8、markdown 组件 28 项测试通过；app e2e 125/132。7 个失败中 5 个为本地 macOS 键位（`Control+W`、`Control+Alt+Arrow`、`Shift+F10`、键位提示文案），1 个为上游 `@pierre/diffs` worker 的 `Theme "pierre-dark"` 错误，1 个为已知的 `Control+,`；5 个键位失败与 worker 错误均已在官方 `v2.1.4` 干净 worktree 复现。
+
+## 28. v2.1.4 发布
+
+### 构建与发布
+
+- 打包流程沿用 v2.0.32：先构建内置 CLI（`OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.1.4-fork.1`、`--single`），再以 `OPENCODE_CHANNEL=prod` + `OPENCODE_CLI_DIST` 打包桌面（`electron-builder.local.ts`、`-c.extraMetadata.version=2.1.4-fork.1`、`--publish never`），仓库版本保持官方 `2.1.4`。
+- 打包后核验：应用与内置 CLI 版本均为 `2.1.4-fork.1`，`app-update.yml` 更新源为 `omegod/opencode` prod 渠道，`codesign --verify --deep --strict` 通过（`RedixDevCert`），`latest-mac.yml` 的 SHA-512 与大小同同次构建的 ZIP（280966012 B）与 DMG（290791879 B）一致。
+- 发布沿用 macOS arm64：DMG、ZIP、各自 blockmap 与 `latest-mac.yml` 五个资产；Release/tag `v2.1.4` 指向本轮发布提交（即本节所在提交），先创建 draft、上传并核对资产，再发布；随后核对 `releases/latest` 与 `releases/download/v2.1.4/latest-mac.yml` 下载。
