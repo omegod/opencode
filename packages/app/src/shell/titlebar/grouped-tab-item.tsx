@@ -381,7 +381,7 @@ export function GroupedTabItem(props: {
             "overflow-hidden text-clip whitespace-nowrap": !editing(),
             "select-text": editing(),
           }}
-          contenteditable={editing() ? true : undefined}
+          contenteditable={editing() ? "plaintext-only" : undefined}
           onDblClick={openRename}
           onKeyDown={(event) => {
             event.stopPropagation()

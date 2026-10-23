@@ -25,7 +25,7 @@ import {
 import { classifyProviderFailure } from "../provider-error.js"
 import { isRecord, JsonObject, optionalArray, optionalNull, ProviderShared } from "./shared.js"
 import { cacheControl } from "./utils/cache.js"
-import { OpenAIOptions } from "./utils/openai-options.js"
+import { OpenResponsesOptions } from "./utils/open-responses-options.js"
 import { Lifecycle } from "./utils/lifecycle.js"
 import { ToolStream } from "./utils/tool-stream.js"
 
@@ -181,7 +181,7 @@ export const bodyFields = {
   stream_options: Schema.optional(Schema.Struct({ include_usage: Schema.Boolean })),
   store: Schema.optional(Schema.Boolean),
   prompt_cache_key: Schema.optional(Schema.String),
-  reasoning_effort: Schema.optional(OpenAIOptions.OpenAIReasoningEffort),
+  reasoning_effort: Schema.optional(OpenResponsesOptions.ReasoningEffort),
   tool_stream: Schema.optional(Schema.Boolean),
   max_completion_tokens: Schema.optional(Schema.Number),
   max_tokens: Schema.optional(Schema.Number),
@@ -577,7 +577,7 @@ const lowerMessages = Effect.fnUntraced(function* (request: LLMRequest, options:
   const mistral = ["mistral", "devstral", "codestral", "pixtral", "mixtral"].some((family) => modelID.includes(family))
   const lowering = {
     ...options,
-    providerMetadataKey: request.model.route.providerMetadataKey ?? String(request.model.provider),
+    providerMetadataKey: request.model.route.providerMetadataKey ?? request.model.provider,
     toolCallID: (id: string) => {
       if (mistral)
         return id
@@ -757,7 +757,7 @@ const detectZaiToolStream = (provider: string, baseURL: string | undefined, mode
 }
 
 const lowerOptions = (request: LLMRequest, supportsStore: boolean) => {
-  const options = OpenAIOptions.resolve(request)
+  const options = OpenResponsesOptions.resolve(request)
   // Default off: strict providers 400 on unknown body fields, so only send
   // the key where compatibility explicitly allows it. Header-based affinity
   // (x-session-affinity, x-grok-conv-id, ...) is unaffected.
@@ -783,7 +783,7 @@ export const fromRequest = Effect.fn("OpenAIChat.fromRequest")(function* (
     )
   const generation = request.generation
   const flattened = ProviderShared.flattenToolRequest(request)
-  const provider = String(request.model.provider)
+  const provider = request.model.provider
   const baseURL = request.model.route.endpoint.baseURL
   const detectedMaxTokensField = detectMaxTokensField(provider, baseURL)
   const maxTokensField = request.model.compatibility?.maxTokensField ?? detectedMaxTokensField
@@ -1028,10 +1028,9 @@ const step = (state: ParserState, event: OpenAIChatEvent) =>
     const choice = event.choices?.[0]
     // Moonshot (and a few other OpenAI-compatible providers) attach usage to
     // `choice.usage` instead of the top-level `usage` field.
-    const choiceUsage = (choice as unknown as { usage?: OpenAIChatEvent["usage"] })?.usage
     const usage =
       mapUsage(event.usage, state.providerMetadataKey) ??
-      (choiceUsage ? mapUsage(choiceUsage, state.providerMetadataKey) : undefined) ??
+      mapUsage(choice?.usage, state.providerMetadataKey) ??
       state.usage
     const rawFinishReason = choice?.finish_reason
     const finishReason = rawFinishReason
@@ -1253,7 +1252,7 @@ export const protocol = Protocol.make({
   stream: {
     event: OpenAIChatStreamEvent,
     initial: (request) => ({
-      providerMetadataKey: request.model.route.providerMetadataKey ?? String(request.model.provider),
+      providerMetadataKey: request.model.route.providerMetadataKey ?? request.model.provider,
       tools: ToolStream.empty<number>(),
       pendingTools: {},
       toolCallEvents: [],

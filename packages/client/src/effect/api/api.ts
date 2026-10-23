@@ -29,13 +29,13 @@ import type { Form } from "@opencode/schema/form"
 import type { Provider } from "@opencode/schema/provider"
 import type { Integration } from "@opencode/schema/integration"
 import type { Mcp } from "@opencode/schema/mcp"
+import type { PtyTicket } from "@opencode/schema/pty-ticket"
 import type { Credential } from "@opencode/schema/credential"
 import type { PermissionSaved } from "@opencode/schema/permission-saved"
 import type { FileSystem } from "@opencode/schema/filesystem"
 import type { Command } from "@opencode/schema/command"
 import type { OpenCodeEvent } from "@opencode/protocol/groups/event"
 import type { Pty } from "@opencode/schema/pty"
-import type { PtyTicket } from "@opencode/schema/pty-ticket"
 import type { Reference } from "@opencode/schema/reference"
 import type { Worktree } from "@opencode/schema/worktree"
 import type { Vcs } from "@opencode/schema/vcs"
@@ -1418,6 +1418,19 @@ export interface GenerateApi<E = never> {
   readonly text: GenerateTextOperation<E>
 }
 
+export type VoiceModelsOutput = {
+  readonly models: ReadonlyArray<{
+    readonly model: string
+    readonly provider: string
+    readonly transports: ReadonlyArray<"webrtc" | "websocket">
+    readonly available: boolean
+    readonly integration?: string | undefined
+    readonly workspace?: string | undefined
+  }>
+  readonly default?: string | undefined
+}
+export type VoiceModelsOperation<E = never> = () => Effect.Effect<VoiceModelsOutput, E>
+
 export type VoiceSessionInput = {
   readonly model: string
   readonly session?: { readonly [x: string]: unknown } | undefined
@@ -1429,11 +1442,20 @@ export type VoiceSessionOutput = {
   readonly transport:
     | { readonly type: "webrtc"; readonly sdp: string }
     | { readonly type: "websocket"; readonly url: string; readonly token: string; readonly expiresAt: number }
+  readonly session?: { readonly id: string } | undefined
 }
 export type VoiceSessionOperation<E = never> = (input: VoiceSessionInput) => Effect.Effect<VoiceSessionOutput, E>
 
+export type VoiceInstructionsInput = { readonly sessionID: string; readonly instructions: string }
+export type VoiceInstructionsOutput = void
+export type VoiceInstructionsOperation<E = never> = (
+  input: VoiceInstructionsInput,
+) => Effect.Effect<VoiceInstructionsOutput, E>
+
 export interface VoiceApi<E = never> {
+  readonly models: VoiceModelsOperation<E>
   readonly session: VoiceSessionOperation<E>
+  readonly instructions: VoiceInstructionsOperation<E>
 }
 
 export type ProviderListInput = { readonly location?: { readonly directory?: string | undefined } | undefined }
@@ -1647,6 +1669,14 @@ export type McpResourceCatalogOperation<E = never> = (
   input?: McpResourceCatalogInput,
 ) => Effect.Effect<McpResourceCatalogOutput, E>
 
+export type McpClientTokenInput = {
+  readonly location?: { readonly directory?: string | undefined } | undefined
+  readonly name: string
+  readonly "x-opencode-ticket"?: string | undefined
+}
+export type McpClientTokenOutput = { readonly location: Location.PublicRef; readonly data: PtyTicket.ConnectToken }
+export type McpClientTokenOperation<E = never> = (input: McpClientTokenInput) => Effect.Effect<McpClientTokenOutput, E>
+
 export interface McpApi<E = never> {
   readonly list: McpListOperation<E>
   readonly add: McpAddOperation<E>
@@ -1654,6 +1684,7 @@ export interface McpApi<E = never> {
   readonly connect: McpConnectOperation<E>
   readonly disconnect: McpDisconnectOperation<E>
   readonly resource: { readonly catalog: McpResourceCatalogOperation<E> }
+  readonly client: { readonly token: McpClientTokenOperation<E> }
 }
 
 export type CredentialListOutput = ReadonlyArray<Credential.Entry>
@@ -2238,6 +2269,20 @@ export interface VcsApi<E = never> {
   readonly diff: VcsDiffOperation<E>
 }
 
+export type DebugHeapDumpInput = { readonly directory?: string | undefined }
+export type DebugHeapDumpOutput = {
+  readonly path: string
+  readonly pid: number
+  readonly memory: {
+    readonly rss: number
+    readonly heapTotal: number
+    readonly heapUsed: number
+    readonly external: number
+    readonly arrayBuffers: number
+  }
+}
+export type DebugHeapDumpOperation<E = never> = (input?: DebugHeapDumpInput) => Effect.Effect<DebugHeapDumpOutput, E>
+
 export type DebugLocationListOutput = ReadonlyArray<Location.PublicRef>
 export type DebugLocationListOperation<E = never> = () => Effect.Effect<DebugLocationListOutput, E>
 
@@ -2248,6 +2293,7 @@ export type DebugLocationEvictOperation<E = never> = (
 ) => Effect.Effect<DebugLocationEvictOutput, E>
 
 export interface DebugApi<E = never> {
+  readonly heapDump: DebugHeapDumpOperation<E>
   readonly location: { readonly list: DebugLocationListOperation<E>; readonly evict: DebugLocationEvictOperation<E> }
 }
 

@@ -12,6 +12,8 @@ export type RealtimeTransportInput =
   | { readonly type: "webrtc"; readonly sdp: string; readonly dcid?: number }
   | { readonly type: "websocket" }
 
+export type RealtimeTransportType = RealtimeTransportInput["type"]
+
 export type RealtimeTransport =
   | { readonly type: "webrtc"; readonly sdp: string }
   | { readonly type: "websocket"; readonly url: string; readonly token: string; readonly expiresAt: number }
@@ -25,11 +27,23 @@ export interface RealtimeConnectInput {
   readonly transport: RealtimeTransportInput
 }
 
-const engines = [
-  { family: "gpt-live", id: "openai-live", provider: "openai" },
-  { family: "gpt-realtime", id: "openai-realtime", provider: "openai" },
-  { family: "grok-voice", id: "xai-realtime", provider: "xai" },
-  { family: "gemini-3.8-live", id: "gemini-live", provider: "google" },
+export const engines = [
+  { family: "gpt-live", model: "gpt-live-1", id: "openai-live", provider: "openai", transports: ["webrtc"] },
+  {
+    family: "gpt-realtime",
+    model: "gpt-realtime-2.1",
+    id: "openai-realtime",
+    provider: "openai",
+    transports: ["webrtc", "websocket"],
+  },
+  { family: "grok-voice", model: "grok-voice-3.0", id: "xai-realtime", provider: "xai", transports: ["websocket"] },
+  {
+    family: "gemini-3.8-live",
+    model: "gemini-3.8-live",
+    id: "gemini-live",
+    provider: "google",
+    transports: ["websocket"],
+  },
 ] as const
 
 // Matches the bare family name (`gpt-realtime`) and its versions (`gpt-realtime-2.1`, `gpt-realtime-mini`).
@@ -39,12 +53,12 @@ export const engine = (model: string) =>
 export const connect = Effect.fn("Realtime.connect")(function* (input: RealtimeConnectInput) {
   const resolved = engine(input.model)
   if (!resolved) return yield* invalidRequest(`Unsupported voice model: ${input.model}`)
+  if (!resolved.transports.some((type) => type === input.transport.type))
+    return yield* invalidRequest(`${input.model} only supports ${resolved.transports.join(", ")} transport`)
   const session = { ...input.session, model: input.model }
 
   switch (resolved.id) {
     case "openai-live": {
-      if (input.transport.type !== "webrtc")
-        return yield* invalidRequest("OpenAI GPT-Live only supports WebRTC transport")
       const data = yield* post(
         resolved.id,
         `${OPENAI_BASE_URL}/live/sessions`,
@@ -73,16 +87,11 @@ export const connect = Effect.fn("Realtime.connect")(function* (input: RealtimeC
       )
       return { type: "webrtc" as const, sdp }
     }
-    case "xai-realtime": {
-      if (input.transport.type !== "websocket")
-        return yield* invalidRequest("xAI Grok Voice only supports WebSocket transport")
+    case "xai-realtime":
       return yield* clientSecret(resolved.id, XAI_BASE_URL, input.model, input.apiKey, {
         expires_after: { seconds: 60 },
       })
-    }
     case "gemini-live": {
-      if (input.transport.type !== "websocket")
-        return yield* invalidRequest("Google Gemini Live only supports WebSocket transport")
       const now = yield* Clock.currentTimeMillis
       const expiresAt = now + 60_000
       const data = yield* post(
@@ -109,6 +118,7 @@ export const connect = Effect.fn("Realtime.connect")(function* (input: RealtimeC
 })
 
 export const Realtime = {
+  engines,
   engine,
   connect,
 } as const

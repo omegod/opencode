@@ -666,7 +666,7 @@ export default setup
 export const builtins = Extension.compose(
   context,
   btw,
-  debug,
+  { ...debug, main: () => import("./debug/main") },
   terminal,
   file,
   review,

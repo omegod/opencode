@@ -132,6 +132,10 @@ describe("inference stat normalization", () => {
     expect(RETIRED_STAT_MODELS).toContain("cat-jam")
     expect(statProvider("cat-jam-free", "", "unknown")).toBe("reflection")
     expect(statProvider("beam-free", "", "unknown")).toBe("reflection")
+    expect(statModel("ll-alpha-free", "")).toBe("flint-40b")
+    expect(statModel("flint-40b-free", "")).toBe("flint-40b")
+    expect(RETIRED_STAT_MODELS).toContain("ll-alpha")
+    expect(statProvider("ll-alpha-free", "", "unknown")).toBe("recursive")
     expect(statModel("space-bunny-free", "")).toBe("minimax-m3.1-flash")
     expect(statModel("space-bunny", "")).toBe("minimax-m3.1-flash")
     expect(statModel("minimax-m3.1-flash-free", "")).toBe("minimax-m3.1-flash")
@@ -300,7 +304,7 @@ describe("inference stat normalization", () => {
     expect(queries[6]).toContain("'2026-08-12' AS period_key")
     expect(queries[0]).toContain('FROM "inference"."generation"')
     expect(queries[0]).toContain("event_type = 'generation.completed'")
-    expect(queries[0]).toContain("AND (product = 'go' OR (lower(COALESCE(model_tier, '')) = 'free'")
+    expect(queries[0]).toContain("AND (product IN ('go', 'go-plus') OR (lower(COALESCE(model_tier, '')) = 'free'")
     expect(queries[0]).toContain("COALESCE(NULLIF(lower(model_tier), ''), '') AS raw_tier")
     expect(queries[0]).toContain("WHEN lower(COALESCE(raw_tier, '')) = 'free'")
     expect(queries[0]).toContain("regexp_replace(NULLIF(route_model, ''), '^.*/', '')")
@@ -358,7 +362,7 @@ describe("inference stat normalization", () => {
       expect(query).toContain("= 'deepseek-flash' THEN 'deepseek-v4.1-flash'")
     })
     expect(queries.map((query) => query.cohortDates)).toEqual([["2026-08-10"], ["2026-08-17"]])
-    expect(queries[0]?.query).toContain("AND product = 'go'")
+    expect(queries[0]?.query).toContain("AND product IN ('go', 'go-plus')")
     expect(queries[0]?.query).toContain("AND lower(model) NOT IN ('alpha-gpt-next')")
     expect(queries[0]?.query).toContain(
       "CASE\n      WHEN lower(model) IN ('exo', 'omen-alpha', 'union-alpha') THEN 'unknown'\n",

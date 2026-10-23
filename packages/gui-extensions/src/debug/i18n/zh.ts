@@ -1,5 +1,12 @@
 export default {
   "command.toggle": "切换调试栏",
+  "command.heap": "捕获堆快照",
+  "command.heap.description": "将应用及其服务器的内存保存到文件夹",
+  "heap.loading": "正在捕获堆快照…",
+  "heap.done": "堆快照已保存",
+  "heap.partial": "部分堆快照失败，请查看 manifest.json。",
+  "heap.failed": "无法捕获堆快照",
+  "heap.reveal": "在文件夹中显示",
   "status.toggle": "切换调试工具",
   ariaLabel: "开发性能诊断",
   providerAriaLabel: "提供商性能诊断",

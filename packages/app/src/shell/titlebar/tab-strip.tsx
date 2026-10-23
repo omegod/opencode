@@ -124,7 +124,9 @@ export function TitlebarTabStrip(props: {
                       : [new PointerActivationConstraints.Distance({ value: 4 })],
                   preventActivation: (event) =>
                     event.target instanceof Element &&
-                    !!event.target.closest('[data-slot="tab-close"], [data-action], [contenteditable="true"]'),
+                    !!event.target.closest(
+                      '[data-slot="tab-close"], [data-action], [contenteditable="true"], [contenteditable="plaintext-only"]',
+                    ),
                 }),
               ]}
               modifiers={[
