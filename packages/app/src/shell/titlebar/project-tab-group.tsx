@@ -74,7 +74,7 @@ export function ProjectTabGroupHeader(props: {
           data-slot="tab-group-icon"
           class="flex size-4 shrink-0 items-center justify-center text-v2-icon-icon-muted"
         >
-          <Icon name={props.collapsed ? "folder" : "folder-opened"} size="small" />
+          <Icon name={props.collapsed ? "folder" : "folder-opened"} />
         </span>
         <span data-slot="tab-group-title" dir="auto" class="min-w-0 flex-1 truncate leading-4">
           {props.group.name}
