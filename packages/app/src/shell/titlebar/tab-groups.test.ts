@@ -12,7 +12,7 @@ const draft = (server: string, draftID: string, directory: string): Tab => ({
   server: key(server),
   directory,
 })
-const project = (worktree: string, name?: string): LocalProject => ({ worktree, expanded: true, name })
+const project = (worktree: string, name?: string): LocalProject => ({ worktree, name })
 
 describe("groupTabEntries", () => {
   test("groups tabs by project following the project order and keeps unknown directories last", () => {

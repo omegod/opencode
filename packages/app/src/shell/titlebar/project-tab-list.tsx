@@ -23,7 +23,6 @@ import {
   groupTabEntries,
   parseProjectSortableId,
   projectGroupKey,
-  projectMoveIndex,
   projectSortableId,
   type TabGroup,
 } from "./tab-groups"
@@ -167,17 +166,9 @@ export function ProjectTabList(props: {
       .findIndex((item) => item.key === group.key)
   }
 
-  const moveProject = (server: ServerConnection.Key, worktree: string, from: number, to: number) => {
-    const conn = global.servers.list().find((item) => ServerConnection.key(item) === server)
-    if (!conn) return
-    const ctx = global.ensureServerCtx(conn)
-    const full = ctx.projects.list().map((project) => project.worktree)
-    const visible = groups()
-      .filter((group) => group.server === server && !!group.project && groupVisible(group))
-      .map((group) => group.directory)
-    const index = projectMoveIndex({ full, visible, from, to })
-    if (index === undefined) return
-    ctx.projects.move(worktree, index)
+  const moveProject = () => {
+    // v2.2.0 returns projects in server activity order and no longer exposes a client-side move API.
+    // Group drag order is therefore not persisted until the fork adds a local order store.
   }
 
   command.register("titlebar-tab-cycle", () => [
@@ -226,7 +217,7 @@ export function ProjectTabList(props: {
         const project = parseProjectSortableId(source.id.toString())
         if (!project) return
         restoreDraggedRow(row)
-        moveProject(project.server, project.worktree, source.initialIndex, source.index)
+        moveProject()
       }}
     >
       <div

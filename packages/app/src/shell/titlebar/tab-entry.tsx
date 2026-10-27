@@ -1,7 +1,6 @@
 import { createEffect, createMemo, createResource, onCleanup, Show } from "solid-js"
 import { useSortable } from "@dnd-kit/solid/sortable"
 import { tabHref, tabKey, type SessionTab, type Tab } from "@/shell/tabs/tabs"
-import { DraftTabItem, TabNavItem } from "@/shell/titlebar/tab-nav"
 import { GroupedDraftTabItem, GroupedTabItem } from "@/shell/titlebar/grouped-tab-item"
 import { useSessionTabAvatarState } from "@/shell/layout/project-avatar-state"
 import { useGlobal, useServerCtx, type ServerCtx } from "@/runtime/server/runtime"
@@ -57,49 +56,25 @@ function SessionTabSlot(props: {
         "w-full shrink-0": props.orientation === "vertical",
       }}
     >
-      <Show
-        when={props.grouped}
-        fallback={
-          <TabNavItem
-            ref={(el) => {
-              ref = el
-            }}
-            href={tabHref(props.tab)}
-            server={props.tab.server}
-            session={props.session}
-            preparing={props.preparing}
-            unread={props.unread}
-            loading={props.loading}
-            fallbackTitle={props.fallbackTitle}
-            onRename={props.onRename}
-            onNavigate={() => props.onNavigate(ref)}
-            onClose={props.onClose}
-            active={props.active}
-            dragging={sortable.isDragSource()}
-            orientation={props.orientation}
-          />
-        }
-      >
-        <GroupedTabItem
-          ref={(el) => {
-            ref = el
-          }}
-          href={tabHref(props.tab)}
-          server={props.tab.server}
-          session={props.session}
-          preparing={props.preparing}
-          fallbackTitle={props.fallbackTitle}
-          onRename={props.onRename}
-          onNavigate={() => props.onNavigate(ref)}
-          onClose={props.onClose}
-          active={props.active}
-          dragging={sortable.isDragSource()}
-          orientation={props.orientation}
-          hideProjectAvatar={props.hideProjectAvatar}
-          indent={props.indent}
-          showSessionTime={props.showSessionTime}
-        />
-      </Show>
+      <GroupedTabItem
+        ref={(el) => {
+          ref = el
+        }}
+        href={tabHref(props.tab)}
+        server={props.tab.server}
+        session={props.session}
+        preparing={props.preparing}
+        fallbackTitle={props.fallbackTitle}
+        onRename={props.onRename}
+        onNavigate={() => props.onNavigate(ref)}
+        onClose={props.onClose}
+        active={props.active}
+        dragging={sortable.isDragSource()}
+        orientation={props.orientation}
+        hideProjectAvatar={props.hideProjectAvatar}
+        indent={props.indent}
+        showSessionTime={props.showSessionTime}
+      />
     </div>
   )
 }
@@ -272,38 +247,20 @@ function DraftTabSlot(props: {
         "w-full shrink-0": props.orientation === "vertical",
       }}
     >
-      <Show
-        when={props.grouped}
-        fallback={
-          <DraftTabItem
-            ref={(el) => {
-              ref = el
-            }}
-            href={tabHref(props.tab)}
-            title={props.title}
-            onNavigate={() => props.onNavigate(ref)}
-            onClose={props.onClose}
-            active={props.active}
-            dragging={sortable.isDragSource()}
-            orientation={props.orientation}
-          />
-        }
-      >
-        <GroupedDraftTabItem
-          ref={(el) => {
-            ref = el
-          }}
-          href={tabHref(props.tab)}
-          title={props.title}
-          onNavigate={() => props.onNavigate(ref)}
-          onClose={props.onClose}
-          active={props.active}
-          dragging={sortable.isDragSource()}
-          orientation={props.orientation}
-          indent={props.indent}
-          hideProjectAvatar={props.hideProjectAvatar}
-        />
-      </Show>
+      <GroupedDraftTabItem
+        ref={(el) => {
+          ref = el
+        }}
+        href={tabHref(props.tab)}
+        title={props.title}
+        onNavigate={() => props.onNavigate(ref)}
+        onClose={props.onClose}
+        active={props.active}
+        dragging={sortable.isDragSource()}
+        orientation={props.orientation}
+        indent={props.indent}
+        hideProjectAvatar={props.hideProjectAvatar}
+      />
     </div>
   )
 }

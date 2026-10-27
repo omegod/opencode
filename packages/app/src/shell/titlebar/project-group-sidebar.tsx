@@ -3,17 +3,15 @@ import { createStore } from "solid-js/store"
 import { Icon } from "@opencode/ui/icon"
 import { useCommand } from "@/shell/commands/command"
 import { useLanguage } from "@/runtime/i18n/language"
-import { useLayout } from "@/shell/state/layout"
 import type { Tab } from "@/shell/tabs/tabs"
 import { ProjectTabList } from "./project-tab-list"
 
-// Sidebar shell for grouped vertical tabs. Rendered in place of the flat home / new-session /
-// tab-strip trio while appearance.groupTabsByProject is on, so grouped mode can restyle every
-// section and add overflow fades without touching the upstream vertical layout.
+// Sidebar shell for grouped vertical tabs. Rendered in place of the flat tab strip while
+// appearance.groupTabsByProject is on, so grouped mode can restyle the list and add overflow fades
+// without touching the upstream vertical layout.
 export function ProjectGroupSidebar(props: {
   tabs: Tab[]
   currentTab: Tab | undefined
-  onHome: () => void
   onNewSession: () => void
   onNavigate: (tab: Tab, el?: HTMLDivElement) => void
   onClose: (tab: Tab) => void
@@ -52,7 +50,6 @@ export function ProjectGroupSidebar(props: {
 
   return (
     <div data-tab-grouped="true" class="flex min-h-0 flex-1 flex-col">
-      <ProjectGroupSidebarHome onToggle={props.onHome} />
       <ProjectGroupSidebarNewSession onNew={props.onNewSession} />
       <div class="h-4 w-full shrink-0" aria-hidden="true" />
       <div class="relative flex min-h-0 flex-1 flex-col">
@@ -79,31 +76,6 @@ export function ProjectGroupSidebar(props: {
         </div>
       </div>
     </div>
-  )
-}
-
-function ProjectGroupSidebarHome(props: { onToggle: () => void }) {
-  const layout = useLayout()
-  const command = useCommand()
-  const language = useLanguage()
-
-  return (
-    <button
-      type="button"
-      data-titlebar-tab-action
-      data-action="vertical-tabs-home"
-      data-state={layout.route().type === "home" ? "pressed" : undefined}
-      class="group mb-1 flex h-7 w-full shrink-0 items-center gap-1.5 rounded-[6px] ps-1.5 pe-2 text-[13px] leading-4 text-v2-text-text-base"
-      onClick={props.onToggle}
-      aria-label={language.t("home.title")}
-      aria-pressed={layout.route().type === "home"}
-    >
-      <Icon name="grid-plus" class="shrink-0" />
-      <span class="min-w-0 truncate">{language.t("home.title")}</span>
-      <span class="ms-auto min-w-0 truncate text-[11px] leading-text-compact text-v2-text-text-faint" aria-hidden="true">
-        <bdi dir="ltr">{command.keybind("home.toggle")}</bdi>
-      </span>
-    </button>
   )
 }
 

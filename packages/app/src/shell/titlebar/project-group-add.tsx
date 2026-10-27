@@ -49,7 +49,7 @@ export function ProjectGroupAdd(props: { exclude: () => Set<string> }) {
   // into the client store first, then add one idempotent tab per session.
   const loadSessions = (conn: ServerConnection.Any, project: LocalProject) => {
     const context = global.ensureServerCtx(conn)
-    context.projects.open(project.worktree)
+    context.projects.touch(project.worktree)
     void context.sdk.api.session
       .list({ limit: SESSION_INDEX_LIMIT, order: "desc", parentID: null })
       .then((response) => {
