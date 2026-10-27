@@ -1,6 +1,4 @@
 import { createEffect, createMemo, createResource, For, onCleanup, Show } from "solid-js"
-import { useSettings } from "@/settings/model"
-import { ProjectTabList } from "./project-tab-list"
 import { createStore } from "solid-js/store"
 import { DragDropProvider, PointerSensor } from "@dnd-kit/solid"
 import { isSortable, useSortable } from "@dnd-kit/solid/sortable"
@@ -381,7 +379,7 @@ function DraftTabSlot(props: {
   )
 }
 
-function FlatTabStrip(props: {
+export function TitlebarTabStrip(props: {
   orientation?: "horizontal" | "vertical"
   tabs: Tab[]
   currentTab: Tab | undefined
@@ -621,32 +619,5 @@ function FlatTabStrip(props: {
         />
       </Show>
     </div>
-  )
-}
-
-export function TitlebarTabStrip(props: {
-  orientation?: "horizontal" | "vertical"
-  tabs: Tab[]
-  currentTab: Tab | undefined
-  onNavigate: (tab: Tab, el?: HTMLDivElement) => void
-  onClose: (tab: Tab) => void
-  onReorder: (keys: string[]) => void
-}) {
-  const settings = useSettings()
-
-  return (
-    <Show
-      when={settings.appearance.groupTabsByProject() && props.orientation === "vertical"}
-      fallback={<FlatTabStrip {...props} />}
-    >
-      <ProjectTabList
-        tabs={props.tabs}
-        currentTab={props.currentTab}
-        showSessionTime
-        onNavigate={props.onNavigate}
-        onClose={props.onClose}
-        onReorder={props.onReorder}
-      />
-    </Show>
   )
 }

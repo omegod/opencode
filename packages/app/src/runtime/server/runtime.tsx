@@ -253,10 +253,16 @@ function createServerController(
     return { ...project, ...sync.child(project.worktree, { bootstrap: false })[0].projectMeta }
   }
 
-  const list = createMemo(() => sync.data.project.map(withLocalMeta))
+  const list = createMemo(() => {
+    const ranks = new Map(projects.order().map((worktree, index) => [pathKey(worktree), index]))
+    const rank = (worktree: string) => ranks.get(pathKey(worktree)) ?? Number.MAX_SAFE_INTEGER
+
+    return sync.data.project.map(withLocalMeta).toSorted((a, b) => rank(a.worktree) - rank(b.worktree))
+  })
 
   // One directory can belong to several project IDs, for example a folder resolved before `.git` existed and again
-  // after a remote was added. The list is most recent first, so the first project per path is the current one.
+  // after a remote was added. The list keeps duplicate paths in server order, so the first project per path is the
+  // current one.
   const unique = createMemo(() => {
     const seen = new Set<string>()
 
@@ -270,7 +276,7 @@ function createServerController(
     })
   })
 
-  // The projects this client has used, in server order. Using any ID of a path shows that path's current project.
+  // The projects this client has used, in display order. Using any ID of a path shows that path's current project.
   const used = createMemo(() => {
     const ids = new Set(projects.used())
     const paths = new Set(list().flatMap((project) => (ids.has(project.id) ? [pathKey(project.worktree)] : [])))
@@ -347,6 +353,10 @@ function createServerController(
       hide(project: Pick<Project, "worktree">) {
         const key = pathKey(project.worktree)
         projects.hide(list().flatMap((item) => (pathKey(item.worktree) === key ? [item.id] : [])))
+      },
+      // Moves a project within the full display list and remembers the order for this client.
+      move(worktree: string, index: number, full: string[]) {
+        projects.move(worktree, index, full)
       },
     },
     notification,

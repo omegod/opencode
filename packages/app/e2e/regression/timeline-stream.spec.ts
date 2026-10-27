@@ -793,7 +793,7 @@ test.describe("Working", () => {
     await expect(working).toHaveCount(0)
   })
 
-  test("shows an expandable live Thinking in place of Working while reasoning is the only activity", async ({
+  test("shows an expandable live Thinking in place of Working when grouped thinking is expanded", async ({
     page,
   }) => {
     const timeline = await setupTimeline(page, {
@@ -801,7 +801,9 @@ test.describe("Working", () => {
         userMessage(),
         assistantMessage([reasoningPart("prt_only_thought", "Still considering the answer.")], { completed: false }),
       ],
-      settings: { timelineDetail: detailed },
+      // Fork: with grouped thinking collapsed the live row is hidden and the bottom scrolling indicator owns the
+      // thought; expanded details keep this timeline row, which is the behavior this test covers.
+      settings: { timelineDetail: { ...detailed, thinking: { placement: "grouped", details: "expanded" } } },
     })
 
     // reasoningPart starts at 1700000001000, so the pause lands 8m 12s into the thought.
@@ -838,7 +840,7 @@ test.describe("Working", () => {
     await expect(working).toBeVisible()
   })
 
-  test("shows the scrolling thought line in place of Working while grouped reasoning is the only activity", async ({
+  test("shows the scrolling thought line in place of Working when grouped thinking is collapsed", async ({
     page,
   }) => {
     const timeline = await setupTimeline(page, {
@@ -847,6 +849,7 @@ test.describe("Working", () => {
         assistantMessage([reasoningPart("prt_working_thought", "Reading the request.")], { completed: false }),
       ],
       viewport: { width: 390, height: 900 },
+      // Collapsed grouped thinking is the fork case: the live timeline row is hidden and the bottom line owns it.
       settings: { timelineDetail: detailed },
     })
 

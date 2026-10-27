@@ -3,7 +3,15 @@ import { Schema } from "effect"
 import { ModelState, ServerState } from "./persistence"
 import { Persistence } from "@/runtime/persistence/schema"
 
-const initial = { list: [], hidden: {}, lastProjectID: {}, usedProjectIDs: {}, hostnames: {}, projects: {} }
+const initial = {
+  list: [],
+  hidden: {},
+  lastProjectID: {},
+  usedProjectIDs: {},
+  hostnames: {},
+  projects: {},
+  projectOrder: {},
+}
 
 function serverSchema() {
   return Persistence.withInitial(ServerState, initial)
@@ -49,6 +57,7 @@ describe("server persistence schema", () => {
       usedProjectIDs: {},
       hostnames: {},
       projects: { local: [{ worktree: "/project" }] },
+      projectOrder: {},
     })
     expect(input.list[1]).toHaveProperty("username", "legacy")
     const encoded = Schema.encodeSync(schema)(state)
@@ -66,6 +75,7 @@ describe("server persistence schema", () => {
         lastProjectID: { local: "project", remote: 1 },
         usedProjectIDs: { local: ["project", 1, null], remote: "bad" },
         projects: { local: [null, {}, { worktree: 1 }, { worktree: "/project", expanded: true }], remote: false },
+        projectOrder: { local: ["/a", 1, null], remote: "bad" },
       }),
     ).toEqual({
       ...initial,
@@ -73,6 +83,7 @@ describe("server persistence schema", () => {
       lastProjectID: { local: "project" },
       usedProjectIDs: { local: ["project"], remote: [] },
       projects: { local: [{ worktree: "/project" }], remote: [] },
+      projectOrder: { local: ["/a"], remote: [] },
     })
   })
 })

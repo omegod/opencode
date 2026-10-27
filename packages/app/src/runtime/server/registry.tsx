@@ -71,6 +71,17 @@ export function createServerProjects(input: {
     },
     used,
     use,
+    order() {
+      return input.store.projectOrder[input.scope()] ?? []
+    },
+    // Moves one worktree within the full display list and stores the whole resulting order. The index
+    // is the position after removal, matching the projectMoveIndex helper in the grouped tab list.
+    move(worktree: string, index: number, full: string[]) {
+      if (!full.includes(worktree)) return
+      const next = full.filter((item) => item !== worktree)
+      next.splice(Math.max(0, Math.min(index, next.length)), 0, worktree)
+      input.setStore("projectOrder", input.scope(), next)
+    },
     hide(projectIDs: string[]) {
       input.setStore(
         "usedProjectIDs",
@@ -207,7 +218,7 @@ export const { use: useServers, provider: ServersProvider } = createSimpleContex
         previousKey: "server.v3",
       },
       ServerState,
-      { list: [], hidden: {}, lastProjectID: {}, usedProjectIDs: {}, hostnames: {}, projects: {} },
+      { list: [], hidden: {}, lastProjectID: {}, usedProjectIDs: {}, hostnames: {}, projects: {}, projectOrder: {} },
     )
 
     const language = useLanguage()

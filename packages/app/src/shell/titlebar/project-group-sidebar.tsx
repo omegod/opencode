@@ -3,15 +3,17 @@ import { createStore } from "solid-js/store"
 import { Icon } from "@opencode/ui/icon"
 import { useCommand } from "@/shell/commands/command"
 import { useLanguage } from "@/runtime/i18n/language"
+import { useLayout } from "@/shell/state/layout"
 import type { Tab } from "@/shell/tabs/tabs"
 import { ProjectTabList } from "./project-tab-list"
 
-// Sidebar shell for grouped vertical tabs. Rendered in place of the flat tab strip while
-// appearance.groupTabsByProject is on, so grouped mode can restyle the list and add overflow fades
-// without touching the upstream vertical layout.
+// Sidebar shell for grouped vertical tabs. When appearance.groupTabsByProject is on it replaces the
+// whole vertical sidebar content (Home, Search sessions, New Session, then the grouped list), so
+// grouped mode keeps its own rows and never renders the upstream flat top group.
 export function ProjectGroupSidebar(props: {
   tabs: Tab[]
   currentTab: Tab | undefined
+  onHome: () => void
   onNewSession: () => void
   onNavigate: (tab: Tab, el?: HTMLDivElement) => void
   onClose: (tab: Tab) => void
@@ -50,7 +52,11 @@ export function ProjectGroupSidebar(props: {
 
   return (
     <div data-tab-grouped="true" class="flex min-h-0 flex-1 flex-col">
-      <ProjectGroupSidebarNewSession onNew={props.onNewSession} />
+      <div class="flex w-full shrink-0 flex-col gap-1">
+        <ProjectGroupSidebarHome onToggle={props.onHome} />
+        <ProjectGroupSidebarSearch />
+        <ProjectGroupSidebarNewSession onNew={props.onNewSession} />
+      </div>
       <div class="h-4 w-full shrink-0" aria-hidden="true" />
       <div class="relative flex min-h-0 flex-1 flex-col">
         {/* Deliberately no [app-region:no-drag] here. app-region is inherited in Chromium 152+, and
@@ -76,6 +82,53 @@ export function ProjectGroupSidebar(props: {
         </div>
       </div>
     </div>
+  )
+}
+
+function ProjectGroupSidebarHome(props: { onToggle: () => void }) {
+  const layout = useLayout()
+  const command = useCommand()
+  const language = useLanguage()
+
+  return (
+    <button
+      type="button"
+      data-titlebar-tab-action
+      data-action="vertical-tabs-home"
+      data-state={layout.route().type === "home" ? "pressed" : undefined}
+      class="group flex h-7 w-full shrink-0 items-center gap-1.5 rounded-[6px] ps-1.5 pe-2 text-[13px] leading-4 text-v2-text-text-base"
+      onClick={props.onToggle}
+      aria-label={language.t("home.title")}
+      aria-pressed={layout.route().type === "home"}
+    >
+      <Icon name="grid-plus" class="shrink-0" />
+      <span class="min-w-0 truncate">{language.t("home.title")}</span>
+      <span class="ms-auto min-w-0 truncate text-[11px] leading-text-compact text-v2-text-text-faint" aria-hidden="true">
+        <bdi dir="ltr">{command.keybind("home.toggle")}</bdi>
+      </span>
+    </button>
+  )
+}
+
+function ProjectGroupSidebarSearch() {
+  const command = useCommand()
+  const language = useLanguage()
+
+  return (
+    <button
+      type="button"
+      data-titlebar-tab-action
+      data-action="vertical-tabs-search"
+      class="group flex h-7 w-full shrink-0 items-center gap-1.5 rounded-[6px] ps-1.5 pe-2 text-[13px] leading-4 text-v2-text-text-base"
+      onClick={() => command.trigger("sessions.search")}
+      aria-label={language.t("command.session.search")}
+    >
+      <Icon name="magnifying-glass" class="shrink-0" />
+      <span class="min-w-0 truncate">{language.t("command.session.search")}</span>
+      <span class="ms-auto min-w-0 truncate text-[11px] leading-text-compact text-v2-text-text-faint" aria-hidden="true">
+        <bdi dir="ltr">{command.keybind("sessions.search")}</bdi>
+      </span>
+    </button>
   )
 }
 

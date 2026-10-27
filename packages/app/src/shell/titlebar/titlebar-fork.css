@@ -1,0 +1,10 @@
+/* Fork-only titlebar fixes. Keep these here instead of editing the upstream stylesheets. */
+
+/* The active flat tab uses [data-state="pressed"], and upstream paints its close slot with the same
+   overlay plus --tab-base so the slot matches the row while the close button is hidden. The fork's
+   vibrancy rows set --tab-base to transparent, so that second overlay stacks on the row's own and
+   reads as a grey square beside the title. Hide the slot while its control is not revealed. */
+[data-titlebar-tab][data-state="pressed"]:not(:hover):not(:has(:focus-visible)):not([data-status])
+  [data-slot="tab-close"] {
+  background: none;
+}

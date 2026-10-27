@@ -106,6 +106,7 @@ export const dict = {
   "command.palette": "命令面板",
 
   "command.session.new": "新建会话",
+  "command.session.search": "搜索会话",
   "command.session.previous": "上一个会话",
   "command.session.next": "下一个会话",
   "command.session.previous.unseen": "上一个未读会话",

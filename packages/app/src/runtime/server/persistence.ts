@@ -44,6 +44,9 @@ export const ServerState = Persistence.struct({
     Schema.mutableKey(Schema.String.pipe(Schema.catchDecoding(() => Effect.succeed(Option.none())))),
   ),
   usedProjectIDs: Persistence.record(Persistence.array(Schema.String)),
+  // Worktrees in the order this client shows projects, per scope. Projects missing from the list keep
+  // the server order after the listed ones.
+  projectOrder: Persistence.record(Persistence.array(Schema.String)),
   // The last hostname each server reported, so its name shows before the first health check answers.
   hostnames: Schema.Record(
     Schema.String,

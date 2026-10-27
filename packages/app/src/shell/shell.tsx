@@ -260,10 +260,12 @@ export default function Layout(props: ParentProps) {
                 class="pointer-events-none absolute inset-y-0 end-0 bg-v2-background-bg-deep shadow-[var(--v2-elevation-floating)]"
                 style={{ width: `${state.tabsWidth}px` }}
               />
+              {/* Transparent so the shell's --shell-surface, and the macOS vibrancy behind it, show through. The peek
+                  surface below stays opaque because it covers the content while the closed sidebar slides in. */}
               <div
                 ref={(element) => setState("tabsMount", element)}
                 data-slot="vertical-tabs-mount"
-                class="absolute inset-y-0 end-0 contain-strict will-change-[opacity] flex min-h-0 flex-col bg-v2-background-bg-deep pe-2.5 ps-4.5 pb-[var(--shell-bottom-inset,8px)] pt-[var(--shell-top-inset,8px)]"
+                class="absolute inset-y-0 end-0 contain-strict will-change-[opacity] flex min-h-0 flex-col pe-2.5 ps-4.5 pb-[var(--shell-bottom-inset,8px)] pt-[var(--shell-top-inset,8px)]"
                 style={{
                   width: `${state.tabsWidth}px`,
                   "padding-bottom": "max(10px, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))",

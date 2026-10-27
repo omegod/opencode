@@ -23,6 +23,7 @@ import {
   groupTabEntries,
   parseProjectSortableId,
   projectGroupKey,
+  projectMoveIndex,
   projectSortableId,
   type TabGroup,
 } from "./tab-groups"
@@ -139,7 +140,7 @@ export function ProjectTabList(props: {
     const order = new Map([...contexts.keys()].map((key, position) => [key, position]))
     return groupTabEntries(entries(), {
       serverIndex: (server) => order.get(server) ?? Number.MAX_SAFE_INTEGER,
-      projectOrder: (server) => (contexts.get(server)?.projects.list() ?? []).map((project) => project.worktree),
+      projectOrder: (server) => (contexts.get(server)?.projects.unique() ?? []).map((project) => project.worktree),
     })
   })
 
@@ -166,9 +167,17 @@ export function ProjectTabList(props: {
       .findIndex((item) => item.key === group.key)
   }
 
-  const moveProject = () => {
-    // v2.2.0 returns projects in server activity order and no longer exposes a client-side move API.
-    // Group drag order is therefore not persisted until the fork adds a local order store.
+  const moveProject = (server: ServerConnection.Key, worktree: string, from: number, to: number) => {
+    const conn = global.servers.list().find((item) => ServerConnection.key(item) === server)
+    if (!conn) return
+    const ctx = global.ensureServerCtx(conn)
+    const full = ctx.projects.unique().map((project) => project.worktree)
+    const visible = groups()
+      .filter((group) => group.server === server && !!group.project && groupVisible(group))
+      .map((group) => group.directory)
+    const index = projectMoveIndex({ full, visible, from, to })
+    if (index === undefined) return
+    ctx.projects.move(worktree, index, full)
   }
 
   command.register("titlebar-tab-cycle", () => [
@@ -217,7 +226,7 @@ export function ProjectTabList(props: {
         const project = parseProjectSortableId(source.id.toString())
         if (!project) return
         restoreDraggedRow(row)
-        moveProject()
+        moveProject(project.server, project.worktree, source.initialIndex, source.index)
       }}
     >
       <div

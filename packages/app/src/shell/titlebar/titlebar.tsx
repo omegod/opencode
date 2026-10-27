@@ -27,6 +27,7 @@ import { ServerConnection } from "@/runtime/server/registry"
 import { tabKey, useTabs } from "@/shell/tabs/tabs"
 import type { ComposerState } from "@/composer/persistence"
 import "./titlebar.css"
+import "./titlebar-fork.css"
 import { MobileDrawer, MobileDrawerContent, MobileDrawerLabel, MobileDrawerTrigger } from "@/shell/mobile-drawer"
 import { sessionTabTitle } from "./tab-title"
 import { SessionTabAvatar } from "@/shell/layout/session-tab-avatar"
@@ -130,6 +131,11 @@ export function Titlebar(props: { verticalTabs?: { mount?: HTMLElement } }) {
   const titlebarItems = useTitlebarItems()
   const hideVerticalTitlebar = createMemo(() => !!props.verticalTabs && !windows())
   const homeInSidebarHeader = () => !windows() && !macTrafficLights()
+  // Grouped mode owns the whole sidebar body, including its Home row, so the header must not add a
+  // second one on platforms that normally put Home there.
+  const groupedSidebar = () =>
+    settings.appearance.tabLayout() === "vertical" && settings.appearance.groupTabsByProject()
+  const headerHome = () => homeInSidebarHeader() && !groupedSidebar()
 
   const back = () => {
     const next = backPath(history)
@@ -816,11 +822,11 @@ export function Titlebar(props: { verticalTabs?: { mount?: HTMLElement } }) {
                                   start so the row doesn't leave an empty band. */}
                               <div
                                 data-slot="sidebar-header"
-                                data-home={homeInSidebarHeader() ? "" : undefined}
+                                data-home={headerHome() ? "" : undefined}
                                 class="flex w-full shrink-0 gap-2"
                                 classList={{
-                                  "items-start pt-2.5 pb-1": homeInSidebarHeader(),
-                                  "mb-2 h-12 items-center": !homeInSidebarHeader(),
+                                  "items-start pt-2.5 pb-1": headerHome(),
+                                  "mb-2 h-12 items-center": !headerHome(),
                                 }}
                                 style={{
                                   "min-height": macVerticalTabs()
@@ -839,7 +845,7 @@ export function Titlebar(props: { verticalTabs?: { mount?: HTMLElement } }) {
                                     aria-hidden="true"
                                   />
                                 </Show>
-                                <Show when={homeInSidebarHeader()} fallback={<div class="flex-1" />}>
+                                <Show when={headerHome()} fallback={<div class="flex-1" />}>
                                   <div class="min-w-0 flex-1">{homeButton(true)}</div>
                                 </Show>
                                 {/* Optically aligns the toggle's glyph with the selected session's end edge. */}
@@ -848,64 +854,64 @@ export function Titlebar(props: { verticalTabs?: { mount?: HTMLElement } }) {
                                 </div>
                               </div>
                             </Show>
-                            <div class="flex w-full shrink-0 flex-col gap-1">
-                              <Show when={!homeInSidebarHeader()}>{homeButton(true)}</Show>
-                              {searchButton(true)}
-                              <RecentlyClosedTabsMenu
-                                vertical
-                                onNewTab={openNewTab}
-                                keybind={command.keybind("tab.new")}
+                            <Show
+                              when={groupedSidebar()}
+                              fallback={
+                                <>
+                                  <div class="flex w-full shrink-0 flex-col gap-1">
+                                    <Show when={!homeInSidebarHeader()}>{homeButton(true)}</Show>
+                                    {searchButton(true)}
+                                    <RecentlyClosedTabsMenu
+                                      vertical
+                                      onNewTab={openNewTab}
+                                      keybind={command.keybind("tab.new")}
+                                    />
+                                  </div>
+                                  <div class="h-4 w-full shrink-0" aria-hidden="true" />
+                                  <div class="flex min-h-0 flex-1 flex-col gap-1">
+                                    <Show
+                                      when={settings.appearance.tabLayout() === "inbox"}
+                                      fallback={
+                                        <TitlebarTabStrip
+                                          orientation="vertical"
+                                          tabs={tabsStore}
+                                          currentTab={currentTab()}
+                                          onNavigate={(tab, el) => {
+                                            tabs.select(tab)
+                                            el?.scrollIntoView({ behavior: "instant", block: "nearest" })
+                                          }}
+                                          onClose={(tab) => {
+                                            const index = tabsStore.findIndex((item) => tabKey(item) === tabKey(tab))
+
+                                            if (index !== -1) tabsStoreActions.closeTab(index)
+                                          }}
+                                          onReorder={(keys) => tabsStoreActions.reorder(keys)}
+                                        />
+                                      }
+                                    >
+                                      <SidebarInbox />
+                                    </Show>
+                                  </div>
+                                </>
+                              }
+                            >
+                              <ProjectGroupSidebar
+                                tabs={tabsStore}
+                                currentTab={currentTab()}
+                                onHome={toggleHome}
+                                onNewSession={openNewTab}
+                                onNavigate={(tab, el) => {
+                                  tabs.select(tab)
+                                  el?.scrollIntoView({ behavior: "instant", block: "nearest" })
+                                }}
+                                onClose={(tab) => {
+                                  const index = tabsStore.findIndex((item) => tabKey(item) === tabKey(tab))
+
+                                  if (index !== -1) tabsStoreActions.closeTab(index)
+                                }}
+                                onReorder={(keys) => tabsStoreActions.reorder(keys)}
                               />
-                            </div>
-                            <div class="h-4 w-full shrink-0" aria-hidden="true" />
-                            <div class="flex min-h-0 flex-1 flex-col gap-1">
-                              <Show
-                                when={
-                                  settings.appearance.groupTabsByProject() &&
-                                  settings.appearance.tabLayout() !== "inbox"
-                                }
-                                fallback={
-                                  <Show
-                                    when={settings.appearance.tabLayout() === "inbox"}
-                                    fallback={
-                                      <TitlebarTabStrip
-                                        orientation="vertical"
-                                        tabs={tabsStore}
-                                        currentTab={currentTab()}
-                                        onNavigate={(tab, el) => {
-                                          tabs.select(tab)
-                                          el?.scrollIntoView({ behavior: "instant", block: "nearest" })
-                                        }}
-                                        onClose={(tab) => {
-                                          const index = tabsStore.findIndex((item) => tabKey(item) === tabKey(tab))
-
-                                          if (index !== -1) tabsStoreActions.closeTab(index)
-                                        }}
-                                        onReorder={(keys) => tabsStoreActions.reorder(keys)}
-                                      />
-                                    }
-                                  >
-                                    <SidebarInbox />
-                                  </Show>
-                                }
-                              >
-                                <ProjectGroupSidebar
-                                  tabs={tabsStore}
-                                  currentTab={currentTab()}
-                                  onNewSession={openNewTab}
-                                  onNavigate={(tab, el) => {
-                                    tabs.select(tab)
-                                    el?.scrollIntoView({ behavior: "instant", block: "nearest" })
-                                  }}
-                                  onClose={(tab) => {
-                                    const index = tabsStore.findIndex((item) => tabKey(item) === tabKey(tab))
-
-                                    if (index !== -1) tabsStoreActions.closeTab(index)
-                                  }}
-                                  onReorder={(keys) => tabsStoreActions.reorder(keys)}
-                                />
-                              </Show>
-                            </div>
+                            </Show>
                             <Show when={titlebarItems.ids().length > 0}>
                               <div data-slot="vertical-tabs-footer" class="mt-2 flex w-full shrink-0 flex-col">
                                 <TitlebarItems items={titlebarItems} vertical />

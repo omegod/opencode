@@ -15,7 +15,7 @@ import { PluginSlot } from "@/runtime/plugin/render"
 import { useLanguage } from "@/runtime/i18n/language"
 import { useServer } from "@/runtime/server/current"
 import { useWorkspaceLocation } from "@/workspaces/location"
-import { Timeline } from "@opencode/session-ui/timeline/projection"
+import { Timeline, TimelineRow } from "@opencode/session-ui/timeline/projection"
 import { createSessionTimelineRowRenderer } from "@opencode/session-ui/timeline/row"
 import { getReadyMarkdown, preloadMarkdown } from "@opencode/session-ui/markdown-cache"
 import { createTimelineController, type TimelineController, type TimelineSessionSource } from "./controller"
@@ -176,11 +176,88 @@ function MessageTimelineView(
   const pinned = createMemo(() => props.pinned)
   const messageByID = projection.messageByID
 
+  // Fork: v2.2.0 removed the projection's thoughtOnly and renders a live Thinking row for a turn that has only
+  // produced reasoning. With grouped thinking collapsed, that row replaced the bottom SessionWorking scroll.
+  // Keep the upstream projection untouched and hide the live reasoning-only row here instead: collapsed details
+  // hand the live thought to SessionWorking, expanded details keep the timeline row. This block is display-only;
+  // the visible row lookups below remap the indexes the virtualizer reads.
+  const hiddenThoughtRow = createMemo(() => {
+    const detail = props.data.timelineDetail()
+
+    if (detail.thinking.placement !== "grouped" || detail.thinking.details !== "collapsed") return
+    if (sessionStatus().type !== "busy") return
+
+    const active = projection.activeMessageID()
+    if (!active) return
+
+    const assistant = projection.assistantMessagesByParent().get(active)?.at(-1)
+    if (!assistant || assistant.time.completed !== undefined || assistant.error || assistant.retry) return
+
+    const groupKey = projection.lastAssistantGroupKey().get(active)
+    if (!groupKey) return
+
+    const row = projection.rows().findLast((item) => {
+      if (!Predicate.isTagged(item, "AssistantPart")) return false
+      if (item.userMessageID !== active || item.group.type !== "context") return false
+
+      return item.group.key === groupKey
+    })
+    if (!row || !Predicate.isTagged(row, "AssistantPart") || row.group.type !== "context") return
+
+    const reasoningOnly = row.group.refs.every(
+      (ref) => Timeline.resolveContent(projection.messageByID().get(ref.messageID), ref.partID)?.type === "reasoning",
+    )
+
+    return reasoningOnly ? row : undefined
+  })
+
+  const visibleRows = createMemo(() => {
+    const hidden = hiddenThoughtRow()
+
+    return hidden ? projection.rows().filter((row) => row !== hidden) : projection.rows()
+  })
+
+  // The virtualizer reads row indexes and keys, so keep all three in step with the filtered rows. The original
+  // lastAssistantGroupKey stays untouched: the hidden row is still the live group, and remapping it would mark
+  // the previous tool group busy instead.
+  const visibleRowByKey = createMemo(() => new Map(visibleRows().map((row) => [TimelineRow.key(row), row] as const)))
+
+  const visibleMessageRowIndex = createMemo(() => {
+    const index = new Map<string, number>()
+
+    visibleRows().forEach((row, position) => {
+      if (index.has(row.userMessageID)) return
+      index.set(row.userMessageID, position)
+    })
+
+    return index
+  })
+
+  const visibleMessageLastRowIndex = createMemo(() => {
+    const index = new Map<string, number>()
+
+    visibleRows().forEach((row, position) => index.set(row.userMessageID, position))
+
+    return index
+  })
+
+  // Stable wrapper for the virtualizer: it only reads these fields, and each accessor stays reactive. Row
+  // rendering below still uses the original projection so user runs, patch groups and disclosures keep their
+  // existing identities.
+  const presentationProjection = {
+    activeMessageID: projection.activeMessageID,
+    messageByID: projection.messageByID,
+    messageLastRowIndex: visibleMessageLastRowIndex,
+    messageRowIndex: visibleMessageRowIndex,
+    rowByKey: visibleRowByKey,
+    rows: visibleRows,
+  }
+
   const virtualized = createTimelineVirtualizer({
     active: () => props.active !== false,
     sessionKey: () => `${server.key}/${props.data.sessionID()}`,
     presentationKey: () => JSON.stringify(props.data.timelineDetail()),
-    projection,
+    projection: presentationProjection,
     showHeader,
     pinned,
     scroll: () => props.scroll,
@@ -408,7 +485,8 @@ function MessageTimelineView(
       return false
     const background = new Set(props.background.tasks().map((task) => task.id))
 
-    return !projection.rows().some((row) => {
+    // Fork: use the presentation rows so a hidden live thought no longer suppresses the bottom indicator.
+    return !visibleRows().some((row) => {
       if (row.userMessageID !== active) return false
 
       if (Predicate.isTagged(row, "Thinking")) return true
@@ -444,7 +522,8 @@ function MessageTimelineView(
   })
 
   // Undelivered input waits below the work the model has seen, so live status moves into the row above it.
-  const activityRow = createMemo(() => projection.rows().some((row) => Predicate.isTagged(row, "Activity")))
+  // Fork: keep the lane decision on the same presentation rows as the virtualizer.
+  const activityRow = createMemo(() => visibleRows().some((row) => Predicate.isTagged(row, "Activity")))
 
   // The lane keeps its height while empty, so Working and the hint come and go without moving the rows around it.
   // The bottom lane also keeps its height while live status moves into the Activity row, so the tail the activity pill

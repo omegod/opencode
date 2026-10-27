@@ -668,4 +668,74 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - i18n：保留 `provider.custom.*` 与分组相关 key；清理 20 个上游已删除的简中 key；v2.2.0 新增的英文 UI key 暂未补简中，按运行时英文回退。
 - 桌面：`scripts/` → `script/`，`make-latest-mac-yml.ts` 随目录迁移；`electron-builder.config.ts` 保留 fork 的 prod GitHub（`omegod/opencode`）发布与“仅 prod 嵌入更新源”；macOS vibrancy 与上游新的 `platformFrame` / 缩放标题栏合并；底部「思考中」滚动行继续接入新的 Activity lane。
 - 已知限制：上游移除了 `projects.move`，分组标题的拖动排序暂为 no-op，需要后续用本地项目顺序存储补回；新 UI 简中未补；release 流程的上游 `prebuild` 已并入 `script/build.ts`，下次打包前需把 fork 的 `OPENCODE_CLI_DIST` 流程改为 `packages/cli/dist` + `bun run build`。
+- 合并后修复（已包含在本轮验收，见 §31）：分组侧栏接管整个左侧、扁平选中行灰块、OpenCode2 毛玻璃、项目拖动排序本地持久化、Search sessions 简中；release 流程仍需按 §31 的打包步骤处理。
 - 验证记录：Node 24 + Bun 1.4.4 下根 `bun run check` 35/35；app 单元 911/911；gui-plugins 240 通过 + 1 skip；Desktop dev 已启动（OpenCode Dev 2.2.0，渲染 5173、内置 CLI 3084）。
+
+## 30. 底部思考滚动：展示层隐藏 live Thinking 行
+
+### 背景与扩大范围的原因
+
+- 上游 v2.2.0（`11133d178b`）删除了 `packages/session-ui/src/timeline/projection.ts` 的 `thoughtOnly`：本轮只有 reasoning 时也会生成时间线 live `Thinking` 行。`message-timeline.tsx` 的 `showWorking()` 把这个“只有思考”的组当作 Working 的替代，隐藏了底部的 `SessionWorking`，fork 的「思考中 · 最新行」滚动因此消失。
+- 原计划恢复 `thoughtOnly`，但那会重新修改上游高频文件 `session-ui/projection.ts`。本次改为只改 app 展示层：`message-timeline.tsx` 本身也是上游高频冲突点，但可以把 fork 代码集中在一个带 `// Fork:` 注释的块里，避免动共享 projection 与 `session-ui` 单测。
+- 这样“扩大”了 fork 在 `message-timeline.tsx` 的定制面（原先只替换了底部 `SessionWorking` 节点）。原因是：v2.2.0 之后，只有展示层能同时做到“折叠时不显示时间线行、展开时保留时间线行”，且不改变 projection 的行结构。
+
+### 做法
+
+- `packages/app/src/session/timeline/message-timeline.tsx`：
+  - `hiddenThoughtRow`：当 `thinking.placement === "grouped"` 且 `thinking.details === "collapsed"`、状态 busy、最后一条 assistant 未完成且无 error / retry、活跃轮最后一个 context 组只含 reasoning 时，标记该行。
+  - `visibleRows` / `visibleRowByKey` / `visibleMessageRowIndex` / `visibleMessageLastRowIndex`：按可见行过滤并重算 virtualizer 读取的索引；`presentationProjection` 只覆盖 virtualizer 需要的六个 accessor。
+  - `showWorking()` 与 `activityRow()` 改用 `visibleRows()`；`lastAssistantGroupKey` 保持原 projection，避免把上一组误标为 busy；`rowRenderer` 仍用原 projection，避免影响 user run / patch group。
+  - 折叠时：live 思考行不显示，底部 `SessionWorking` 显示「思考中 · 最新行」并滚动。
+  - 展开时（`thinking.details === "expanded"`）：保留上游 live Thinking 行，底部滚动隐藏。
+- 范围：折叠模式下所有正在流式输出的纯思考组都由底部滚动接管，不只是第一段；展开模式保持上游行为。
+
+### 冲突与还原
+
+- 不修改 `packages/session-ui`；`session-ui` 的 projection 单测保持原样。
+- fork 代码集中在 `message-timeline.tsx` 的 `hiddenThoughtRow` 到 `presentationProjection` 一段；`showWorking` / `activityRow` 只有两处 `projection.rows()` → `visibleRows()` 的替换。
+- 还原方法：删除 `hiddenThoughtRow`、`visible*` 与 `presentationProjection` 块；把 `createTimelineVirtualizer` 的 `projection` 改回 `projection`；把 `showWorking` / `activityRow` 的 `visibleRows()` 改回 `projection.rows()`；把 e2e 中 expanded 的 settings 改回 `detailed`。
+- e2e：上游 `shows an expandable live Thinking...` 改为 `thinking.details = "expanded"`，覆盖展开时保留；fork 的滚动用例保持 `collapsed`，并改名为 `... when grouped thinking is collapsed`。两者不再互相矛盾。
+
+### 验证记录
+
+- `packages/app` `bun typecheck` 通过（1,874 files）。
+- `packages/app` `bun run test:unit`：912 通过 / 0 失败（129 files）。
+- `packages/app` e2e `timeline-stream.spec.ts -g Working`：14/14 通过（折叠滚动、展开 Thinking、工具 / 补丁 / 子代理、背景 shell、Retry、文本流等）。
+- 未跑 timeline projection benchmark：基线构建被中断；本次只在 app 展示层过滤行，`session-ui` projection 构造与流式 token 路径未改。
+
+## 31. v2.2.0 合并后界面修复
+
+### 分组侧栏接管整个左侧
+
+- `packages/app/src/shell/titlebar/titlebar.tsx`：`tabLayout === "vertical"` 且开启 `groupTabsByProject` 时，整个左侧内容由 `ProjectGroupSidebar` 接管；header 只保留 macOS 交通灯和侧栏按钮，抑制 header Home，避免与分组侧栏自己的 Home 重复。
+- `packages/app/src/shell/titlebar/project-group-sidebar.tsx`：分组侧栏包含 Home、Search sessions、New Session 和分组列表；Search 行调用 `sessions.search` 命令并显示 `command.session.search` 快捷键。
+- `packages/app/src/shell/titlebar/tab-strip.tsx`：撤回上一轮在 `TitlebarTabStrip` 内委托分组列表的临时写法，恢复上游 v2.2.0 结构；分组模式只走 `ProjectGroupSidebar`。
+- 分组模式按此前要求不显示「最近关闭」。
+- `packages/app/src/runtime/i18n/zh.ts`：补 `command.session.search` → 「搜索会话」，与 `home.sessions.search.placeholder` 术语一致。
+
+### 扁平选中标签右侧灰块
+
+- 根因：上游 close 槽使用 `overlay + --tab-base`；fork 的 vibrancy 主题把所有 `[data-titlebar-tab]` 的 `--tab-base` 设为 `transparent`，close 槽于是变成第二层 overlay，叠在整行 overlay 上形成灰色方块。
+- 修复：新增 `packages/app/src/shell/titlebar/titlebar-fork.css`，选中但未 hover / focus / 有 status 时 close 槽 `background: none`；hover 时关闭按钮和底色正常出现。`titlebar.tsx` 引入该文件。
+
+### OpenCode2 毛玻璃
+
+- `packages/app/src/shell/shell.tsx`：去掉 `vertical-tabs-mount` 上不透明的 `bg-v2-background-bg-deep`，让 shell 的 `--shell-surface` 和 macOS vibrancy 透出；`peek-surface` 保持不透明，避免关闭侧栏预览时透出内容。
+- 实测 `mountBg: rgba(0,0,0,0)`、`shellBg` 为 60% 透明。
+
+### 项目拖动排序本地持久化
+
+- `packages/app/src/runtime/server/persistence.ts`：`ServerState` 新增 `projectOrder`（按 server scope 保存 worktree 顺序）。
+- `packages/app/src/runtime/server/registry.tsx`：`createServerProjects` 新增 `order()` / `move()`。
+- `packages/app/src/runtime/server/runtime.tsx`：`projects.list()` 按本地 `projectOrder` 排序，未知项目保持服务器顺序；暴露 controller `move`。
+- `packages/app/src/shell/titlebar/project-tab-list.tsx`：恢复 `projectMoveIndex` 和 `moveProject`，拖动项目标题后写回本地顺序。
+- 测试：`registry.test.ts` 覆盖 `order()` / `move()`，`persistence.test.ts` 覆盖 `projectOrder` 迁移与容错。
+- 已知限制：没有 project 记录的目录组（例如 `main`）不参与本地项目顺序，固定排在项目组之后；用户已确认该目录是脏数据，不处理。
+
+### 验证记录
+
+- 根 `bun run check`：35/35 通过（v2.2.0 合并后的基线）。
+- `packages/app` `bun run test:unit`：912 通过 / 0 失败。
+- 定向测试：`persistence.test.ts`、`registry.test.ts`、`tab-groups.test.ts` 17 通过。
+- e2e：`timeline-stream.spec.ts -g Working` 14/14；折叠思考滚动与展开 Thinking 两个用例 2/2。
+- Desktop 手工：分组侧栏单实例 Home / Search / New Session、Search 打开最近会话、扁平选中行无灰块、OpenCode2 毛玻璃、项目拖动排序刷新后保留。

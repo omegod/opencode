@@ -14,6 +14,7 @@ function serverSchema() {
     usedProjectIDs: {},
     hostnames: {},
     projects: {},
+    projectOrder: {},
   })
 }
 
@@ -119,4 +120,26 @@ test("used and last projects follow dynamic server scopes, and migration consume
   expect(store.projects).toEqual({ other: [{ worktree: "/b" }] })
   expect(store.lastProjectID).toEqual({ local: "a", [props.server]: "remote-project" })
   expect(store.usedProjectIDs).toEqual({ local: ["a"], [props.server]: ["remote-project"] })
+})
+
+test("keeps a local project order per scope and moves within the full list", () => {
+  const [store, setStore] = createStore(Schema.decodeUnknownSync(serverSchema())({}))
+  const props: ProjectScopeProps = { server: ServerConnection.Key.make("https://remote.example") }
+  const projects = createServerProjects({
+    store,
+    setStore,
+    scope: () => ServerScope.fromServerKey(props.server, props.canonicalLocalServer),
+  })
+
+  expect(projects.order()).toEqual([])
+
+  projects.move("/a", 2, ["/a", "/b", "/c"])
+  expect(projects.order()).toEqual(["/b", "/c", "/a"])
+  expect(store.projectOrder).toEqual({ [props.server]: ["/b", "/c", "/a"] })
+
+  projects.move("/c", 0, ["/b", "/c", "/a"])
+  expect(projects.order()).toEqual(["/c", "/b", "/a"])
+
+  projects.move("/missing", 0, ["/c", "/b", "/a"])
+  expect(projects.order()).toEqual(["/c", "/b", "/a"])
 })
