@@ -656,3 +656,16 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - 打包流程沿用 v2.0.32：先构建内置 CLI（`OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.1.4-fork.1`、`--single`），再以 `OPENCODE_CHANNEL=prod` + `OPENCODE_CLI_DIST` 打包桌面（`electron-builder.local.ts`、`-c.extraMetadata.version=2.1.4-fork.1`、`--publish never`），仓库版本保持官方 `2.1.4`。
 - 打包后核验：应用与内置 CLI 版本均为 `2.1.4-fork.1`，`app-update.yml` 更新源为 `omegod/opencode` prod 渠道，`codesign --verify --deep --strict` 通过（`RedixDevCert`），`latest-mac.yml` 的 SHA-512 与大小同同次构建的 ZIP（280966012 B）与 DMG（290791879 B）一致。
 - 发布沿用 macOS arm64：DMG、ZIP、各自 blockmap 与 `latest-mac.yml` 五个资产；Release/tag `v2.1.4` 指向本轮发布提交（即本节所在提交），先创建 draft、上传并核对资产，再发布；随后核对 `releases/latest` 与 `releases/download/v2.1.4/latest-mac.yml` 下载。
+
+## 29. 合并上游 v2.2.0
+
+- 合并官方 `v2.2.0`（`1097e2668b`），合并提交 `0926a80f90`；`v2.1.4` 的真实合并基点是 `74f8d4860f`（`v2.1.4` 发版提交只含版本号），本轮共 661 个提交、3109 个文件（+136853/−97083）。
+- 冲突 63 个：34 个 `package.json` 与 `bun.lock` 全部取上游版本；28 个实质冲突集中在 titlebar / tab-strip、settings、i18n、provider credentials、desktop 窗口与打包、主题 CSS。
+- 官方重点：桌面 GUI 插件体系（`@opencode/plugin/gui`、`gui-extensions` 重写为 `gui-plugins`）、Top/Side/Inbox 三种界面模式、侧栏与底部面板标签、文件/终端/浏览器标签、Home 会话搜索、图片与决策生成 API、`@opencode/ai` 根入口改为 Promise API、OpenTUI 0.7、Console 用量与 Go 额度、session instruction entries、媒体 blob、prompt cache TTL、大量 core/ai/tui 修复。
+- `gui-extensions` 整体改名为 `gui-plugins`，fork 的 debug/pairing 简中随包迁移；新的 GUI 插件 i18n 是静态对象，pairing 改为直接导入 `zh`，README 的示例块同步更新。
+- 自定义提供商：上游删除了 `providers/credentials/*`，fork 保留该表单并接入新的 `providers/connect/dialog.tsx`（`_custom` 入口、编辑模式、picker 自定义行）；服务端 `Config.Patch.provider` 补丁继续保留，`packages/client` 已重新生成。
+- 分组侧栏：上游重写了 `titlebar.tsx`、`tab-strip.tsx` 并新增 `tab-nav.tsx`。fork 保留 `ProjectGroupSidebar` / `ProjectTabList`，接入新的 Side tabs：保留上游的 Home/Search/最近关闭行，分组列表在 `tabLayout !== "inbox"` 且开启分组时替换扁平标签列表；`TitlebarTabStrip` 只在垂直 + 分组时委托给 `ProjectTabList`。
+- i18n：保留 `provider.custom.*` 与分组相关 key；清理 20 个上游已删除的简中 key；v2.2.0 新增的英文 UI key 暂未补简中，按运行时英文回退。
+- 桌面：`scripts/` → `script/`，`make-latest-mac-yml.ts` 随目录迁移；`electron-builder.config.ts` 保留 fork 的 prod GitHub（`omegod/opencode`）发布与“仅 prod 嵌入更新源”；macOS vibrancy 与上游新的 `platformFrame` / 缩放标题栏合并；底部「思考中」滚动行继续接入新的 Activity lane。
+- 已知限制：上游移除了 `projects.move`，分组标题的拖动排序暂为 no-op，需要后续用本地项目顺序存储补回；新 UI 简中未补；release 流程的上游 `prebuild` 已并入 `script/build.ts`，下次打包前需把 fork 的 `OPENCODE_CLI_DIST` 流程改为 `packages/cli/dist` + `bun run build`。
+- 验证记录：Node 24 + Bun 1.4.4 下根 `bun run check` 35/35；app 单元 911/911；gui-plugins 240 通过 + 1 skip；Desktop dev 已启动（OpenCode Dev 2.2.0，渲染 5173、内置 CLI 3084）。
