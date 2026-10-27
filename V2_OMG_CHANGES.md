@@ -739,3 +739,15 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - 定向测试：`persistence.test.ts`、`registry.test.ts`、`tab-groups.test.ts` 17 通过。
 - e2e：`timeline-stream.spec.ts -g Working` 14/14；折叠思考滚动与展开 Thinking 两个用例 2/2。
 - Desktop 手工：分组侧栏单实例 Home / Search / New Session、Search 打开最近会话、扁平选中行无灰块、OpenCode2 毛玻璃、项目拖动排序刷新后保留。
+
+## 32. v2.2.0 发布
+
+### 构建与发布
+
+- 官方 `v2.2.0` tag 提交 `1097e2668b` 是合并源；fork 发布时把 `v2.2.0` 标签指向本轮发布提交（即本节所在提交）并推送到 `origin`，仓库版本保持官方 `2.2.0`。
+- 内置 CLI 构建：`packages/cli` 下 `OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.2.0-fork.1 bun run build --single`；产物 `dist/cli-darwin-arm64` 版本 `2.2.0-fork.1`。
+- 桌面构建：`packages/desktop` 下 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.2.0-fork.1 bun run build`，从 `packages/cli/dist` 复制 CLI 到 `resources/opencode-cli`。
+- 打包：`OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.2.0-fork.1 bunx electron-builder --mac --arm64 --publish never --config electron-builder.local.ts`；仓库版本不变，`-c.extraMetadata.version` / `OPENCODE_VERSION` 注入 `2.2.0-fork.1`。
+- 打包后核验：应用与内置 CLI 版本均为 `2.2.0-fork.1`；`app-update.yml` 更新源为 `omegod/opencode` prod/latest 渠道；`codesign --verify --deep --strict` 通过（`RedixDevCert`）；`latest-mac.yml` 的 SHA-512 与大小同同次构建的 ZIP（282885318 B）与 DMG（292675101 B）一致。
+- 发布沿用 macOS arm64：DMG、ZIP、各自 blockmap 与 `latest-mac.yml` 五个资产；Release/tag `v2.2.0` 指向本轮发布提交（即本节所在提交），先创建 draft、上传并核对资产，再发布；随后核对 `releases/latest` 与 `releases/download/v2.2.0/latest-mac.yml` 下载。
+- 首次安装提示：本地 `RedixDevCert` 自签，未公证；macOS 需在「隐私与安全性」中允许打开。
