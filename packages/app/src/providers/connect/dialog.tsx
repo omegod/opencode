@@ -266,7 +266,7 @@ function ProviderPicker(props: { directory?: string; onSelect: (provider: string
 
   const custom = (): IntegrationInfo => ({
     id: CUSTOM_ID,
-    name: language.t("dialog.provider.custom.label"),
+    name: language.t("provider.custom.title"),
     methods: [],
     connections: [],
   })

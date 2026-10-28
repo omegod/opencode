@@ -1196,6 +1196,8 @@ test("providers: the connect dialog lists connected providers and manages their 
   await settings.getByRole("tab", { name: "Providers", exact: true }).click()
   await settings.getByRole("button", { name: "Show more providers", exact: true }).click()
   const dialog = page.getByRole("dialog")
+  // The fork keeps the custom provider entry; its label must not resolve to a missing i18n key.
+  await expect(dialog.getByRole("button", { name: "Custom provider", exact: true })).toBeVisible()
   const openai = dialog.locator('[data-provider-id="openai"]')
   await expect(openai.locator('[data-slot="provider-connected"]')).toHaveText("2 connections")
   await expect(

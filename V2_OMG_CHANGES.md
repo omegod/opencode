@@ -798,3 +798,32 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - 根 `bun run check` 35/35 通过。
 - `packages/app` e2e「grouped sidebar peek closes after the pointer leaves」built 模式 3 次重复通过；修复前同一用例在 `data-peek` 仍存在处超时。
 - 用户已在 `OpenCode Dev` 桌面开发版完成手工验收：开启「按项目分组」并折叠侧栏后，peek 移开鼠标正常收回，添加项目菜单开关和关闭动画正常。
+
+## 35. 自定义提供商入口空白文案修复
+
+### 症状
+
+- 打开「连接提供商」，Services 第一行只显示地球图标，没有文字；点击仍能进入自定义提供商表单。
+- 这一行是 fork 自己合成并置顶的 `_custom` 入口，官方 v2.2.0 没有。
+
+### 根因
+
+- `packages/app/src/providers/connect/dialog.tsx` 用 `language.t("dialog.provider.custom.label")` 生成该行文案。
+- 上游 v2.2.0 的 `1da3604a35` 重做 integration 对话框时删除了 `dialog.provider.custom.label`，并从 picker 移除了自定义入口；fork 保留了入口和表单，但合并 `en.ts` / `zh.ts` 时沿用了上游的删除。
+- `language.t` 对字典外的 key 返回 `undefined`，Solid 渲染成空文本，所以只剩图标；英文和简中都会空白。
+
+### 修复
+
+- 改用已有的 `provider.custom.title`：en 为 `Custom provider`，zh 为 `自定义提供商`；不新增 key，也不再依赖上游已删除的 key。
+- 只改 `dialog.tsx` 一行；fork 的自定义 provider 表单、`_custom` 入口和点击行为不变。
+
+### 回归测试
+
+- `packages/app/e2e/regression/settings.spec.ts` 的 provider picker 用例新增断言：`Custom provider` 行可见。
+- 修复前该用例在断言处失败；修复后 built 模式通过（13.0s）。
+
+### 发布资产替换
+
+- 版本仍为 `2.2.0-fork.2`，重新构建并替换 GitHub Release `v2.2.0-fork.2` 的五个资产。
+- 新 ZIP 282887921 B、DMG 292670199 B；`latest-mac.yml` 的 SHA-512 与新产物一致。
+- 应用与内置 CLI 版本均为 `2.2.0-fork.2`，`codesign --verify --deep --strict` 通过。
