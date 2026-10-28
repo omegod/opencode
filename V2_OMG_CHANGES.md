@@ -779,3 +779,22 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - 新增 `packages/app/e2e/regression/tabs.spec.ts` 用例「grouped sidebar peek closes after the pointer leaves」：
   - 修复前在 `not.toHaveAttribute("data-peek", "")` 处超时失败；
   - 修复后 built e2e 3 次重复全部通过，同时验证添加项目菜单仍能打开、按 Esc 关闭后 `display: none`。
+
+## 34. v2.2.0-fork.2 发布
+
+### 构建与发布
+
+- 发布内容：§33 的分组侧栏 peek 修复；仓库版本仍为官方 `2.2.0`，安装包与内置 CLI 版本为 `2.2.0-fork.2`。
+- 内置 CLI 构建：`packages/cli` 下 `OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.2.0-fork.2 bun run build --single`；产物 `dist/cli-darwin-arm64/bin/opencode` 版本 `2.2.0-fork.2`。
+- 桌面构建：`packages/desktop` 下 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.2.0-fork.2 bun run build`，从 `packages/cli/dist` 复制 CLI 到 `resources/opencode-cli`。
+- 打包：`OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.2.0-fork.2 bunx electron-builder --mac --arm64 --publish never --config electron-builder.local.ts`；仓库版本不变，`-c.extraMetadata.version` / `OPENCODE_VERSION` 注入 `2.2.0-fork.2`。
+- 打包后核验：应用与内置 CLI 版本均为 `2.2.0-fork.2`；`app-update.yml` 更新源为 `omegod/opencode` prod/latest 渠道；`codesign --verify --deep --strict` 通过（`RedixDevCert`）；`latest-mac.yml` 的 SHA-512 与大小同同次构建的 ZIP（282885266 B）与 DMG（292671379 B）一致。
+- 发布沿用 macOS arm64：DMG、ZIP、各自 blockmap 与 `latest-mac.yml` 五个资产；Release/tag `v2.2.0-fork.2` 指向本轮发布提交（即本节所在提交），先创建 draft、上传并核对资产，再发布；随后核对 `releases/latest` 与 `releases/download/v2.2.0-fork.2/latest-mac.yml` 下载。
+- 首次安装提示：本地 `RedixDevCert` 自签，未公证；macOS 需在「隐私与安全性」中允许打开。
+
+### 验证记录
+
+- `packages/app` `bun typecheck` 通过（1,874 files）；`bun run test:unit` 912 通过 / 0 失败。
+- 根 `bun run check` 35/35 通过。
+- `packages/app` e2e「grouped sidebar peek closes after the pointer leaves」built 模式 3 次重复通过；修复前同一用例在 `data-peek` 仍存在处超时。
+- 用户已在 `OpenCode Dev` 桌面开发版完成手工验收：开启「按项目分组」并折叠侧栏后，peek 移开鼠标正常收回，添加项目菜单开关和关闭动画正常。
