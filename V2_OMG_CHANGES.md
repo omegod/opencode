@@ -751,3 +751,31 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - 打包后核验：应用与内置 CLI 版本均为 `2.2.0-fork.1`；`app-update.yml` 更新源为 `omegod/opencode` prod/latest 渠道；`codesign --verify --deep --strict` 通过（`RedixDevCert`）；`latest-mac.yml` 的 SHA-512 与大小同同次构建的 ZIP（282885318 B）与 DMG（292675101 B）一致。
 - 发布沿用 macOS arm64：DMG、ZIP、各自 blockmap 与 `latest-mac.yml` 五个资产；Release/tag `v2.2.0` 指向本轮发布提交（即本节所在提交），先创建 draft、上传并核对资产，再发布；随后核对 `releases/latest` 与 `releases/download/v2.2.0/latest-mac.yml` 下载。
 - 首次安装提示：本地 `RedixDevCert` 自签，未公证；macOS 需在「隐私与安全性」中允许打开。
+
+## 33. 分组侧栏 peek 不收回修复
+
+### 症状与触发
+
+- 开启「按项目分组」且侧栏折叠时，hover 左上角折叠按钮（或窗口左边缘）让侧栏 peek 出来，再把鼠标移开，面板一直停在 276px，不收回。
+- 关闭「按项目分组」后不触发；官方 v2.2.0 没有这个分组设置，也没有对应的常驻菜单。
+
+### 根因
+
+- `packages/app/src/shell/sidebar-peek.ts` 的 `held()` 用 `getClientRects().length > 0` 判断菜单是否打开。
+- fork 的分组侧栏在 `packages/app/src/shell/titlebar/project-group-add.tsx` 里用 `forceMount` 常驻「添加项目」菜单；`grouped-tab.css` 只用 `visibility: hidden` 隐藏它，元素仍有布局盒。
+- 于是 peek 一直认为有菜单打开，鼠标移开后拒绝关闭；只有分组模式会渲染这个菜单，所以 bug 只在分组模式出现。
+
+### 修复（只改 fork）
+
+- `project-group-add.tsx` 新增 `visible` 状态：菜单关闭且不在关闭动画中时 `display: none`，打开时显示；关闭动画 `titlebar-project-add-close` 结束后（内容仍带 `data-closed`）再隐藏。
+- 隐藏菜单不再有布局盒，`held()` 的 `getClientRects()` 返回 0，peek 正常收回；菜单的打开和关闭渐隐动画保持。
+- 不修改 upstream 的 `sidebar-peek.ts`；这是 fork 的分组菜单触发的行为，修复留在 fork 文件内。
+- 回滚：删除 `visible` signal、`style` 和 `onAnimationEnd`，把 `onOpenChange` 恢复为只在 open 时 `setOpened(true)`；删除下方 e2e 用例。
+
+### 验证记录
+
+- `packages/app` `bun typecheck` 通过（1,874 files）。
+- `packages/app` `bun run test:unit`：912 通过 / 0 失败。
+- 新增 `packages/app/e2e/regression/tabs.spec.ts` 用例「grouped sidebar peek closes after the pointer leaves」：
+  - 修复前在 `not.toHaveAttribute("data-peek", "")` 处超时失败；
+  - 修复后 built e2e 3 次重复全部通过，同时验证添加项目菜单仍能打开、按 Esc 关闭后 `display: none`。

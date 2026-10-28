@@ -625,6 +625,51 @@ for (const [screen, href] of [
   })
 }
 
+test("grouped sidebar peek closes after the pointer leaves", async ({ page }) => {
+  await mockWorkspace(page, {
+    name: "Tabs",
+    sessions: [a],
+    seed: {
+      settings: {
+        appearance: { tabLayout: "vertical", sidebarOpen: false, groupTabsByProject: true },
+      },
+      tabs: [a.id],
+    },
+  })
+  await page.goto(sessionHref(a.id))
+
+  const sidebar = page.locator('[data-slot="vertical-tabs-sidebar"]')
+  const addMenu = page.locator('[data-slot="tab-list-add-content"]')
+  await expect(sidebar).toHaveAttribute("data-state", "closed")
+  // Grouped mode only: the force-mounted add-project menu is what used to hold the peek open.
+  await expect(page.locator('[data-action="tab-list-add-project"]')).toBeAttached()
+  await expect(addMenu).toBeAttached()
+
+  await page
+    .locator('[data-slot="collapsed-sidebar-toggle"]')
+    .getByRole("button", { name: "Toggle sidebar", exact: true })
+    .hover()
+  await expect(sidebar).toHaveAttribute("data-peek", "")
+  await expect(page.locator('[data-slot="vertical-tabs-mount"]')).toHaveCSS("transform", "none")
+
+  await page.mouse.move(800, 500)
+  await expect(sidebar).not.toHaveAttribute("data-peek", "")
+  await expect(sidebar).toHaveCSS("width", "0px")
+
+  // The menu must still open after being dropped from layout while closed.
+  await page
+    .locator('[data-slot="collapsed-sidebar-toggle"]')
+    .getByRole("button", { name: "Toggle sidebar", exact: true })
+    .click()
+  await expect(sidebar).toHaveAttribute("data-state", "open")
+  await page.locator('[data-slot="tab-list-label"]').hover()
+  await page.locator('[data-action="tab-list-add-project"]').click()
+  await expect(addMenu).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(addMenu).toBeHidden()
+  await expect(addMenu).toHaveCSS("display", "none")
+})
+
 test("vertical tab gaps hover and select the nearest row", async ({ page }) => {
   await mockWorkspace(page, {
     name: "Tabs",

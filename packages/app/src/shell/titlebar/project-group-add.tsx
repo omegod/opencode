@@ -34,6 +34,11 @@ export function ProjectGroupAdd(props: { exclude: () => Set<string> }) {
   // The menu content is force-mounted (see tab-nav.css), so the closed state must not run the
   // close fade before the menu ever opened; that would flash the popup on every mount.
   const [opened, setOpened] = createSignal(false)
+  // A force-mounted, closed menu still has a layout box when it is only hidden with visibility.
+  // Keep it out of layout when closed so the sidebar peek's "a menu is open" check (which reads
+  // getClientRects) does not hold the peek open after the pointer leaves. Stay visible through the
+  // close fade, then drop it out of layout once that animation ends.
+  const [visible, setVisible] = createSignal(false)
 
   const addable = () =>
     global.servers.list().flatMap((conn) => {
@@ -100,7 +105,10 @@ export function ProjectGroupAdd(props: { exclude: () => Set<string> }) {
       modal={false}
       placement="bottom-end"
       onOpenChange={(open) => {
-        if (open) setOpened(true)
+        if (open) {
+          setOpened(true)
+          setVisible(true)
+        }
       }}
     >
       <Tooltip placement="bottom" value={language.t("home.project.add")}>
@@ -119,6 +127,12 @@ export function ProjectGroupAdd(props: { exclude: () => Set<string> }) {
           data-slot="tab-list-add-content"
           data-opened={opened() ? "" : undefined}
           class="w-[243px] overflow-hidden rounded-md border-0 bg-v2-background-bg-layer-01 shadow-[var(--v2-elevation-floating)] focus:outline-none"
+          style={{ display: visible() ? undefined : "none" }}
+          onAnimationEnd={(event: AnimationEvent) => {
+            if (event.target !== event.currentTarget || !(event.currentTarget instanceof HTMLElement)) return
+            if (!event.currentTarget.matches("[data-closed]")) return
+            setVisible(false)
+          }}
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
           <div class="max-h-[224px] overflow-y-auto">
