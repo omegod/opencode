@@ -1,12 +1,14 @@
 const PROVIDER_ID = /^[a-z0-9][a-z0-9-_]*$/
 const OPENAI_COMPATIBLE = "@ai-sdk/openai-compatible"
 const OPENAI_RESPONSES = "@ai-sdk/openai"
+// Bundled with Core, so an Anthropic-compatible provider never waits for an npm install.
+const ANTHROPIC_COMPATIBLE = "@opencode/ai/providers/anthropic-compatible"
 const TOKEN_COUNT = /^\d+$/
 
 // Mirrors the generated client's Config.Patch provider value type.
 type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue }
 
-export type Protocol = "compatible" | "response"
+export type Protocol = "compatible" | "response" | "anthropic"
 
 type Translator = (key: string, vars?: Record<string, string | number | boolean>) => string
 
@@ -176,7 +178,12 @@ export function validateCustomProvider(input: ValidateArgs) {
       providerID,
       name,
       config: {
-        npm: input.form.protocol === "response" ? OPENAI_RESPONSES : OPENAI_COMPATIBLE,
+        npm:
+          input.form.protocol === "anthropic"
+            ? ANTHROPIC_COMPATIBLE
+            : input.form.protocol === "response"
+              ? OPENAI_RESPONSES
+              : OPENAI_COMPATIBLE,
         name,
         ...(env ? { env: [env] } : {}),
         options: {
@@ -257,11 +264,13 @@ export type ExistingProvider = {
 // from what the config file actually contains.
 export function prefillCustomProvider(providerID: string, provider: ExistingProvider): FormState {
   const pkg = (provider.package ?? "").replace(/^aisdk:/, "")
-  const protocol: Protocol = pkg.includes("openai-compatible")
-    ? "compatible"
-    : pkg.includes("openai")
-      ? "response"
-      : "compatible"
+  const protocol: Protocol = pkg.includes("anthropic-compatible")
+    ? "anthropic"
+    : pkg.includes("openai-compatible")
+      ? "compatible"
+      : pkg.includes("openai")
+        ? "response"
+        : "compatible"
   const settings = provider.settings ?? {}
   const headers = Object.entries(provider.headers ?? {}).map(([key, value]) => headerRow(key, String(value)))
   const models = Object.entries(provider.models ?? {}).map(([id, model]) => modelFromConfig(id, model))
@@ -275,7 +284,7 @@ export function prefillCustomProvider(providerID: string, provider: ExistingProv
         ? settings.apiKey
         : "",
     protocol,
-    models: models.length ? models : [modelRow()],
+    models: models.length ? models : [modelRow(protocol)],
     headers: headers.length ? headers : [headerRow()],
     err: {},
   }
@@ -314,20 +323,27 @@ const nextRow = () => `row-${row++}`
 
 export const propertyRow = (key = "", value = ""): PropertyRow => ({ row: nextRow(), key, value, err: {} })
 
-const defaultProperties = (): PropertyRow[] => [
-  propertyRow("options", JSON.stringify({ reasoningEffort: "high" })),
-  propertyRow("modalities", JSON.stringify({ input: ["text"], output: ["text"] })),
-  propertyRow("variants", JSON.stringify({ high: { reasoningEffort: "high" } })),
-]
+const defaultProperties = (protocol: Protocol): PropertyRow[] =>
+  protocol === "anthropic"
+    ? [
+        // Anthropic requires budget_tokens below max_tokens; the row's default output limit is 16000.
+        propertyRow("options", JSON.stringify({ thinking: { type: "enabled", budgetTokens: 8192 } })),
+        propertyRow("modalities", JSON.stringify({ input: ["text", "image"], output: ["text"] })),
+      ]
+    : [
+        propertyRow("options", JSON.stringify({ reasoningEffort: "high" })),
+        propertyRow("modalities", JSON.stringify({ input: ["text"], output: ["text"] })),
+        propertyRow("variants", JSON.stringify({ high: { reasoningEffort: "high" } })),
+      ]
 
-export const modelRow = (): ModelRow => ({
+export const modelRow = (protocol: Protocol = "compatible"): ModelRow => ({
   row: nextRow(),
   id: "",
   name: "",
   context: "200000",
   output: "16000",
   expanded: false,
-  properties: defaultProperties(),
+  properties: defaultProperties(protocol),
   err: {},
 })
 

@@ -896,3 +896,71 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - 分组侧栏 e2e 3/3 通过（peek、draft 归属、添加项目列表）。
 - `settings.spec.ts` + `timeline-stream.spec.ts`：101 通过、8 失败。8 个失败均因测试用 `Control+,` / `Control+]` 触发 `mod+comma` 与 `mod+]`，在 macOS 上实际绑定为 `⌘,` / `⌘]`；属既有平台差异，不是本次合并引入。
 - `zh.ts` 未补齐上游新增文案（合并前已有大量缺失），按英文回退处理。
+
+## 38. 自定义提供商弹层标题修复
+
+### 症状
+
+- 进入「自定义提供商」表单时，弹层标题显示成上一个提供商的「连接 302.AI」，或者为空。
+- 表单内又渲染了一次「自定义提供商」标题，与弹层标题重复。
+
+### 根因
+
+- 弹层标题统一读 `state.title`，它只由 `ProviderConnection` 在 `createEffect` 里写入；`CustomProviderForm` 走的是另一条渲染分支，从不设置标题，于是保留上一个提供商的值。
+- `CustomProviderForm` 自身在表单上方渲染了「图标 + 自定义提供商」一行，与弹层 header 重复。
+
+### 修复
+
+- `packages/app/src/providers/connect/dialog.tsx`：header 的选中分支按 `CUSTOM_ID` 计算标题，自定义提供商使用 `provider.custom.title`；其余提供商仍用 `state.title`。
+- `packages/app/src/providers/credentials/dialog.tsx`：删除表单上方的图标与标题行，移除随之不再使用的 `CustomManagedProviderIcon` import。
+- 未新增 i18n 键，中英文沿用已有的 `provider.custom.title`（`Custom provider` / `自定义提供商`）。
+
+### 回归测试
+
+- `packages/app/e2e/regression/settings.spec.ts` 新增「providers: the custom provider step is titled Custom provider」：先进入 302.AI 的连接步骤，确认弹层可访问名为 `Connect 302.AI`，返回后进入自定义提供商，断言可访问名为 `Custom provider`，且弹层内该文案只出现一次。
+- 还原源码后确认失败：实测可访问名为 `Connect 302.AI`；修复后通过。
+
+### 验证
+
+- `packages/app` `bun typecheck` 通过（1,890 files）。
+- `packages/app` `bun run test:unit`：937 通过 / 0 失败。
+- 该 e2e 用例通过。
+- 开发版桌面端已通过 HMR 应用改动，可直接查看。
+
+## 39. 自定义提供商拆分 OpenAI / Anthropic
+
+### 背景
+
+「自定义提供商」只写了 OpenAI 协议（`@ai-sdk/openai-compatible` 或 `@ai-sdk/openai`），无法配置 Anthropic Messages 协议的代理。
+
+### Anthropic 协议配置
+
+- 使用 Core 内置的 `@opencode/ai/providers/anthropic-compatible`，不经过 npm 安装；`@ai-sdk/anthropic` 不是仓库依赖，写它会在首次使用时下载。
+- 写出的配置仍是 `provider.<id>`（`config.update` 的旧键），核心迁移为 `package` / `settings` / `headers`：
+  - `npm`: `@opencode/ai/providers/anthropic-compatible`
+  - `options.baseURL`: 指向包含 `/messages` 的目录，默认 `https://api.anthropic.com/v1`
+  - `options.apiKey`: 走 `x-api-key`；`options.headers` 作为请求头覆盖层，Bearer 代理可自行加 `Authorization`
+  - 模型 `options` 对应 Anthropic Messages 参数（`thinking`、`effort` 等），未知键被忽略
+- 路由固定 `POST {baseURL}/messages` 并发送 `anthropic-version: 2023-06-01`。
+- 模型没有显式 `variants` 时，Core 按 Anthropic 协议自动生成思考变体。
+
+### 改动
+
+- i18n：`provider.custom.title` 改为「自定义 OpenAI 提供商 / Custom OpenAI provider」；新增 Anthropic 标题与说明文案。
+- `providers/credentials/form.ts`：
+  - `Protocol` 增加 `"anthropic"`，校验时映射到内置包名。
+  - `prefillCustomProvider` 从包名反推协议，编辑 Anthropic 提供商保存后仍是 Anthropic 包。
+  - `modelRow(protocol)`：Anthropic 预填 `options.thinking = { type: "enabled", budgetTokens: 8192 }` 与 `modalities`（文本 + 图片），不写 OpenAI 的 `reasoningEffort` 变体。
+- `providers/credentials/dialog.tsx`：新增 `protocol` 与 `onTitle`；Anthropic 模式隐藏协议选择器并切换说明文案；新增模型沿用当前协议默认值。
+- `providers/connect/dialog.tsx`：新增 `_custom_anthropic` 条目，两个自定义行都排在「服务」分组顶部；编辑模式由表单上报实际标题。
+
+### 测试
+
+- `providers/credentials/form.test.ts`：anthropic 协议映射到内置包名；prefill 反推协议并生成 Anthropic 模型默认属性。
+- `e2e/regression/settings.spec.ts`：更新 OpenAI 标签断言；新增「providers: a custom provider step is titled for its protocol」，覆盖两个条目、标题、Anthropic 说明文案以及协议选择器不出现。
+
+### 验证
+
+- `bun typecheck`（1,890 files）与根 `bun run check` 35/35 通过。
+- `packages/app` `bun run test:unit`：939 通过 / 0 失败。
+- `settings.spec.ts` 的 `providers:` 13 个用例全部通过。

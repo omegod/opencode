@@ -22,10 +22,11 @@ import {
   type ExistingProvider,
   type Protocol,
 } from "./form"
-import { CustomManagedProviderIcon } from "@/providers/models/provider-group"
 import { FormSelect } from "./form-select"
 
-export function CustomProviderForm(props: { autofocus?: boolean; edit?: string } = {}) {
+export function CustomProviderForm(
+  props: { autofocus?: boolean; edit?: string; protocol?: Protocol; onTitle?: (title: string) => void } = {},
+) {
   const dialog = useDialog()
   const data = useData()
   const language = useLanguage()
@@ -36,8 +37,8 @@ export function CustomProviderForm(props: { autofocus?: boolean; edit?: string }
     name: "",
     baseURL: "",
     apiKey: "",
-    protocol: "compatible",
-    models: [modelRow()],
+    protocol: props.protocol ?? "compatible",
+    models: [modelRow(props.protocol)],
     headers: [headerRow()],
     err: {},
   })
@@ -67,11 +68,20 @@ export function CustomProviderForm(props: { autofocus?: boolean; edit?: string }
   // Edit mode waits for the config entry so the form never flashes empty fields first.
   const ready = () => !props.edit || configProviders.state === "ready" || !!configProviders.error
 
+  const anthropic = () => form.protocol === "anthropic"
+
+  createEffect(() => {
+    if (!ready()) return
+    props.onTitle?.(
+      language.t(anthropic() ? "provider.custom.anthropic.title" : "provider.custom.title"),
+    )
+  })
+
   const addModel = () => {
     setForm(
       "models",
       produce((rows) => {
-        rows.push(modelRow())
+        rows.push(modelRow(form.protocol))
       }),
     )
   }
@@ -219,18 +229,21 @@ export function CustomProviderForm(props: { autofocus?: boolean; edit?: string }
   return (
     <Show when={ready()} fallback={<div class="flex justify-center p-10"><Spinner /></div>}>
       <div class="flex flex-col gap-6 px-2.5 pb-3 overflow-y-auto max-h-[60vh]">
-        <div class="px-2.5 flex gap-4 items-center">
-          <CustomManagedProviderIcon class="size-5 shrink-0" />
-          <div class="text-16-medium text-text-strong">{language.t("provider.custom.title")}</div>
-        </div>
-
         <form onSubmit={save} class="px-2.5 pb-6 flex flex-col gap-6">
           <p class="text-14-regular text-text-base">
-            {language.t("provider.custom.description.prefix")}
+            {language.t(
+              anthropic()
+                ? "provider.custom.anthropic.description.prefix"
+                : "provider.custom.description.prefix",
+            )}
             <ExternalLink href="https://opencode.ai/v2/docs/providers#custom" tabIndex={-1}>
               {language.t("provider.custom.description.link")}
             </ExternalLink>
-            {language.t("provider.custom.description.suffix")}
+            {language.t(
+              anthropic()
+                ? "provider.custom.anthropic.description.suffix"
+                : "provider.custom.description.suffix",
+            )}
           </p>
 
           <div class="flex flex-col gap-4">
@@ -268,18 +281,20 @@ export function CustomProviderForm(props: { autofocus?: boolean; edit?: string }
               value={form.apiKey}
               onChange={(v) => setField("apiKey", v)}
             />
-            <div class="flex flex-col gap-2">
-              <label class="text-12-medium text-text-weak">{language.t("provider.custom.protocol.label")}</label>
-              <FormSelect
-                label={language.t("provider.custom.protocol.label")}
-                current={form.protocol}
-                onSelect={(value) => setForm("protocol", value as Protocol)}
-                options={[
-                  { value: "compatible", label: language.t("provider.custom.protocol.compatible") },
-                  { value: "response", label: language.t("provider.custom.protocol.response") },
-                ]}
-              />
-            </div>
+            <Show when={!anthropic()}>
+              <div class="flex flex-col gap-2">
+                <label class="text-12-medium text-text-weak">{language.t("provider.custom.protocol.label")}</label>
+                <FormSelect
+                  label={language.t("provider.custom.protocol.label")}
+                  current={form.protocol}
+                  onSelect={(value) => setForm("protocol", value as Protocol)}
+                  options={[
+                    { value: "compatible", label: language.t("provider.custom.protocol.compatible") },
+                    { value: "response", label: language.t("provider.custom.protocol.response") },
+                  ]}
+                />
+              </div>
+            </Show>
           </div>
 
           <div class="flex flex-col gap-3">

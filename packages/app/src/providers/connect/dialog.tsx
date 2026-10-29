@@ -62,6 +62,7 @@ import "@/shell/search-list.css"
 import "./models.css"
 
 const CUSTOM_ID = "_custom"
+const CUSTOM_ANTHROPIC_ID = "_custom_anthropic"
 
 export function useProviderConnectController() {
   const [store, setStore] = createStore<{ selected?: string; edit?: string }>({})
@@ -135,10 +136,19 @@ export const DialogConnectProvider: Component<{
     return (
       <Switch>
         <Match keyed when={controller.edit()}>
-          {(providerID) => <CustomProviderForm autofocus={false} edit={providerID} />}
+          {(providerID) => (
+            <CustomProviderForm
+              autofocus={false}
+              edit={providerID}
+              onTitle={(title) => setState("title", title)}
+            />
+          )}
         </Match>
         <Match when={controller.selected() === CUSTOM_ID}>
-          <CustomProviderForm autofocus={false} />
+          <CustomProviderForm autofocus={false} protocol="compatible" />
+        </Match>
+        <Match when={controller.selected() === CUSTOM_ANTHROPIC_ID}>
+          <CustomProviderForm autofocus={false} protocol="anthropic" />
         </Match>
         <Match
           keyed
@@ -232,25 +242,35 @@ export const DialogConnectProvider: Component<{
             </div>
           </Match>
           <Match when={controller.selected()}>
-            {(provider) => (
-              <div class="flex min-w-0 flex-1 items-center gap-2">
-                <Show when={!props.standalone || state.stepBack}>
-                  <button
-                    type="button"
-                    class="-my-0.5 -ms-0.5 flex size-5 shrink-0 items-center justify-center rounded-sm text-v2-icon-icon-muted hover:bg-v2-overlay-simple-overlay-hover focus-visible:bg-v2-overlay-simple-overlay-hover focus-visible:outline-none"
-                    onClick={() => back.current()}
-                    aria-label={language.t("common.goBack")}
-                  >
-                    <Icon name="arrow-left" size="small" />
-                  </button>
-                </Show>
-                <ProviderModelIcon
-                  provider={{ id: provider(), name: state.title }}
-                  class="shrink-0 text-v2-icon-icon-base"
-                />
-                <DialogTitle>{state.title}</DialogTitle>
-              </div>
-            )}
+            {(provider) => {
+              // The custom forms never report a connection title, so name them here instead of keeping the last provider's.
+              const title = () => {
+                if (controller.edit()) return state.title
+                if (provider() === CUSTOM_ANTHROPIC_ID) return language.t("provider.custom.anthropic.title")
+                if (provider() === CUSTOM_ID) return language.t("provider.custom.title")
+                return state.title
+              }
+
+              return (
+                <div class="flex min-w-0 flex-1 items-center gap-2">
+                  <Show when={!props.standalone || state.stepBack}>
+                    <button
+                      type="button"
+                      class="-my-0.5 -ms-0.5 flex size-5 shrink-0 items-center justify-center rounded-sm text-v2-icon-icon-muted hover:bg-v2-overlay-simple-overlay-hover focus-visible:bg-v2-overlay-simple-overlay-hover focus-visible:outline-none"
+                      onClick={() => back.current()}
+                      aria-label={language.t("common.goBack")}
+                    >
+                      <Icon name="arrow-left" size="small" />
+                    </button>
+                  </Show>
+                  <ProviderModelIcon
+                    provider={{ id: provider(), name: title() }}
+                    class="shrink-0 text-v2-icon-icon-base"
+                  />
+                  <DialogTitle>{title()}</DialogTitle>
+                </div>
+              )
+            }}
           </Match>
           <Match when={true}>
             <DialogTitleGroup
@@ -306,9 +326,9 @@ function ProviderPicker(props: { directory?: string; onSelect: (provider: string
     return integrations.list().filter((row) => `${row.id} ${row.name}`.toLowerCase().includes(query))
   })
 
-  const custom = (): IntegrationInfo => ({
-    id: CUSTOM_ID,
-    name: language.t("provider.custom.title"),
+  const custom = (protocol: "openai" | "anthropic"): IntegrationInfo => ({
+    id: protocol === "anthropic" ? CUSTOM_ANTHROPIC_ID : CUSTOM_ID,
+    name: language.t(protocol === "anthropic" ? "provider.custom.anthropic.title" : "provider.custom.title"),
     methods: [],
     connections: [],
   })
@@ -341,11 +361,11 @@ function ProviderPicker(props: { directory?: string; onSelect: (provider: string
       .filter((row) => !POPULAR.includes(row.id))
       .toSorted((a, b) => a.name.localeCompare(b.name))
     const query = store.filter.trim().toLowerCase()
-    const row = custom()
+    const customRows = [custom("openai"), custom("anthropic")].filter(
+      (row) => !query || `${row.id} ${row.name}`.toLowerCase().includes(query),
+    )
 
-    if (query && !`${row.id} ${row.name}`.toLowerCase().includes(query)) return rows
-
-    return [row, ...rows]
+    return [...customRows, ...rows]
   })
 
   const groups = () => [
@@ -357,7 +377,10 @@ function ProviderPicker(props: { directory?: string; onSelect: (provider: string
 
   // An integration that only reads environment variables has nothing to connect from here.
   const disabled = (row: IntegrationInfo) =>
-    row.id !== CUSTOM_ID && connectMethods(row).length === 0 && providerAccounts(row).length === 0
+    row.id !== CUSTOM_ID &&
+    row.id !== CUSTOM_ANTHROPIC_ID &&
+    connectMethods(row).length === 0 &&
+    providerAccounts(row).length === 0
 
   const rows = createMemo(() => [...connected(), ...mcp(), ...popular(), ...services()].filter((row) => !disabled(row)))
 

@@ -1207,7 +1207,7 @@ test("providers: the connect dialog lists connected providers and manages their 
   await settings.getByRole("button", { name: "Show more providers", exact: true }).click()
   const dialog = page.getByRole("dialog")
   // The fork keeps the custom provider entry; its label must not resolve to a missing i18n key.
-  await expect(dialog.getByRole("button", { name: "Custom provider", exact: true })).toBeVisible()
+  await expect(dialog.getByRole("button", { name: "Custom OpenAI provider", exact: true })).toBeVisible()
   const openai = dialog.locator('[data-provider-id="openai"]')
   await expect(openai.locator('[data-slot="provider-connected"]')).toHaveText("Work")
   await expect(
@@ -1263,6 +1263,30 @@ test("providers: the connect dialog lists connected providers and manages their 
   await expect(dialog.getByPlaceholder("API key")).toBeVisible()
   await dialog.getByRole("button", { name: "Navigate back", exact: true }).click()
   await expect(list).toBeVisible()
+})
+
+test("providers: a custom provider step is titled for its protocol", async ({ page }) => {
+  const { settings } = await open(page, {
+    integrations: () => [{ id: "302ai", name: "302.AI", methods: [{ type: "key", label: "API key" }], connections: [] }],
+  })
+  await settings.getByRole("tab", { name: "Providers", exact: true }).click()
+  await settings.getByRole("button", { name: "Show more providers", exact: true }).click()
+  const dialog = page.getByRole("dialog")
+  await dialog.locator('[data-provider-id="302ai"]').click()
+  // The custom forms never report a title of their own, so they used to keep this one.
+  await expect(dialog).toHaveAccessibleName("Connect 302.AI")
+  await dialog.getByRole("button", { name: "Navigate back", exact: true }).click()
+  await dialog.getByRole("button", { name: "Custom OpenAI provider", exact: true }).click()
+  await expect(dialog).toHaveAccessibleName("Custom OpenAI provider")
+  // The header names the step, so the form must not repeat the same heading.
+  await expect(dialog.getByText("Custom OpenAI provider", { exact: true })).toHaveCount(1)
+
+  await dialog.getByRole("button", { name: "Navigate back", exact: true }).click()
+  await dialog.getByRole("button", { name: "Custom Anthropic provider", exact: true }).click()
+  await expect(dialog).toHaveAccessibleName("Custom Anthropic provider")
+  await expect(dialog.getByText("Configure an Anthropic-compatible provider.")).toBeVisible()
+  // Anthropic only speaks Messages, so the OpenAI protocol picker is gone.
+  await expect(dialog.getByText("Protocol format", { exact: true })).toHaveCount(0)
 })
 
 test("providers: adding an account starts a lone method once", async ({ page, context }) => {
