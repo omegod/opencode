@@ -964,3 +964,30 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - `bun typecheck`（1,890 files）与根 `bun run check` 35/35 通过。
 - `packages/app` `bun run test:unit`：939 通过 / 0 失败。
 - `settings.spec.ts` 的 `providers:` 13 个用例全部通过。
+
+## 40. v2.2.1-fork.1 发布
+
+### 发布内容
+
+- 合并上游 v2.2.1（§37）。
+- 分组侧栏项目归属与添加项目列表修复（§36）。
+- 自定义提供商拆分为 OpenAI / Anthropic，并修正弹层标题（§38、§39）。
+- 仓库版本为官方 `2.2.1`，安装包与内置 CLI 版本为 `2.2.1-fork.1`。
+
+### 构建
+
+- 内置 CLI：`packages/cli` 下 `OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.2.1-fork.1 bun run build --single`，产物 `dist/cli-darwin-arm64/bin/opencode`，`--version` 输出 `2.2.1-fork.1`。
+- 桌面构建：`packages/desktop` 下 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.2.1-fork.1 bun run build`，脚本从 `packages/cli/dist` 复制 CLI 到 `resources/opencode-cli`。
+- 打包：`OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.2.1-fork.1 bunx electron-builder --mac --arm64 --publish never --config electron-builder.local.ts`；打包前清空 `dist/`。
+
+### 核验
+
+- 应用 `CFBundleShortVersionString` 与内置 `opencode-cli --version` 均为 `2.2.1-fork.1`。
+- `app-update.yml`：`omegod/opencode`、`github`、`latest` 渠道。
+- `codesign --verify --deep --strict` 通过（`RedixDevCert`，`timestamp: none`）。
+- `latest-mac.yml` 的 SHA-512 与大小同 ZIP（282,749,466 B）和 DMG（292,466,000 B）一致。
+
+### 发布
+
+- 资产：DMG、ZIP、两个 blockmap、`latest-mac.yml`，共 5 个。
+- 先创建 draft、上传并核对资产，再发布；Release/tag `v2.2.1-fork.1` 指向本节所在提交。
