@@ -13,6 +13,7 @@ import { Keybind } from "@opencode/ui/keybind"
 import type { BackgroundTask, MountedSession, SessionScreen } from "@opencode/plugin/gui"
 import { PluginSlot } from "@/runtime/plugin/render"
 import { useLanguage } from "@/runtime/i18n/language"
+import { useSettings } from "@/settings/model"
 import { useServer } from "@/runtime/server/current"
 import { useWorkspaceLocation } from "@/workspaces/location"
 import { Timeline, TimelineRow } from "@opencode/session-ui/timeline/projection"
@@ -404,7 +405,10 @@ function MessageTimelineView(
     setTitle({ draft: "", editing: false, menuOpen: false, pendingRename: false })
   })
 
+  const settings = useSettings()
+
   const rowRenderer = createSessionTimelineRowRenderer({
+    foldUserMessages: settings.general.foldUserMessages,
     sessionID: () => sessionID()!,
     status: sessionStatus,
     projection,
