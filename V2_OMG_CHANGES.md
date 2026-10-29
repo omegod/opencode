@@ -827,3 +827,36 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - 版本仍为 `2.2.0-fork.2`，重新构建并替换 GitHub Release `v2.2.0-fork.2` 的五个资产。
 - 新 ZIP 282887921 B、DMG 292670199 B；`latest-mac.yml` 的 SHA-512 与新产物一致。
 - 应用与内置 CLI 版本均为 `2.2.0-fork.2`，`codesign --verify --deep --strict` 通过。
+
+## 36. 分组侧栏项目归属与添加项目列表修复
+
+### 症状
+
+- 开启「按项目分组」后，新会话（draft）的分组名显示成上级目录项目，例如 `caichenghu`，而不是当前项目。
+- 分组侧栏的「添加项目」弹层与主页项目列表不一致，多出 `/` 项目和从未使用过的服务端项目。
+
+### 根因
+
+- `packages/app/src/shell/titlebar/project-tab-list.tsx` 的 `matchProject` 用 `projects.find(...)` 取**第一个包含该目录**的项目，而不是精确或最长匹配。客户端 `projectOrder` 把 `/Users/caichenghu` 排在最前，它包含当前仓库，于是永远先命中。
+- draft 分支还把 `tab.worktree` 当成目录。它实际是 workspace 选择值（`main` / `create` / worktree 路径），选中 workspace 时分组会变成 `main` / `create`。
+- `packages/app/src/shell/titlebar/project-group-add.tsx` 的 `addable()` 用 `projects.list()`（服务端全部项目），主页用 `projects.used()`（本客户端用过的项目）。`/` 和未使用项目因此只出现在弹层。
+- `/` 来自服务端历史数据：v1 迁移写入的 `global` 项目和按目录 hash 创建的 `e22c…` 项目；后者仍有 4 条会话，不做数据库删除。
+
+### 修复
+
+- 删除 `matchProject` 及 `LocalProject` / `isProjectDirectory` import。
+- draft 使用 `tab.directory` 和 `projects.forDirectory()`；未加载的 session 同样走 `forDirectory`，已加载的继续用 `projectForSession`。`forDirectory` 先精确匹配 worktree/sandbox，再按路径长度取最长祖先。
+- `addable()` 改用 `projects.used()`，与主页同源；`used()` 内部已用 `unique()` 去重，重复 worktree 不再出现两行。
+- 不新增根项目过滤：只要 `/` 不在 `usedProjectIDs`，主页和弹层都不会显示它。新项目仍可通过弹层底部的「打开文件夹」添加。
+
+### 回归测试
+
+- `packages/app/e2e/regression/tabs.spec.ts` 新增「grouped sidebar keeps a draft in its own project instead of an ancestor」：父项目 `C:/OpenCode` 排在子项目 `C:/OpenCode/Nested` 前，draft 在子目录；修复前出现 `OpenCode` + `Nested` 两个分组，修复后只有 `Nested`。
+- 新增「grouped sidebar add menu lists this client's projects only」：服务端有 `/`、未使用项目和两个 used 项目；修复前菜单为 `Shared`、`/`、`Unused`、`Open Folder` 四项，修复后只有 `Shared` 和 `Open Folder`。
+- 两个用例均在还原源码后确认失败，修复后 built 模式通过。
+
+### 验证
+
+- `packages/app` `bun typecheck` 通过（1,874 files）。
+- `packages/app` 标题栏单测 33 通过 / 0 失败。
+- 根 `bun run check` 通过。

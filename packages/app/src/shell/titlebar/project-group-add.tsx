@@ -24,8 +24,8 @@ const SESSION_INDEX_LIMIT = 100
 const menuItemClass =
   "flex h-7 min-w-0 items-center gap-2 rounded-[6px] px-1.5 text-[13px] font-[440] leading-5 text-v2-text-text-muted [font-family:var(--v2-font-family-sans)] data-[highlighted]:bg-v2-background-bg-layer-01 data-[highlighted]:text-v2-text-text-base"
 
-// Hover-revealed "add project" entry on the grouped list label row. Offers the
-// server's projects that have no group yet, plus a pinned open-folder action.
+// Hover-revealed "add project" entry on the grouped list label row. Offers this
+// client's used projects that have no group yet, plus a pinned open-folder action.
 export function ProjectGroupAdd(props: { exclude: () => Set<string> }) {
   const global = useGlobal()
   const tabs = useTabs()
@@ -45,7 +45,7 @@ export function ProjectGroupAdd(props: { exclude: () => Set<string> }) {
       const key = ServerConnection.key(conn)
       const context = global.ensureServerCtx(conn)
       return context.projects
-        .list()
+        .used()
         .filter((project) => !props.exclude().has(projectGroupKey(key, project.worktree)))
         .map((project) => ({ conn, project }))
     })

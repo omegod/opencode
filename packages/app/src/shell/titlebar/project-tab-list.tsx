@@ -13,8 +13,6 @@ import { useGlobal } from "@/runtime/server/runtime"
 import { useCommand } from "@/shell/commands/command"
 import { useTabs } from "@/shell/tabs/tabs"
 import { projectForSession } from "@/shell/layout/helpers"
-import type { LocalProject } from "@/shell/state/layout"
-import { isProjectDirectory } from "@/workspaces/paths"
 import { TabStripEntry } from "./tab-entry"
 import { ProjectGroupAdd } from "./project-group-add"
 import { ProjectTabGroupHeader } from "./project-tab-group"
@@ -27,11 +25,6 @@ import {
   projectSortableId,
   type TabGroup,
 } from "./tab-groups"
-
-function matchProject(projects: LocalProject[], directory: string) {
-  if (!directory) return undefined
-  return projects.find((project) => isProjectDirectory(project, directory))
-}
 
 function activationSensor() {
   return PointerSensor.configure({
@@ -117,8 +110,7 @@ export function ProjectTabList(props: {
       const ctx = conn ? global.ensureServerCtx(conn) : undefined
       const projects = ctx?.projects.list() ?? []
       if (tab.type === "draft") {
-        const directory = tab.worktree ?? tab.directory
-        return { tab, server: tab.server, directory, project: matchProject(projects, directory) }
+        return { tab, server: tab.server, directory: tab.directory, project: ctx?.projects.forDirectory(tab.directory) }
       }
       const pending = tabs.pendingSession(tab.server, tab.sessionId)
       const session = ctx?.data.session.get(tab.sessionId)
@@ -128,7 +120,7 @@ export function ProjectTabList(props: {
         tab,
         server: tab.server,
         directory,
-        project: session ? projectForSession(session, projects) : matchProject(projects, directory),
+        project: session ? projectForSession(session, projects) : ctx?.projects.forDirectory(directory),
       }
     }),
   )

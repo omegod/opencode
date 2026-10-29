@@ -670,6 +670,51 @@ test("grouped sidebar peek closes after the pointer leaves", async ({ page }) =>
   await expect(addMenu).toHaveCSS("display", "none")
 })
 
+test("grouped sidebar keeps a draft in its own project instead of an ancestor", async ({ page }) => {
+  const parent = project({ id: "proj_parent", directory: "C:/OpenCode", name: "OpenCode" })
+  const nested = project({ id: "proj_nested", directory: "C:/OpenCode/Nested", name: "Nested" })
+  await mockWorkspace(page, {
+    name: "Nested",
+    directory: "C:/OpenCode/Nested",
+    projects: [parent, nested],
+    seed: {
+      settings: { appearance: { tabLayout: "vertical", sidebarOpen: true, groupTabsByProject: true } },
+      tabs: ["ses_nested", { draft: "draft_nested", directory: "C:/OpenCode/Nested" }],
+    },
+  })
+  await page.goto(sessionHref("ses_nested"))
+
+  // The draft belongs to C:/OpenCode/Nested. Matching the first containing project picked the
+  // parent C:/OpenCode and split it into a second group.
+  await expect(page.locator('[data-slot="tab-group-title"]')).toHaveText(["Nested"])
+})
+
+test("grouped sidebar add menu lists this client's projects only", async ({ page }) => {
+  const picker = project({ id: "proj_picker", directory: "C:/OpenCode/Picker", name: "Picker" })
+  const shared = project({ id: "proj_shared", directory: "C:/OpenCode/Shared", name: "Shared" })
+  const root = project({ id: "proj_root", directory: "/", name: "/" })
+  const unused = project({ id: "proj_unused", directory: "C:/OpenCode/Unused", name: "Unused" })
+  await mockWorkspace(page, {
+    name: "Picker",
+    sessions: [{ id: "ses_picker" }],
+    projects: [picker, shared, root, unused],
+    seed: {
+      usedProjects: { local: ["proj_picker", "proj_shared"] },
+      settings: { appearance: { tabLayout: "vertical", sidebarOpen: true, groupTabsByProject: true } },
+      tabs: ["ses_picker"],
+    },
+  })
+  await page.goto(sessionHref("ses_picker"))
+
+  await page.locator('[data-slot="tab-list-label"]').hover()
+  await page.locator('[data-action="tab-list-add-project"]').click()
+  const menu = page.locator('[data-slot="tab-list-add-content"]')
+  await expect(menu).toBeVisible()
+  // Same source as Home: the used projects minus the one already grouped. The root and unused
+  // projects exist on the server but were never used here. The leading letter is the avatar.
+  await expect(menu.getByRole("menuitem")).toHaveText([/Shared$/, "Open Folder"])
+})
+
 test("vertical tab gaps hover and select the nearest row", async ({ page }) => {
   await mockWorkspace(page, {
     name: "Tabs",
