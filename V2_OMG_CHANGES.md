@@ -860,3 +860,39 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - `packages/app` `bun typecheck` 通过（1,874 files）。
 - `packages/app` 标题栏单测 33 通过 / 0 失败。
 - 根 `bun run check` 通过。
+
+## 37. 合并上游 v2.2.1
+
+### 合并对象
+
+- 上游 tag `v2.2.1`（`3ebcf9a32c`，2026-10-29），133 个提交，701 个文件，+43,156 / −13,889。
+- 上一轮合并的是 `1097e2668b`（v2.2.0 发布前的最后一个 dev 提交），所以本轮同时带入 `86976449c4 release: v2.2.0` 和整个 v2.2.1。
+- 仓库版本随之变为官方 `2.2.1`；安装包与内置 CLI 的 `-fork.N` 版本仍由构建注入，不受影响。
+
+### 上游主要内容
+
+- `/goal <objective>`：目标驱动续跑，支持 pause / resume / clear。
+- `image_generate` 工具：需 `experimental.image_generate` 开启；新增 GPT Image 2、MiniMax、Meta Muse 图像模型。
+- `/schedule` + `experimental.schedules`：定时唤醒会话。
+- 后台 shell 从 activity pill 查看实时输出并停止。
+- 新模型选择器成为默认（旧 `select-dialog-next.*` 删除）。
+- `/reload`、集成对话框重设计、会话 location 菜单操作。
+- `@opencode/ai` 移除 fal / Black Forest Labs / Replicate / Stability，`configure()` 输入类型改名 `Config`。
+- SDK 实验性方法收进 `client.experimental`，旧位置保留 deprecated alias。
+- `process-daemon` 并入 monorepo。
+
+### 冲突与解决
+
+- 35 个 `package.json`：只冲突版本号，取上游 `2.2.1`。fork 侧没有独立依赖改动，`bun install` 后 `bun.lock` 无额外变化。
+- `packages/app/src/index.css`：保留 fork 的 `--shell-surface` / `[data-vibrancy]` 块，同时保留上游新增的 `@property --panel-hold-width`。
+- `packages/app/src/providers/connect/dialog.tsx`：上游把选择器重设计为 connected / mcp / popular / services 分组。fork 的 custom provider 行保留，插到 `services()` 顶部并沿用查询过滤；`CUSTOM_ID` 仍绕过 `disabled()`，`CustomProviderForm` 与 `store.edit` 保留。
+- `packages/plugin/src/gui/icon-name.ts`：并集，保留 `outline-dots-vertical` 并新增 `outline-expand`。
+- `packages/client` 生成文件：取上游结果后执行 `bun run generate`，恢复 fork 在 `Config.Patch` 上增加的 `provider` 字段（上游生成文件不含该字段，因为它是 fork 的 schema 扩展）。
+
+### 验证
+
+- `bun install` 正常；根 `bun run check` 35/35 通过。
+- `packages/app` `bun run test:unit`：937 通过 / 0 失败（合并前 912）。
+- 分组侧栏 e2e 3/3 通过（peek、draft 归属、添加项目列表）。
+- `settings.spec.ts` + `timeline-stream.spec.ts`：101 通过、8 失败。8 个失败均因测试用 `Control+,` / `Control+]` 触发 `mod+comma` 与 `mod+]`，在 macOS 上实际绑定为 `⌘,` / `⌘]`；属既有平台差异，不是本次合并引入。
+- `zh.ts` 未补齐上游新增文案（合并前已有大量缺失），按英文回退处理。
