@@ -46,6 +46,7 @@ import {
 } from "../context/markdown"
 import { createMarkdownImages } from "./markdown-image"
 import { createImagePreview } from "./image-preview"
+import { setupFragmentLinks } from "./markdown-fragment-links"
 import { markSessionLinks, setupSessionLinks } from "./markdown-session-links"
 import { markdownClipboardHtml } from "./markdown-clipboard"
 
@@ -641,6 +642,7 @@ export function Markdown(
   const completedCode = new Map<string, Extract<RenderedBlock, { mode: "code" }>>()
   const settledMarkdown = new Map<string, Exclude<RenderedBlock, { mode: "code" }>>()
   let renderedBlocks: RenderedBlock[] = []
+  let appliedLabels: CopyLabels | undefined
   let streamed = false
 
   const [projection] = createResource(
@@ -805,6 +807,7 @@ export function Markdown(
   let linkCleanup: (() => void) | undefined
   let faviconCleanup: (() => void) | undefined
   let sessionLinkCleanup: (() => void) | undefined
+  let fragmentLinkCleanup: (() => void) | undefined
   let readImage: ReadMarkdownImage | undefined
   let images: ReturnType<typeof createMarkdownImages> | undefined
 
@@ -881,9 +884,15 @@ export function Markdown(
     container.querySelectorAll<HTMLImageElement>("img[data-markdown-favicon]").forEach((image) => {
       if (image.complete && image.naturalWidth > 0) image.dataset.loaded = ""
     })
-    container
-      .querySelectorAll<HTMLElement>('[data-slot="markdown-copy-button"]')
-      .forEach((button) => setCopyState(button, labels, button.dataset.copied === "true"))
+
+    // A button gets the labels of the run that creates it, so the others only need new ones when the language changes.
+    // Relabelling every button on each streamed delta re-rendered each one's tooltip and icon button.
+    if (appliedLabels?.copy !== labels.copy || appliedLabels?.copied !== labels.copied)
+      container
+        .querySelectorAll<HTMLElement>('[data-slot="markdown-copy-button"]')
+        .forEach((button) => setCopyState(button, labels, button.dataset.copied === "true"))
+
+    appliedLabels = labels
 
     if (!copyCleanup)
       copyCleanup = setupCodeCopy(container, () => ({
@@ -894,6 +903,8 @@ export function Markdown(
     if (!linkCleanup) linkCleanup = setupLocalLinks(container, () => markdown?.openLocalFile)
 
     if (!sessionLinkCleanup) sessionLinkCleanup = setupSessionLinks(container, () => markdown?.openSession)
+
+    if (!fragmentLinkCleanup) fragmentLinkCleanup = setupFragmentLinks(container)
 
     if (!faviconCleanup) faviconCleanup = setupExternalLinkFavicons(container)
     container.toggleAttribute("data-local-links", !!markdown?.openLocalFile)
@@ -923,6 +934,8 @@ export function Markdown(
     if (linkCleanup) linkCleanup()
 
     if (sessionLinkCleanup) sessionLinkCleanup()
+
+    if (fragmentLinkCleanup) fragmentLinkCleanup()
 
     if (faviconCleanup) faviconCleanup()
     const container = root()

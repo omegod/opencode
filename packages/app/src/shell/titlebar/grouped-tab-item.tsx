@@ -355,12 +355,14 @@ export function GroupedTabItem(props: {
               }
             >
               {(session) => (
-                <SessionTabAvatarView
-                  project={project()}
-                  directory={session.location.directory}
-                  unread={false}
-                  loading={avatar.loading()}
-                />
+                <Show
+                  when={avatar.loading()}
+                  fallback={
+                    <SessionTabAvatarView project={project()} directory={session.location.directory} unread={false} />
+                  }
+                >
+                  <SessionProgressIndicatorV2 />
+                </Show>
               )}
             </Show>
             <Show when={unread()}>
