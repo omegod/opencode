@@ -991,3 +991,36 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 
 - 资产：DMG、ZIP、两个 blockmap、`latest-mac.yml`，共 5 个。
 - 先创建 draft、上传并核对资产，再发布；Release/tag `v2.2.1-fork.1` 指向本节所在提交。
+
+## 41. 合并上游 v2.2.3
+
+### 范围
+
+- 上游 v2.2.1 之后两个版本：`v2.2.2`（40 提交）与 `v2.2.3`（101 提交），合计 140 提交、947 文件、+36,954/−10,486 行。
+- 合并提交父：`b9fd66040d`（v2.2.1-fork.1）+ `082ac6281f`（release v2.2.3）。
+
+### 上游重点
+
+- **v2.2.2**：`experimental_image_generate` 默认开启（连上图像模型即可用）；新会话的 Git 分支可直达 worktree 选择器；引用/批注统一为同一套可选评论编辑器；经典问题卡片恢复默认，「新问题 UI」移到实验设置。
+- **v2.2.3**：新增内置 **Claude Agent** 提供商（复用 `claude auth login`）；长会话渲染优化（timeline projection、markdown worker、virtualizer）；桌面端修复侧栏标签页、重复 "Session not found"、HTTP 下「打开文件」。
+- 破坏性变更均只影响直接引用 `@opencode/ai` 的代码（speech/transcription/video 移到 `@opencode/ai/experimental`，`AI.tool`/`Tool.make` 统一为 `tool()`），本 fork 未改动 `packages/ai`，随上游自动继承。
+- TUI 插件要求 OpenTUI 0.8.0（`bun.lock` 已升级），本 fork 未改动 `packages/tui`。
+- 托管策略：`integration.use` 只管集成，新增 `mcp.use`/`skill.use`/`plugin.use`。
+
+### 合并处理
+
+- 36 个 `package.json`、`CHANGELOG.md`、`bun.lock` 取上游（fork 未改过任何 `package.json`）。
+- 唯一代码冲突 `packages/app/src/shell/commands/dialog.tsx`：上游抽出 `PaletteSessionRow`，并把 `SessionTabAvatar` 拆成 `SessionTabAvatarView` + `useSessionTabAvatarState`；fork 的 `clockNow()` 相对时间刷新随之移入新行。
+- `SessionTabAvatarView` 上游去掉了 `loading` 属性（忙碌改用行尾 `ActivityRing`），fork 的分组侧栏仍是「运行中把头像换成进度指示」，因此在 `grouped-tab-item.tsx` 调用处用 `Show` 自行切换，不改上游组件形状。
+- 合并后重跑 `bun run generate`，fork 的 `Config.Patch.provider` 仍在生成结果中（`types.ts:4676`）。
+- fork 功能全部保留并经确认：两行自定义提供商入口（`_custom` / `_custom_anthropic`）、分组侧栏、vibrancy CSS、`electron-builder` 的 `omegod/opencode` 更新源。
+
+### 验证
+
+- `bun install` 正常；根 `bun run check` 35/35 通过。
+- `packages/app` `bun run test:unit`：956 通过 / 0 失败。
+- e2e：`providers:` 13/13 通过；分组侧栏 3/3 通过。
+- `packages/core` `bun run test`：7126 通过 / 3 失败。3 个失败均为本机环境导致，与合并无关：
+  - 2 个 `ShellTool conditional process substitution`：macOS 自带 bash 3.2 的 `wait "$!"` 不认进程替换子进程（`wait: pid ... is not a child of this shell`）。
+  - 1 个 `real-shell compound syntax`：bash 3.2 在命令替换内不接受无花括号的 `case` 函数体。
+  - 这两个测试文件与上游 `v2.2.3` 完全一致；另外 23 个 ripgrep 用例失败是因为测试脚本把 `HOME` 指向临时目录且网络被守卫，机器上又没装 `rg`，把 `~/.cache/opencode/bin` 加进 `PATH` 后全部通过。
