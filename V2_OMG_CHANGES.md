@@ -1024,3 +1024,31 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
   - 2 个 `ShellTool conditional process substitution`：macOS 自带 bash 3.2 的 `wait "$!"` 不认进程替换子进程（`wait: pid ... is not a child of this shell`）。
   - 1 个 `real-shell compound syntax`：bash 3.2 在命令替换内不接受无花括号的 `case` 函数体。
   - 这两个测试文件与上游 `v2.2.3` 完全一致；另外 23 个 ripgrep 用例失败是因为测试脚本把 `HOME` 指向临时目录且网络被守卫，机器上又没装 `rg`，把 `~/.cache/opencode/bin` 加进 `PATH` 后全部通过。
+
+## 42. v2.2.3-fork.1 发布
+
+### 发布内容
+
+- 合并上游 v2.2.3（§41）：Claude Agent 提供商、长会话渲染优化、桌面端稳定性修复。
+- 分组侧栏项目归属与添加项目列表修复（§36）、自定义提供商 OpenAI / Anthropic 拆分（§38、§39）继续保留。
+- 仓库版本为官方 `2.2.3`，安装包与内置 CLI 版本为 `2.2.3-fork.1`。
+
+### 构建
+
+- 内置 CLI：`packages/cli` 下 `OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.2.3-fork.1 bun run build --single`，产物 `dist/cli-darwin-arm64/bin/opencode`，`--version` 输出 `2.2.3-fork.1`。
+- 桌面构建：`packages/desktop` 下 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.2.3-fork.1 bun run build`，脚本从 `packages/cli/dist` 复制 CLI 到 `resources/opencode-cli`。
+- 打包：`OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.2.3-fork.1 bunx electron-builder --mac --arm64 --publish never --config electron-builder.local.ts`；打包前清空 `dist/`。
+- 本机未装 Xcode 26（只有 Command Line Tools），上游 prod 渠道的 Icon Composer 包（`resources/icons/icon.icon`）需要 `actool` 26，打包直接失败。`electron-builder.local.ts` 因此固定 `mac.icon` 为 `resources/icons/icon.icns`，本地包继续使用预渲染 ICNS；afterPack 把该 ICNS 复制进 bundle 的逻辑不受影响，应用图标不变。
+
+### 核验
+
+- 应用 `CFBundleShortVersionString` 与内置 `opencode-cli --version` 均为 `2.2.3-fork.1`。
+- `app-update.yml`：`omegod/opencode`、`github`、`latest` 渠道。
+- `codesign --verify --deep --strict` 通过（`RedixDevCert`，`timestamp: none`）。
+- bundle 内只有 `icon.icns`（923,007 B），无 `Assets.car`：符合本机用 ICNS 的预期。
+- `latest-mac.yml` 的 SHA-512 与大小同 ZIP（287,063,767 B）和 DMG（296,830,092 B）一致。
+
+### 发布
+
+- 资产：DMG、ZIP、两个 blockmap、`latest-mac.yml`，共 5 个。
+- 先创建 draft、上传并核对资产，再发布；Release/tag `v2.2.3-fork.1` 指向本节所在提交。
