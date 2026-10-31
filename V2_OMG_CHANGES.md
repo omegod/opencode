@@ -1052,3 +1052,64 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 
 - 资产：DMG、ZIP、两个 blockmap、`latest-mac.yml`，共 5 个。
 - 先创建 draft、上传并核对资产，再发布；Release/tag `v2.2.3-fork.1` 指向本节所在提交。
+
+## 43. 合并上游 v2.2.4 / v2.2.5
+
+### 范围
+
+- 上游 v2.2.3 之后两个版本：`v2.2.4`（31 提交）与 `v2.2.5`（19 提交），合计 49 提交、532 文件、+13,339/−8,047 行。
+- v2.2.4 的功能/修复提交全部是 v2.2.5 的祖先（dev 上另有一个内容重复的 `release: v2.2.4 (#60664)`），因此一次合并 v2.2.5 即覆盖两个版本。
+- 合并提交父：`bddb16249a`（v2.2.3-fork.1）+ `9bbb8ce18c`（release v2.2.5）。
+
+### 上游重点
+
+- **v2.2.4**：桌面终端改为会话级持久 PTY（服务重启保留滚动缓冲，与 TUI 及其他窗口同步，可重命名）；新增实验性 **artifacts**（`experimental.artifacts`，可发布/更新/托管静态产物）；Claude Agent 引导安装与连接检测；worktree 基分支快捷键；本地/项目配置可以覆盖 Console 下发的提供商；loopback 请求绕过环境代理。
+- **v2.2.5**：worktree（`⌘⌥O`）、基分支（`⌘⌥B`）、shell 模式（`⌘⇧X`）快捷键；引用弹窗按住 `⌘` 或 `⌘Enter` 直接发送；`compaction.buffer` 支持百分比；`read`/`edit` 失败给出最近目录/最接近的行；名为 `bash` 的工具调用按 `shell` 执行；MCP stdio 大消息分帧；输入框改为扁平表面 + 紧凑尺寸；连接菜单不再列 MCP 服务器。
+- 行为变化：新增数据库迁移 `20261030054400_job`（后台任务标记进 SQLite job 表）；`@opencode/pty` 0.3.3 → 0.4.0（含各平台二进制）；`packages/ai` 内部重构（`LLMClient` 合并为统一的 `LLM`），本 fork 未直接引用其内部 API；新增 patch `@brendonovich/vite-plugin-opencode@0.1.3`（desktop dev 的 picker）。
+
+### 合并处理
+
+- 38 个冲突：35 个 `package.json`、`CHANGELOG.md`、`bun.lock` 全部取上游（fork 未改过任何 `package.json`）。
+- 唯一代码冲突 `packages/app/src/providers/connect/dialog.tsx`（1 个冲突块）：上游把 MCP 过滤并入 `all()` 并删除 MCP 分组，fork 保留 `custom()` 两行自定义入口、删掉多余的 `providers` memo；`services()` 的 customRows、`groups`、`rows`、`disabled()` 的 custom 例外均由 git 自动合好。
+- 双方都改过的 13 个文件全部自动合并，逐个核验 fork 改动仍在：`en.ts`、`providers.tsx`、三个 e2e 文件、主题三件套、`client` 手写 API 与三个生成文件。
+- `bun install` 正常（`@opencode/pty@0.4.0` 与 patched vite 插件均已解析）；`packages/client` 重跑 `bun run generate` 无差异，`Config.Patch.provider` 与 `experimental.artifacts.*` 并存。
+- 主题：把 `v2-elevation-input` 同步进 `oc-2-translucent.json`（light/dark 各一处，值与 `oc-2.json` 一致），提交 `a50c59db2b`。
+- 打包配置未受影响：上游本轮未改 `electron-builder.config.ts`，`electron-builder.local.ts` 的 ICNS 覆盖继续有效，本机仍不需要 Xcode 26。
+
+### 验证
+
+- 根 `bun run check` 35/35 通过（注意 `oxlint` 的 JS 插件需要 Node 24，Node 22.16 会报 `ERR_UNKNOWN_FILE_EXTENSION`）。
+- `packages/app` `bun run test:unit`：963 通过 / 0 失败。
+- e2e：`providers:` 13/13 与分组侧栏 3/3 合计 16/16 通过。
+- e2e `composer.spec.ts` 29/31：2 个 `reveals a multiline paste` 用例在干净的 v2.2.5 worktree 上同样失败，属本机 headless 剪贴板环境，与合并无关。
+- e2e `terminal.spec.ts` 20/21：`Escape cancels a terminal rename and Enter renames once` 在干净的 v2.2.5 上同样失败；原因是改名输入框在 `requestAnimationFrame` 启用 blur 之前就收到 Enter（测试里 `fill` + `press` 快于一帧），在该 worktree 里加 100ms 即可通过；上游 CI 有 2 次重试，属测试竞态而非产品缺陷。
+- `packages/core` `bun run test`：7145 通过 / 3 失败，仍是 §41 记录的 3 个 macOS bash 3.2 环境失败。
+- dev 桌面冒烟：会话列表正常（迁移成功）、除 dev-only picker 500 外无 JS 报错、两行自定义提供商仍在 Services 顶部、新增 Claude Agent、MCP 分组已消失、自定义 Anthropic 表单默认值未变；`Ctrl+`` ` 打开终端后可建持久 PTY 并正常收发命令。
+
+## 44. v2.2.5-fork.1 发布
+
+### 发布内容
+
+- 合并上游 v2.2.4 / v2.2.5（§43）：持久桌面终端、artifacts 实验功能、Claude Agent 引导、worktree 快捷键、引用直接发送、百分比压缩缓冲。
+- 分组侧栏、两行自定义提供商、vibrancy 主题继续保留。
+- 仓库版本为官方 `2.2.5`，安装包与内置 CLI 版本为 `2.2.5-fork.1`。
+
+### 构建
+
+- 内置 CLI：`packages/cli` 下 `OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.2.5-fork.1 bun run build --single`，产物 `dist/cli-darwin-arm64/bin/opencode`，`--version` 输出 `2.2.5-fork.1`。
+- 桌面构建：`packages/desktop` 下 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.2.5-fork.1 bun run build`，脚本从 `packages/cli/dist` 复制 CLI 到 `resources/opencode-cli`。
+- 打包：`OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.2.5-fork.1 bunx electron-builder --mac --arm64 --publish never --config electron-builder.local.ts`；打包前清空 `dist/`。
+- 本机未装 Xcode 26，`electron-builder.local.ts` 继续把 `mac.icon` 固定为 `resources/icons/icon.icns`。
+
+### 核验
+
+- 应用 `CFBundleShortVersionString` 与内置 `opencode-cli --version` 均为 `2.2.5-fork.1`。
+- `app-update.yml`：`omegod/opencode`、`github`、`latest` 渠道。
+- `codesign --verify --deep --strict` 通过（`RedixDevCert`，`timestamp: none`）。
+- bundle 内只有 `icon.icns`，无 `Assets.car`。
+- `latest-mac.yml` 的 SHA-512 与大小同 ZIP（287,137,605 B）和 DMG（296,898,631 B）一致。
+
+### 发布
+
+- 资产：DMG、ZIP、两个 blockmap、`latest-mac.yml`，共 5 个。
+- 先创建 draft、上传并核对资产，再发布；Release/tag `v2.2.5-fork.1` 指向本节所在提交。
