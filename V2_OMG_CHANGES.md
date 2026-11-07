@@ -1158,6 +1158,10 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
   - `terminal.spec.ts` 26/27：新增的“命令面板新建终端”用 `Control+Shift+P`，macOS 上 `mod` 是 Command，属平台差异。
 - dev 桌面冒烟：主题为 `oc-2-translucent`；设置 › 提供商里 SenseNova / AnyRouter 显示“编辑 / 移除”，编辑表单正确预填（含 API Key）；连接对话框顶部仍是两行自定义 OpenAI / Anthropic、无 MCP 分组；自定义 Anthropic 默认值保持 `200000/16000` + `budgetTokens 8192` + text/image；竖向 + 分组侧栏显示“默认项目 / mc-edu / manyi”且无报错。
 
+### 合并后修复
+
+- 上游 v2.2.6 重写了 `shell.tsx` 的根节点，合并时丢了 fork 的 `data-slot="shell-root"`，导致 `grouped-tab.css` 里按该锚点接管的 tab / tab-action 表面规则全部失效。opencode2 + vibrancy 下，激活与未激活的会话项都会绘制不透明的 `--v2-background-bg-deep`，在浅色下表现为白胶囊。已在根节点恢复该属性并注明 CSS 依赖。
+
 ### 说明
 
 - 本次未改动 `electron-builder.config.ts` 与图标资源，本机仍不需要 Xcode 26。

@@ -207,6 +207,9 @@ export default function Layout(props: ParentProps) {
 
   return (
     <div
+      // Fork-owned anchor: grouped-tab.css scopes the translucent tab/action surfaces to it, so a
+      // vibrancy window keeps them transparent instead of painting the opaque theme background.
+      data-slot="shell-root"
       class="relative bg-[var(--shell-surface)] flex-1 min-h-0 min-w-0 flex flex-col select-none [&_input]:select-text [&_textarea]:select-text [&_[contenteditable]]:select-text"
       style={{
         // Mobile panels only need clearance for their outer border.
