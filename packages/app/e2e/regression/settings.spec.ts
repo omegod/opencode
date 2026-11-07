@@ -2080,8 +2080,8 @@ test("providers: the account options rename and remove the active account", asyn
   await expect.poll(() => removed).toEqual(["cred_work"])
 })
 
-test("providers: a disconnect that finds no stored credentials keeps the provider connected", async ({ page }) => {
-  // No integration lists OpenRouter, so the server's integration lookup reports no credentials to remove.
+test("providers: a config-defined provider is managed in place instead of through credentials", async ({ page }) => {
+  // No integration lists OpenRouter, so it reads as a config-defined provider with no stored credentials.
   const { settings } = await open(page, {
     provider: { all: [{ id: "openrouter", name: "OpenRouter", models: {} }], connected: ["openrouter"], default: {} },
     integrations: [],
@@ -2089,13 +2089,14 @@ test("providers: a disconnect that finds no stored credentials keeps the provide
 
   await settings.getByRole("tab", { name: "Providers", exact: true }).click()
   const connected = settings.locator('[data-component="connected-providers-section"]')
-  const disconnect = connected.getByRole("button", { name: "Disconnect", exact: true })
-  await expect(connected.getByText("OpenRouter", { exact: true })).toBeVisible()
-
-  await disconnect.click()
-  await expect(page.getByText("No removable credentials found for OpenRouter", { exact: true })).toBeVisible()
-  await expect(connected.getByText("OpenRouter", { exact: true })).toBeVisible()
-  await expect(disconnect).toBeVisible()
+  const row = connected.locator(".settings-provider-row").filter({ hasText: "OpenRouter" })
+  await expect(row.getByText("Custom", { exact: true })).toBeVisible()
+  // A credential disconnect would only report that it found nothing to remove; the fork edits or
+  // removes config-defined providers in place instead.
+  await expect(connected.getByRole("button", { name: "Disconnect", exact: true })).toHaveCount(0)
+  await row.getByRole("button", { name: "More options", exact: true }).click()
+  await expect(page.getByRole("menuitem", { name: "Edit", exact: true })).toBeVisible()
+  await expect(page.getByRole("menuitem", { name: "Remove", exact: true })).toBeVisible()
 })
 
 test("providers: switching to a Zen API key does not wait for a Console workspace", async ({ page }) => {
