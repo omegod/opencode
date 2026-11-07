@@ -1113,3 +1113,52 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 
 - 资产：DMG、ZIP、两个 blockmap、`latest-mac.yml`，共 5 个。
 - 先创建 draft、上传并核对资产，再发布；Release/tag `v2.2.5-fork.1` 指向本节所在提交。
+
+## 45. 合并上游 v2.2.6
+
+### 范围
+
+- 上游 `v2.2.5` 到 `v2.2.6`：515 个提交、4775 个文件、+449,558/−99,405 行。
+- 合并提交父：`9fa33cfb82`（v2.2.5-fork.1）+ `dc2ffcf8bf`（release v2.2.6）。
+- **没有新增数据库迁移**：`packages/core/src/database` 只有 sqlite 拆分、`batch` 与迁移事务处理的重构，不搬数据也不删行，因此本次合并没有做数据库备份。
+
+### 上游重点
+
+- **Provider 连接流程重写**：连接对话框改为 `dialog-machine` / `form-machine` / `machine` / `mcp-machine` 驱动，`mcp.ts` 拆成 `mcp.tsx` 与 `mcp-sign-in.tsx`。
+- **竖向侧栏原生项目分组**：设置 › 实验 › Organize vertical sidebar 可选 Projects / One list（默认 One list），新增 `SidebarOrganized`，带折叠、排序、拖拽、Show more、项目菜单与活动指示。
+- **GUI 插件主题与插槽**：插件可贡献主题（`Theme` registry）、代码块渲染与操作（`CodeBlock` / `CodeBlockAction`）、原生 Select、设置页与菜单组件；侧栏面板可持久化宽度。
+- **Code Mode 字节码 VM**（默认关闭）、共享 MCP 连接（`pool: true`）、移动端输入 dock、`opencode run -w/--worktree`、`--archived`、会话预热、`websearch.use`、`OPENCODE_FLAGS=all`。
+- **安全与稳定性**：文件读取改为沙箱下载、`/api/*` 拒绝跨站导航与不允许的来源、webfetch 拒绝带凭据 URL 并检查每次重定向、MCP 连接等待 2 秒、Console 配置 5 秒超时、`opencode run` 等待后台任务（无超时，CI 需自行设置 timeout）。
+- **站点重构**：`services/site` 取代 `services/www`、`packages/posts`、`services/changelog`、`packages/console/*`；根工作区相应变化，桌面打包不受影响。
+- 依赖：Effect 4.0.6 → 4.1.0、OpenTUI 0.8.1、新增 `@hona/strobe`；`@opencode/pty` 消费方仍为 0.4.0。新增端点 `/api/experimental/job`（`client.experimental.job.list()`）。
+
+### 合并处理
+
+- 52 个冲突：35 个 `package.json`（含 `packages/console/app/package.json` 的上游删除）、`CHANGELOG.md`、`bun.lock` 全部取上游；15 个代码文件逐个手工解决。
+- **`providers/connect/dialog.tsx`**：以上游的机器驱动结构为骨架；fork 的 `useProviderConnectController` 保留 `edit` / `editProvider`，自定义 OpenAI / Anthropic 入口在进入机器之前分流，表单、编辑与删除继续可用。配置型提供商仍走“就地编辑/删除”，因此上游新增的“无凭据 disconnect”用例改写为断言该交互。
+- **`settings/providers/providers.tsx`**：沿用上游的 `dispatch` / `pageState` / `liveAvailable`；fork 的 `editProvider`、`removeProvider`、`removeProviderConfig`（`config.update({ provider: { [id]: null } })`）接到新页面上。
+- **分组侧栏**：保留 fork 的 `ProjectGroupSidebar` 作为外层选择；fallback 内采用上游的新间距、`--sidebar-inset-*`、`--sidebar-divider-bleed` 与原生 `SidebarOrganized`。两者可共存：fork 的「Group by project」仍生效，上游的「Organize vertical sidebar = Projects」默认关闭。
+- **主题**：采用上游的 `theme/machine.ts`，把两个内置主题静态预载进初始状态并默认选中 `oc-2-translucent`（`createThemeState` 增加可选 `themes` 参数），避免先闪一下 `oc-2`。
+- **桌面 early window**：采用上游的 `early-machine.ts`，保留 fork 的 `frameBackgroundColor`、`vibrancyFrame`，vibrancy 继续生效。
+- **时间显示**：`getRelativeTime(date, t, locale, now)` 同时接受 locale 与 fork 注入的 `clockNow()`。
+- **标签批处理**：采用上游的 `closeTabs(keys, keep?)`，分组头的“关闭全部”计算组外保留标签；没有剩余标签时回主页。
+- **shell 布局**：采用上游的 `--session-header-inset-end` 等变量，保留 `--shell-surface` 与透明挂载层，vibrancy 不被不透明背景覆盖。
+- `bun install` 正常；`packages/client` 重跑 `bun run generate` 后保留 fork 的 `Config.Patch.provider` 并生成 `experimental.job.*`。
+
+### 验证
+
+- 根 `bun run check` 32/32 通过（工作区从 35 个变为 32 个，因 console/www/posts/changelog 被 `services/site` 取代）。
+- `packages/app` 单测 2597 通过 / 0 失败；`packages/ui` 620 通过 / 0 失败。
+- `packages/core` 7283 通过 / 3 失败，仍是 §41 记录的 3 个 macOS bash 3.2 环境失败。
+- e2e：
+  - `settings.spec.ts` 的 providers 19/19（改写的配置型提供商用例通过）。
+  - `tabs.spec.ts` 分组侧栏与折叠侧栏 8/8；整文件 59/64，5 个失败在干净的 v2.2.6 worktree 上原样复现（macOS `mod` 映射与 headless 剪贴板）。
+  - `timeline-stream.spec.ts` 63/65：1 个选择工具条竞态复跑通过；1 个 `Control+,` 打开设置失败，`home.spec.ts` 同样失败，属 macOS 快捷键映射。
+  - `composer.spec.ts` 37/39：2 个 `reveals a multiline paste` 仍是 headless 剪贴板问题。
+  - `terminal.spec.ts` 26/27：新增的“命令面板新建终端”用 `Control+Shift+P`，macOS 上 `mod` 是 Command，属平台差异。
+- dev 桌面冒烟：主题为 `oc-2-translucent`；设置 › 提供商里 SenseNova / AnyRouter 显示“编辑 / 移除”，编辑表单正确预填（含 API Key）；连接对话框顶部仍是两行自定义 OpenAI / Anthropic、无 MCP 分组；自定义 Anthropic 默认值保持 `200000/16000` + `budgetTokens 8192` + text/image；竖向 + 分组侧栏显示“默认项目 / mc-edu / manyi”且无报错。
+
+### 说明
+
+- 本次未改动 `electron-builder.config.ts` 与图标资源，本机仍不需要 Xcode 26。
+- 上游原生项目分组已可用，但按本次决定继续保留 fork 的分组侧栏；后续若要切换，只需删除 fork 的 `ProjectGroupSidebar` 并把默认值改为 `sidebarOrganize: "projects"`。
