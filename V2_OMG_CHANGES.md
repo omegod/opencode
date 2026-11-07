@@ -1166,3 +1166,32 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 
 - 本次未改动 `electron-builder.config.ts` 与图标资源，本机仍不需要 Xcode 26。
 - 上游原生项目分组已可用，但按本次决定继续保留 fork 的分组侧栏；后续若要切换，只需删除 fork 的 `ProjectGroupSidebar` 并把默认值改为 `sidebarOrganize: "projects"`。
+
+## 46. v2.2.6-fork.1 发布
+
+### 发布内容
+
+- 合并上游 v2.2.6（§45）：provider 连接流程重写、竖向侧栏原生项目分组、GUI 插件主题与插槽、移动端输入 dock、`opencode run -w/--archived`、Code Mode VM、共享 MCP 连接。
+- 分组侧栏、两行自定义提供商、vibrancy 主题继续保留。
+- 修复合并后 opencode2 主题下会话项表面不透明的问题（§45 合并后修复）。
+- 仓库版本为官方 `2.2.6`，安装包与内置 CLI 版本为 `2.2.6-fork.1`。
+
+### 构建
+
+- 内置 CLI：`packages/cli` 下 `OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.2.6-fork.1 bun run build --single`，产物 `dist/cli-darwin-arm64/bin/opencode`，`--version` 输出 `2.2.6-fork.1`。
+- 桌面构建：`packages/desktop` 下 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.2.6-fork.1 bun run build`，脚本从 `packages/cli/dist` 复制 CLI 到 `resources/opencode-cli`。
+- 打包：`OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.2.6-fork.1 bunx electron-builder --mac --arm64 --publish never --config electron-builder.local.ts`；打包前清空 `dist/`。
+- 本机未装 Xcode 26，`electron-builder.local.ts` 继续把 `mac.icon` 固定为 `resources/icons/icon.icns`。
+
+### 核验
+
+- 应用 `CFBundleShortVersionString` 与内置 `opencode-cli --version` 均为 `2.2.6-fork.1`。
+- `app-update.yml`：`omegod/opencode`、`github`、`latest` 渠道。
+- `codesign --verify --deep --strict` 通过（`RedixDevCert`，`timestamp: none`）。
+- bundle 内只有 `icon.icns`，无 `Assets.car`。
+- `latest-mac.yml` 的 SHA-512 与大小同 ZIP（290,532,619 B）和 DMG（300,477,482 B）一致。
+
+### 发布
+
+- 资产：DMG、ZIP、两个 blockmap、`latest-mac.yml`，共 5 个。
+- 先创建 draft、上传并核对资产，再发布；Release/tag `v2.2.6-fork.1` 指向本节所在提交。
