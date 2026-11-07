@@ -107,7 +107,7 @@ export function ProjectTabList(props: {
   const entries = createMemo(() =>
     props.tabs.map((tab) => {
       const conn = global.servers.list().find((item) => ServerConnection.key(item) === tab.server)
-      const ctx = conn ? global.ensureServerCtx(conn) : undefined
+      const ctx = conn ? global.serverCtx(ServerConnection.key(conn)) : undefined
       const projects = ctx?.projects.list() ?? []
       if (tab.type === "draft") {
         return { tab, server: tab.server, directory: tab.directory, project: ctx?.projects.forDirectory(tab.directory) }
@@ -127,7 +127,7 @@ export function ProjectTabList(props: {
 
   const groups = createMemo(() => {
     const contexts = new Map(
-      global.servers.list().map((conn) => [ServerConnection.key(conn), global.ensureServerCtx(conn)] as const),
+      global.servers.list().map((conn) => [ServerConnection.key(conn), global.serverCtx(ServerConnection.key(conn))] as const),
     )
     const order = new Map([...contexts.keys()].map((key, position) => [key, position]))
     return groupTabEntries(entries(), {
@@ -162,7 +162,8 @@ export function ProjectTabList(props: {
   const moveProject = (server: ServerConnection.Key, worktree: string, from: number, to: number) => {
     const conn = global.servers.list().find((item) => ServerConnection.key(item) === server)
     if (!conn) return
-    const ctx = global.ensureServerCtx(conn)
+    const ctx = global.serverCtx(ServerConnection.key(conn))
+    if (!ctx) return
     const full = ctx.projects.unique().map((project) => project.worktree)
     const visible = groups()
       .filter((group) => group.server === server && !!group.project && groupVisible(group))
@@ -293,7 +294,16 @@ export function ProjectTabList(props: {
                         sourceRef={sortable.sourceRef}
                         targetRef={sortable.targetRef}
                         onToggle={() => tabs.toggleGroupCollapsed(value().key)}
-                        onCloseAll={(groupTabs) => tabs.closeTabs(groupTabs)}
+                        onCloseAll={(groupTabs) => {
+                          const closing = new Set(groupTabs.map(tabKey))
+                          // Keep the first tab after the group, else the one before it, so the view leaves the
+                          // block it just closed; closing every tab goes home.
+                          const last = props.tabs.findLastIndex((tab) => closing.has(tabKey(tab)))
+                          const keep =
+                            props.tabs.slice(last + 1).find((tab) => !closing.has(tabKey(tab))) ??
+                            props.tabs.findLast((tab) => !closing.has(tabKey(tab)))
+                          tabs.closeTabs(groupTabs.map(tabKey), keep)
+                        }}
                       />
                     </Show>
                     <div

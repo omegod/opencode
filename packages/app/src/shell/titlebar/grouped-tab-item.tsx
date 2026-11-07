@@ -422,7 +422,7 @@ export function GroupedTabItem(props: {
             data-slot="tab-time"
             class="shrink-0 text-[11px] leading-text-compact text-v2-text-text-faint group-hover:hidden group-data-[editing=true]:hidden [@media(hover:none)]:hidden"
           >
-            {getRelativeTime(time(), language.t, clockNow())}
+            {getRelativeTime(time(), language.t, language.intl(), clockNow())}
           </span>
         )}
       </Show>

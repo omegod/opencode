@@ -43,7 +43,8 @@ export function ProjectGroupAdd(props: { exclude: () => Set<string> }) {
   const addable = () =>
     global.servers.list().flatMap((conn) => {
       const key = ServerConnection.key(conn)
-      const context = global.ensureServerCtx(conn)
+      const context = global.serverCtx(key)
+      if (!context) return []
       return context.projects
         .used()
         .filter((project) => !props.exclude().has(projectGroupKey(key, project.worktree)))
@@ -53,7 +54,8 @@ export function ProjectGroupAdd(props: { exclude: () => Set<string> }) {
   // Load the project's sessions as background tabs: merge the fetched index
   // into the client store first, then add one idempotent tab per session.
   const loadSessions = (conn: ServerConnection.Any, project: LocalProject) => {
-    const context = global.ensureServerCtx(conn)
+    const context = global.serverCtx(ServerConnection.key(conn))
+    if (!context) return
     context.projects.touch(project.worktree)
     void context.sdk.api.session
       .list({ limit: SESSION_INDEX_LIMIT, order: "desc", parentID: null })
@@ -92,7 +94,9 @@ export function ProjectGroupAdd(props: { exclude: () => Set<string> }) {
         const [directory] = homeProjectDirectories(result)
         if (!directory) return
         const key = ServerConnection.key(conn)
-        addProjects(global.ensureServerCtx(conn), [directory])
+        const context = global.serverCtx(key)
+        if (!context) return
+        addProjects(context, [directory])
         void tabs.newDraft({ server: key, directory })
       },
     })
