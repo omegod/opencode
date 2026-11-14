@@ -22,11 +22,6 @@ export const content = {
       body: "自分のスクリプト、CIジョブ、ツールからOpenCodeを操作できます。",
       action: "ドキュメント",
     },
-    ide: {
-      name: "IDE拡張機能",
-      body: "VS Code、Cursor、WindsurfでOpenCodeを開けます。ZedやJetBrains IDEではACP経由で使えます。",
-      action: "インストール",
-    },
     mini: {
       name: "Mini",
       body: "最小限のターミナルインターフェース。返答はスクロールバックに出力され、下にはプロンプトが1つだけ残ります。",
@@ -188,32 +183,6 @@ export const content = {
         },
       },
     },
-    ide: {
-      title: "OpenCode | VS Code、Cursor、Zed向けのエディタ連携",
-      description:
-        "エディタの中でOpenCodeを使えます。VS Code、Cursor、Windsurf、VSCodiumには拡張機能があり、Zed、JetBrains IDE、その他のACP対応エディタでは opencode acp を使います。",
-      intro:
-        "エディタの中でOpenCodeを使えます。VS Code、Cursor、Windsurf、VSCodiumでは、統合ターミナルで opencode を実行すると拡張機能が自動でインストールされます。Zed、JetBrains IDE、その他のAgent Client Protocol対応エディタでは、opencode acp でOpenCodeを実行します。",
-      features: {
-        "quick-launch": {
-          title: "すばやく起動",
-          body: "Cmd+Esc または Ctrl+Esc で、分割したターミナルにOpenCodeを開きます。",
-        },
-        "new-session": {
-          title: "新規セッション",
-          body: "Cmd+Shift+Esc または Ctrl+Shift+Esc で別のセッションを開始します。",
-        },
-        context: { title: "コンテキスト", body: "現在の選択範囲やタブをOpenCodeと共有します。" },
-        "file-references": {
-          title: "ファイル参照",
-          body: "Cmd+Option+K または Alt+Ctrl+K で @File#L37-42 を挿入します。",
-        },
-        "installs-itself": { title: "自動インストール", body: "統合ターミナルで opencode を実行すると追加されます。" },
-        "acp-editors": { title: "ACPエディタ", body: "Zed、JetBrains IDE、Avante.nvim、CodeCompanion.nvim。" },
-        "open-vsx": { title: "Open VSX", body: "Cursor、Windsurf、VSCodium向けにOpen VSXでも公開しています。" },
-        "same-agent": { title: "同じエージェント", body: "ターミナルで使うOpenCodeを、コードのすぐ横で。" },
-      },
-    },
     mini: {
       title: "OpenCode | Mini、エージェントのための最小限のターミナルUI",
       description:
@@ -274,14 +243,21 @@ export const content = {
           body: "スクリーンショット、画面録画、HAR形式のネットワーク通信。",
         },
         "any-mcp-client": { title: "全MCPクライアント", body: "OpenCode、Claude Code、Cursor、Codex、Zedなど多数。" },
-        "named-sessions": { title: "名前付きセッション", body: "各セッションは再起動後も自分のタブを保持します。" },
+        "all-your-logins": {
+          title: "ログインはそのまま",
+          body: "エージェントは、すでにサインインしているサイトをそのまま使います。キーも設定も不要です。",
+        },
         allowlists: { title: "許可リスト", body: "セッションのタブを、指定したサイトだけに制限できます。" },
       },
       install:
-        "1行でBrowseをインストールし、見つけたエージェントに追加して拡張機能とペアリングします。Windowsでは irm https://opencode.ai/browse/install.ps1 | iex を実行します。エージェントに設定を頼むこともできます。",
+        "まず [Chrome 拡張機能] をインストールしてください。残りの手順は拡張機能が案内します。CLI を直接インストールする場合は(通常は不要です)、次のいずれかを使ってください。",
     },
   },
   apps: {
+    browse: {
+      category: "エージェント向けブラウザ操作",
+      body: "ログインもタブもそのまま、いつものブラウザをエージェントが使えます。",
+    },
     opentunnel: { category: "ローカルトンネル", body: "ローカルアプリに公開HTTPS URLを。" },
     opentui: { category: "ライブラリ", body: "ターミナルUIのためのライブラリ。" },
     hex: { category: "音声入力", body: "どのアプリでも使える、デバイス上の音声入力。" },
@@ -298,7 +274,7 @@ export const content = {
     },
     subscriptions: { "chatgpt-plus-pro": { name: "ChatGPT Plus/Pro" } },
     steps: {
-      download: { title: "ダウンロード", line: "デスクトップ、モバイル、ターミナル。" },
+      download: { title: "ダウンロード", line: "デスクトップ、ターミナル、モバイル。" },
       "use-free-models": {
         title: "無料モデルを使う",
         line: "OpenCodeには無料モデルが付属しています。アカウントは不要です。",
@@ -355,7 +331,7 @@ export const content = {
     },
     colors: {
       title: "カラー",
-      body: "ロゴとワードマークは1つのインクを3段階の不透明度で使い、暗い背景にはより明るいインクを使います。下の値は、標準ファイルと同じく、白または#0B0B0Bの上にそのインクを重ねた色です。値をクリックするとコピーできます。",
+      body: "ロゴとワードマークは1つのインクを3段階の不透明度で使い、暗い背景にはより明るいインクを使います。下の値は標準ファイルの色です。これらはロゴとワードマークだけに使用し、ほかのテキストや背景には使用しないでください。値をクリックするとコピーできます。",
       palettes: {
         light: {
           name: "ライト",
@@ -481,7 +457,7 @@ export const content = {
       projects: {
         opencode: {
           name: "OpenCode",
-          body: "オープンソースのコーディングエージェント。デスクトップ、モバイル、ターミナル向けのアプリとSDKがあります。MITライセンス、GitHubスター220,000以上。",
+          body: "オープンソースのコーディングエージェント。デスクトップ、ターミナル、モバイル向けのアプリとSDKがあります。MITライセンス、GitHubスター220,000以上。",
         },
         sst: {
           name: "SST",
@@ -507,10 +483,11 @@ export const content = {
     },
     about: {
       title: "OpenCodeについて",
+      body: "OpenCodeと各製品の紹介文です。長文版と短文版があり、そのままコピーして使えます。",
       boilerplate: {
-        long: "OpenCodeはオープンソースのコーディングエージェントです。デスクトップアプリ、モバイルアプリ、ターミナルUI、SDKとして提供され、Claude、GPT、Geminiなど、あらゆるプロバイダーのモデルで動作します。OpenCodeはMITライセンスで、Anomalyが開発しています。GitHubスターは220,000以上、コントリビューターは1,000人以上で、毎月2,200万人以上の開発者が利用しています。",
+        long: "OpenCodeはオープンソースのコーディングエージェントです。デスクトップアプリ、ターミナルUI、モバイルアプリ、SDKとして提供され、Claude、GPT、Geminiなど、あらゆるプロバイダーのモデルで動作します。OpenCodeはMITライセンスで、Anomalyが開発しています。GitHubスターは220,000以上、コントリビューターは1,000人以上で、毎月2,200万人以上の開発者が利用しています。",
         short:
-          "OpenCodeはAnomalyが開発するオープンソースのコーディングエージェントで、デスクトップ、モバイル、ターミナル向けのアプリとSDKがあります。",
+          "OpenCodeはAnomalyが開発するオープンソースのコーディングエージェントで、デスクトップ、ターミナル、モバイル向けのアプリとSDKがあります。",
       },
       products: {
         "opencode-console": {
@@ -711,14 +688,6 @@ export const content = {
   productDownloads: {
     terminal: { commands: { curl: { name: "スクリプト" } } },
     sdk: { more: { label: "SDKのドキュメントを読む" } },
-    ide: {
-      lead: "エディタの統合ターミナルで opencode を実行すると拡張機能が自動でインストールされます。手動でインストールすることもできます。",
-      links: {
-        "vs-code-marketplace": { label: "VS Code Marketplace" },
-        "open-vsx-cursor-windsurf-vscodium": { label: "Open VSX（Cursor、Windsurf、VSCodium）" },
-      },
-      more: { label: "Zed、JetBrains IDE、その他のACPエディタを設定" },
-    },
     mini: {
       commands: { curl: { name: "スクリプト" } },
       lead: "MiniはOpenCode CLIに含まれています。次のいずれかでインストールし、opencode mini を実行してください。",

@@ -18,11 +18,6 @@ export const content = {
       action: "Установить",
     },
     sdk: { body: "Управляйте OpenCode из своих скриптов, CI-задач и инструментов.", action: "Документация" },
-    ide: {
-      name: "Расширения для IDE",
-      body: "Открывайте OpenCode в VS Code, Cursor и Windsurf или в Zed и JetBrains IDE через ACP.",
-      action: "Установить",
-    },
     mini: {
       body: "Минимальный терминальный интерфейс. Ответы выводятся в историю прокрутки, а внизу одна строка ввода.",
       action: "Установить",
@@ -183,29 +178,6 @@ export const content = {
         },
       },
     },
-    ide: {
-      title: "OpenCode | Интеграции с редакторами VS Code, Cursor и Zed",
-      description:
-        "Используйте OpenCode в своём редакторе. Расширение для VS Code, Cursor, Windsurf и VSCodium, а opencode acp для Zed, JetBrains IDE и других ACP-редакторов.",
-      intro:
-        "Используйте OpenCode в своём редакторе. В VS Code, Cursor, Windsurf и VSCodium запустите opencode во встроенном терминале, и расширение установится само. Zed, JetBrains IDE и другие редакторы с поддержкой Agent Client Protocol запускают OpenCode через opencode acp.",
-      features: {
-        "quick-launch": {
-          title: "Быстрый запуск",
-          body: "Cmd+Esc или Ctrl+Esc открывает OpenCode в разделённом терминале.",
-        },
-        "new-session": { title: "Новая сессия", body: "Cmd+Shift+Esc или Ctrl+Shift+Esc начинает ещё одну сессию." },
-        context: { title: "Контекст", body: "Передаёт в OpenCode текущее выделение или вкладку." },
-        "file-references": { title: "Ссылки на файлы", body: "Cmd+Option+K или Alt+Ctrl+K вставляет @File#L37-42." },
-        "installs-itself": {
-          title: "Ставится само",
-          body: "Запустите opencode во встроенном терминале, чтобы добавить его.",
-        },
-        "acp-editors": { title: "ACP-редакторы", body: "Zed, JetBrains IDE, Avante.nvim и CodeCompanion.nvim." },
-        "open-vsx": { title: "Open VSX", body: "Также в Open VSX для Cursor, Windsurf и VSCodium." },
-        "same-agent": { title: "Тот же агент", body: "Тот же OpenCode, что и в терминале, рядом с вашим кодом." },
-      },
-    },
     mini: {
       title: "OpenCode | Mini, минимальный терминальный интерфейс агента",
       description:
@@ -262,17 +234,21 @@ export const content = {
           title: "Любой MCP-клиент",
           body: "OpenCode, Claude Code, Cursor, Codex, Zed и многие другие.",
         },
-        "named-sessions": {
-          title: "Именованные сессии",
-          body: "Каждая сессия сохраняет свои вкладки после перезапуска.",
+        "all-your-logins": {
+          title: "Все ваши входы",
+          body: "Агенты используют сайты, на которых вы уже вошли. Без ключей и настройки.",
         },
         allowlists: { title: "Списки доступа", body: "Ограничьте вкладки сессии указанными сайтами." },
       },
       install:
-        "Одна строка устанавливает Browse, добавляет его найденным агентам и связывает расширение. В Windows выполните irm https://opencode.ai/browse/install.ps1 | iex. Или попросите агента всё настроить.",
+        "Сначала установите [расширение для Chrome]. Оно проведёт вас через остальные шаги. Чтобы установить CLI напрямую (обычно это не нужно), используйте любую из этих команд.",
     },
   },
   apps: {
+    browse: {
+      category: "Управление браузером для агентов",
+      body: "Пусть агент работает в вашем настоящем браузере, с вашими входами и вкладками.",
+    },
     opentunnel: { category: "Локальные туннели", body: "Публичные HTTPS-адреса для локальных приложений." },
     opentui: { category: "Библиотека", body: "Библиотека для терминальных интерфейсов." },
     hex: { category: "Голосовой ввод", body: "Голосовой ввод на устройстве для любого приложения." },
@@ -289,7 +265,7 @@ export const content = {
     },
     subscriptions: { "chatgpt-plus-pro": { name: "ChatGPT Plus/Pro" } },
     steps: {
-      download: { title: "Скачайте", line: "Desktop, Mobile или Terminal." },
+      download: { title: "Скачайте", line: "Desktop, Terminal или Mobile." },
       "use-free-models": {
         title: "Бесплатные модели",
         line: "В OpenCode есть набор бесплатных моделей. Аккаунт не нужен.",
@@ -346,7 +322,7 @@ export const content = {
     },
     colors: {
       title: "Цвета",
-      body: "Логотип и вордмарк используют одну краску в трёх степенях прозрачности и более светлую краску для тёмного фона. Значения ниже показывают эту краску поверх белого или #0B0B0B, как в стандартных файлах. Нажмите на значение, чтобы скопировать его.",
+      body: "Логотип и вордмарк используют одну краску в трёх степенях прозрачности и более светлую краску для тёмного фона. Значения ниже — это цвета в стандартных файлах. Используйте их только для логотипа и вордмарка, но не для другого текста или фонов. Нажмите на значение, чтобы скопировать его.",
       palettes: {
         light: {
           name: "Светлая",
@@ -470,7 +446,7 @@ export const content = {
       learnMore: "Подробнее на [anoma.ly](site).",
       projects: {
         opencode: {
-          body: "Агент для программирования с открытым кодом, с приложениями для десктопа, телефона и терминала и SDK. Лицензия MIT, 220 000+ звёзд на GitHub.",
+          body: "Агент для программирования с открытым кодом, с приложениями для десктопа, терминала и телефона и SDK. Лицензия MIT, 220 000+ звёзд на GitHub.",
         },
         sst: {
           body: "Фреймворк для full-stack приложений на вашей собственной инфраструктуре. Лицензия MIT, открыт с 2020 года, более 26 000 звёзд на GitHub.",
@@ -492,10 +468,11 @@ export const content = {
     },
     about: {
       title: "Об OpenCode",
+      body: "Описания OpenCode и его продуктов в длинной и короткой версии, готовые к копированию.",
       boilerplate: {
-        long: "OpenCode — агент для программирования с открытым исходным кодом. Он доступен как десктопное приложение, мобильное приложение, терминальный интерфейс и SDK и работает с моделями любых провайдеров, включая Claude, GPT и Gemini. OpenCode распространяется по лицензии MIT и создан Anomaly. У него более 220 000 звёзд на GitHub и более 1 000 контрибьюторов, и им пользуются более 22 миллионов разработчиков каждый месяц.",
+        long: "OpenCode — агент для программирования с открытым исходным кодом. Он доступен как десктопное приложение, терминальный интерфейс, мобильное приложение и SDK и работает с моделями любых провайдеров, включая Claude, GPT и Gemini. OpenCode распространяется по лицензии MIT и создан Anomaly. У него более 220 000 звёзд на GitHub и более 1 000 контрибьюторов, и им пользуются более 22 миллионов разработчиков каждый месяц.",
         short:
-          "OpenCode — агент для программирования с открытым кодом от Anomaly, с приложениями для десктопа, телефона и терминала и SDK.",
+          "OpenCode — агент для программирования с открытым кодом от Anomaly, с приложениями для десктопа, терминала и телефона и SDK.",
       },
       products: {
         "opencode-console": {
@@ -684,14 +661,6 @@ export const content = {
   productDownloads: {
     terminal: { commands: { curl: { name: "Скрипт" } } },
     sdk: { more: { label: "Документация SDK" } },
-    ide: {
-      lead: "Запустите opencode во встроенном терминале редактора, и расширение установится само, или установите его вручную.",
-      links: {
-        "vs-code-marketplace": { label: "VS Code Marketplace" },
-        "open-vsx-cursor-windsurf-vscodium": { label: "Open VSX (Cursor, Windsurf, VSCodium)" },
-      },
-      more: { label: "Настройка Zed, JetBrains IDE и других ACP-редакторов" },
-    },
     mini: {
       lead: "Mini входит в OpenCode CLI. Установите его любым из этих способов, затем запустите opencode mini.",
       commands: { curl: { name: "Скрипт" } },

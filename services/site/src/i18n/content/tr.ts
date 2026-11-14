@@ -44,11 +44,6 @@ export const content = {
       body: "OpenCode'u kendi betiklerinizden, CI işlerinizden ve araçlarınızdan yönetin.",
       action: "Dokümanlar",
     },
-    ide: {
-      name: "IDE eklentileri",
-      body: "OpenCode'u VS Code, Cursor ve Windsurf'te ya da ACP ile Zed ve JetBrains IDE'lerinde açın.",
-      action: "Kur",
-    },
     mini: {
       name: "Mini",
       body: "Minimal bir terminal arayüzü. Yanıtlar kaydırma geçmişinize yazılır, altta tek bir prompt kalır.",
@@ -258,47 +253,6 @@ export const content = {
         },
       },
     },
-    ide: {
-      title: "OpenCode | VS Code, Cursor ve Zed için editör entegrasyonları",
-      description:
-        "OpenCode'u editörünüzde kullanın. VS Code, Cursor, Windsurf ve VSCodium için eklenti, Zed, JetBrains IDE'leri ve diğer ACP editörleri için opencode acp.",
-      intro:
-        "OpenCode'u editörünüzün içinde kullanın. VS Code, Cursor, Windsurf ve VSCodium'da entegre terminalde opencode çalıştırın, eklenti kendini kursun. Zed, JetBrains IDE'leri ve Agent Client Protocol destekleyen diğer editörler OpenCode'u opencode acp ile çalıştırır.",
-      features: {
-        "quick-launch": {
-          title: "Hızlı açılış",
-          body: "Cmd+Esc ya da Ctrl+Esc, OpenCode'u bölünmüş bir terminalde açar.",
-        },
-        "new-session": {
-          title: "Yeni oturum",
-          body: "Cmd+Shift+Esc ya da Ctrl+Shift+Esc yeni bir oturum başlatır.",
-        },
-        context: {
-          title: "Bağlam",
-          body: "Geçerli seçiminizi ya da sekmenizi OpenCode ile paylaşır.",
-        },
-        "file-references": {
-          title: "Dosya referansı",
-          body: "Cmd+Option+K ya da Alt+Ctrl+K, @File#L37-42 ekler.",
-        },
-        "installs-itself": {
-          title: "Kendini kurar",
-          body: "Eklemek için entegre terminalde opencode çalıştırın.",
-        },
-        "acp-editors": {
-          title: "ACP editörleri",
-          body: "Zed, JetBrains IDE'leri, Avante.nvim ve CodeCompanion.nvim.",
-        },
-        "open-vsx": {
-          title: "Open VSX",
-          body: "Cursor, Windsurf ve VSCodium için Open VSX'te de var.",
-        },
-        "same-agent": {
-          title: "Aynı ajan",
-          body: "Terminalde çalıştırdığınız OpenCode, kodunuzun yanında.",
-        },
-      },
-    },
     mini: {
       title: "OpenCode | Mini, ajan için minimal bir terminal arayüzü",
       description:
@@ -380,9 +334,9 @@ export const content = {
           title: "Her MCP istemcisi",
           body: "OpenCode, Claude Code, Cursor, Codex, Zed ve çok daha fazlası.",
         },
-        "named-sessions": {
-          title: "Adlı oturumlar",
-          body: "Her oturum, yeniden başlatmalarda da kendi sekmelerini korur.",
+        "all-your-logins": {
+          title: "Tüm oturum açmalarınız",
+          body: "Ajanlar zaten oturum açtığınız siteleri kullanır. Anahtar yok, kurulum yok.",
         },
         allowlists: {
           title: "İzin listeleri",
@@ -390,10 +344,14 @@ export const content = {
         },
       },
       install:
-        "Tek satır Browse'u kurar, bulduğu ajanlara ekler ve eklentiyle eşler. Windows'ta irm https://opencode.ai/browse/install.ps1 | iex komutunu çalıştırın. Ya da ajanınızdan kurmasını isteyin.",
+        "Önce [Chrome uzantısını] yükleyin. Kalan adımlarda size yol gösterir. CLI'yi doğrudan yüklemek için (buna ihtiyacınız olmamalı) bunlardan birini kullanın.",
     },
   },
   apps: {
+    browse: {
+      category: "Ajanlar için tarayıcı kontrolü",
+      body: "Ajanınız gerçek tarayıcınızı, oturumlarınız ve sekmelerinizle kullansın.",
+    },
     hex: {
       category: "Sesle dikte",
       body: "Her uygulama için cihaz üzerinde sesle dikte.",
@@ -446,7 +404,7 @@ export const content = {
     steps: {
       download: {
         title: "İndir",
-        line: "Masaüstü, mobil ya da terminal.",
+        line: "Masaüstü, terminal ya da mobil.",
       },
       "use-free-models": {
         title: "Ücretsiz modeller",
@@ -550,7 +508,7 @@ export const content = {
     },
     colors: {
       title: "Renkler",
-      body: "Logo ve yazı logosu tek bir mürekkebi üç opaklıkta kullanır, koyu arka planlar için daha açık bir mürekkep vardır. Aşağıdaki değerler, standart dosyalardaki gibi bu mürekkebin beyaz ya da #0B0B0B üzerindeki hâlidir. Kopyalamak için bir değere tıklayın.",
+      body: "Logo ve yazı logosu tek bir mürekkebi üç opaklıkta kullanır, koyu arka planlar için daha açık bir mürekkep vardır. Aşağıdaki değerler standart dosyalardaki renklerdir. Bunları yalnızca logo ve yazı logosu için kullanın; diğer metinlerde veya arka planlarda kullanmayın. Kopyalamak için bir değere tıklayın.",
       palettes: {
         light: {
           name: "Açık",
@@ -790,7 +748,7 @@ export const content = {
       projects: {
         opencode: {
           name: "OpenCode",
-          body: "Masaüstü, mobil ve terminal uygulamaları ile bir SDK'sı olan açık kaynaklı kodlama ajanı. MIT lisanslı, 220.000'den fazla GitHub yıldızı.",
+          body: "Masaüstü, terminal ve mobil uygulamaları ile bir SDK'sı olan açık kaynaklı kodlama ajanı. MIT lisanslı, 220.000'den fazla GitHub yıldızı.",
         },
         sst: {
           name: "SST",
@@ -816,10 +774,11 @@ export const content = {
     },
     about: {
       title: "OpenCode hakkında",
+      body: "OpenCode ve ürünleri için uzun ve kısa sürümlerde, kopyalanmaya hazır tanıtım metinleri.",
       boilerplate: {
-        long: "OpenCode açık kaynaklı bir kodlama ajanıdır. Masaüstü uygulaması, mobil uygulama, terminal arayüzü ve SDK olarak gelir ve Claude, GPT ve Gemini dahil her sağlayıcının modelleriyle çalışır. OpenCode MIT lisanslıdır ve Anomaly tarafından geliştirilir. 220.000'den fazla GitHub yıldızı ve 1.000'den fazla katkıcısı vardır, her ay 22 milyondan fazla geliştirici onu kullanır.",
+        long: "OpenCode açık kaynaklı bir kodlama ajanıdır. Masaüstü uygulaması, terminal arayüzü, mobil uygulama ve SDK olarak gelir ve Claude, GPT ve Gemini dahil her sağlayıcının modelleriyle çalışır. OpenCode MIT lisanslıdır ve Anomaly tarafından geliştirilir. 220.000'den fazla GitHub yıldızı ve 1.000'den fazla katkıcısı vardır, her ay 22 milyondan fazla geliştirici onu kullanır.",
         short:
-          "OpenCode, Anomaly'nin masaüstü, mobil ve terminal uygulamaları ile bir SDK'sı olan açık kaynaklı kodlama ajanıdır.",
+          "OpenCode, Anomaly'nin masaüstü, terminal ve mobil uygulamaları ile bir SDK'sı olan açık kaynaklı kodlama ajanıdır.",
       },
       products: {
         "opencode-console": {
@@ -1174,20 +1133,6 @@ export const content = {
     sdk: {
       more: {
         label: "SDK dokümanlarını okuyun",
-      },
-    },
-    ide: {
-      links: {
-        "vs-code-marketplace": {
-          label: "VS Code Marketplace",
-        },
-        "open-vsx-cursor-windsurf-vscodium": {
-          label: "Open VSX (Cursor, Windsurf, VSCodium)",
-        },
-      },
-      lead: "Editörünüzün entegre terminalinde opencode çalıştırın, eklenti kendini kursun ya da kendiniz kurun.",
-      more: {
-        label: "Zed, JetBrains IDE'leri ve diğer ACP editörlerini kurun",
       },
     },
     mini: {

@@ -15,7 +15,8 @@ import { markdownDocument, type MarkdownContext } from "~/lib/markdown"
 import { pressMarkdown } from "~/lib/press-content"
 import { extensionMarkdown, productMarkdown, productsMarkdown } from "~/lib/product-markdown"
 import { extensionPages } from "~/component/site/extension-data"
-import { allProductPages, productAreas, productDetails } from "~/component/site/product-data"
+import { allProductPages, productAreas } from "~/component/site/product-data"
+import { productDetails } from "~/component/site/product-details"
 
 type PageMarkdown = {
   title: string
@@ -36,7 +37,7 @@ type PageMarkdown = {
  * negotiation, llms.txt and llms-full.txt all read this list.
  */
 export const pageMarkdown: Record<string, PageMarkdown> = {
-  "/": { title: "Home", description: "What OpenCode is, its apps, features and FAQ", markdown: homeMarkdown },
+  "/": { title: "Home", description: "What OpenCode is, its apps and features", markdown: homeMarkdown },
   "/product": {
     title: "Product",
     description: "Every OpenCode product and extension, more open source from Anomaly, and every download",

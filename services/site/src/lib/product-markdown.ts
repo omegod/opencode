@@ -1,18 +1,16 @@
-import { anomalyProducts } from "~/component/site/links"
+import { anomalyApps, anomalyProducts } from "~/component/site/links"
 import { extensionPages, type ExtensionSlug } from "~/component/site/extension-data"
 import {
-  acpDocs,
-  extensions,
   installs,
   mobileStores,
   productAreas,
-  productDetails,
   allProductPages,
   productPages,
   sdkDocs,
   sdkSnippet,
   type PageSlug,
 } from "~/component/site/product-data"
+import { productDetails } from "~/component/site/product-details"
 import { changelogEntryMarkdown } from "~/lib/changelog-markdown"
 import { downloadSectionsMarkdown, productDownloadMarkdown, storeMarkdown } from "~/lib/download-content"
 import { changelogQuery } from "~/lib/changelog-notes"
@@ -44,9 +42,9 @@ export function productMarkdown(slug: PageSlug) {
           ]
         : []),
       productDownloadMarkdown(slug, context),
+      `## ${context.t("site.companions")}`,
+      anomalyApps.map((app) => `- ${appMarkdown(app, context)}: ${app.body}`).join("\n"),
       ...(areas ? changelogBlocks(product.name, areas, context) : []),
-      "## More from Anomaly",
-      anomalyProducts.map((app) => `- ${link(app.name, app.href)}: ${app.body}`).join("\n"),
     )
   }
 }
@@ -67,7 +65,10 @@ export function productsMarkdown(context: MarkdownContext) {
       ...extensionPages
         .filter((extension) => extension.product)
         .map((extension) => `- ${link(extension.name, context.route(`/product/${extension.slug}`))}: ${extension.body}`),
-      ...anomalyProducts.map((app) => `- ${link(app.name, app.href)}: ${app.body}`),
+      // Browse is listed above with its own page.
+      ...anomalyProducts
+        .filter((app) => !extensionPages.some((extension) => extension.product && extension.slug === app.id))
+        .map((app) => `- ${appMarkdown(app, context)}: ${app.body}`),
     ].join("\n"),
     ...(extensionPages.some((extension) => !extension.product)
       ? [
@@ -123,8 +124,6 @@ export function productActionMarkdown(slug: PageSlug, context: MarkdownContext) 
     ).trimEnd()
   if (slug === "mobile")
     return `Download: ${mobileStores.map((store) => storeMarkdown({ ...store, href: store.href.startsWith("/") ? context.route(store.href) : store.href })).join(", ")}`
-  if (slug === "ide")
-    return `Install: ${link("VS Code Marketplace", extensions.href)}, or run \`opencode\` in your editor's integrated terminal. ACP editors: ${link("ACP docs", context.route(acpDocs))}`
   if (slug === "terminal" || slug === "mini")
     return blocks(
       "Install with any of these:",
@@ -138,7 +137,7 @@ export function productActionMarkdown(slug: PageSlug, context: MarkdownContext) 
 
 /** An extension's page as Markdown: what it does, its features, how to install it and its source. */
 export function extensionMarkdown(slug: ExtensionSlug) {
-  return () => {
+  return (context: MarkdownContext) => {
     const extension = extensionPages.find((item) => item.slug === slug)!
     return blocks(
       `# ${extension.name}`,
@@ -147,11 +146,22 @@ export function extensionMarkdown(slug: ExtensionSlug) {
       extension.features.map((feature) => `- **${feature.title}:** ${feature.body}`).join("\n"),
       "## Install",
       extension.store && `Add to Chrome from the ${link("Chrome Web Store", extension.store)}.`,
-      extension.install.lead,
+      extension.store
+        ? extension.install.lead.replace(/\[([^\]]+)\]/g, (_, text) => link(text, extension.store!))
+        : extension.install.lead.replace(/\[([^\]]+)\]/g, "$1"),
       extension.install.command && codeFence("bash", extension.install.command),
+      extension.install.commands && codeFence("bash", extension.install.commands.map((item) => item.command).join("\n")),
       `Source: ${link(extension.source.replace("https://", ""), extension.source)}`,
       "## More from Anomaly",
-      anomalyProducts.map((app) => `- ${link(app.name, app.href)}: ${app.body}`).join("\n"),
+      anomalyProducts
+        .filter((app) => app.id !== slug)
+        .map((app) => `- ${appMarkdown(app, context)}: ${app.body}`)
+        .join("\n"),
     )
   }
+}
+
+/** An app's name linked to its page, on this site in the reader's language or on its own site. */
+function appMarkdown(app: { name: string; href: string }, context: MarkdownContext) {
+  return link(app.name, app.href.startsWith("/") ? context.route(app.href) : app.href)
 }

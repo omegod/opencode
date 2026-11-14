@@ -14,7 +14,7 @@ import {
   writeWorkerConfig,
 } from "@cloudflare/build-output-utils"
 import { resolveAndParseConfig } from "@cloudflare/config"
-import { mediaFile } from "../src/lib/media"
+import { inBucket } from "../src/lib/media"
 import { stageHeaders } from "../src/lib/noindex"
 import { retainAssets } from "./retain-assets"
 
@@ -37,7 +37,7 @@ await Bun.$`bun ./script/og.ts`.cwd(root).env(env)
 await Bun.$`bun ./textjs/script/build.ts`.cwd(root).env(env)
 await Bun.$`vite build`.cwd(root).env(env)
 // The V2 docs at /docs: prerendered pages, Markdown twins and search (src/docs/script/build.ts).
-await Bun.$`bun ./src/docs/script/build.ts --mode ${mode}`.cwd(root).env(env)
+await Bun.$`bun ./src/docs/script/build.ts`.cwd(root).env(env)
 await Bun.$`bun ./script/check-server-bundle.ts`.cwd(root).env(env)
 await Bun.$`bun ./script/check-client-bundle.ts`.cwd(root).env(env)
 await Bun.$`bun ./script/check-css-output.ts`.cwd(root).env(env)
@@ -57,10 +57,11 @@ await writeRootConfig(
 
 // Heavy media is never a Worker asset; it is served from the files bucket (src/lib/media.ts).
 const assets = path.join(root, "dist", "assets")
+const output = path.join(root, ".output", "public")
 await rm(assets, { recursive: true, force: true })
-await cp(path.join(root, ".output", "public"), assets, {
+await cp(output, assets, {
   recursive: true,
-  filter: (file) => !mediaFile.test(file),
+  filter: (file) => !inBucket(path.relative(output, file)),
 })
 const shipped = await Array.fromAsync(new Bun.Glob("**/*").scan({ cwd: assets, dot: true }))
 // Every opencode.json and V1 TUI config names these as its $schema; /openapi.json is the protocol's.

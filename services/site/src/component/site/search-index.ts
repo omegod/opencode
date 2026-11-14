@@ -10,6 +10,7 @@ import { brandContent, brandMarkdown } from "~/lib/brand-content"
 import { brandAssets } from "~/lib/media"
 import type { ChangelogRelease } from "~/lib/changelog"
 import { changelogTimeline } from "~/lib/changelog-notes"
+import { latestDocs } from "~/docs/config"
 import { docsHref, docsSections } from "~/docs/lib/navigation"
 import { v1DocsUrl } from "~/lib/docs"
 import { docsIntro, docsToc } from "~/lib/docs-content"
@@ -84,19 +85,6 @@ export function buildSearchIndex(
     href: route(path),
     target: { text: title },
   })
-  const faq = (page: string, path: string) =>
-    home.faq.items.map(
-      (item): SearchItem => ({
-        id: `faq:${path}:${item.question}`,
-        group: "Sections",
-        title: item.question,
-        context: t("site.search.faq", { page }),
-        body: plainRich(item.answer),
-        keywords: "faq question",
-        href: route(path),
-        target: { faq: item.question },
-      }),
-    )
 
   const pages: SearchItem[] = [
     { title: names.home, path: "/", body: joinSentences([home.hero.title, ...home.hero.subtitle]) },
@@ -161,7 +149,6 @@ export function buildSearchIndex(
       home.tools.items.map((i) => i.name).join(" "),
     ),
     section(names.home, "/", home.openSource.title, stripTags(home.openSource.lead)),
-    section(names.home, "/", home.faq.title, undefined, "questions"),
     section(names.home, "/", home.console.title, `${home.console.headline} ${home.console.body}`),
   ]
   const productSections = productPages.flatMap((product) => [
@@ -181,16 +168,16 @@ export function buildSearchIndex(
       download.desktop.builds.map((b) => b.label).join(" "),
     ),
     section(
+      content.products.terminal.name,
+      "/terminal#install",
+      t("download.action.install"),
+      download.terminal.installs.map((i) => i.command).join(" "),
+    ),
+    section(
       content.products.mobile.name,
       "/mobile#download",
       t("download.action.download"),
       "iOS iPhone TestFlight beta Android Google Play",
-    ),
-    section(
-      content.products.terminal.name,
-      "/terminal#download",
-      t("download.action.download"),
-      download.terminal.installs.map((i) => i.command).join(" "),
     ),
     section(
       names.product,
@@ -240,7 +227,7 @@ export function buildSearchIndex(
       title: entry.label,
       context: "Docs › Intro",
       body: docsBody(entry.id),
-      href: `${docsHref("index")}#${entry.id}`,
+      href: `${docsHref("index", latestDocs)}#${entry.id}`,
       target: { id: entry.id },
     })),
     ...docsSections.flatMap((section) =>
@@ -250,9 +237,9 @@ export function buildSearchIndex(
           group: "Docs" as const,
           // A section's first page is its intro: "CLI docs" rather than a second "Intro".
           title: item.slug === section.landingSlug && section.key !== "docs" ? `${section.title} docs` : item.title,
-          context: docsHref(item.slug),
+          context: docsHref(item.slug, latestDocs),
           body: item.slug === "index" ? docsIntro.lead : undefined,
-          href: docsHref(item.slug),
+          href: docsHref(item.slug, latestDocs),
         })),
       ),
     ),
@@ -314,7 +301,6 @@ export function buildSearchIndex(
     ...homeSections,
     ...productSections,
     ...downloadSections,
-    ...faq(names.home, "/"),
     ...pressSections,
     ...brandSections,
     ...legalSections,

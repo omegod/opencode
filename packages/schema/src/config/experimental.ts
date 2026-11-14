@@ -10,6 +10,9 @@ export class Info extends Schema.Class<Info>("ConfigExperimental.Info")({
   portable_shell_scanner: Schema.Boolean.pipe(optional).annotate({
     description: "Deprecated: the built-in shell permission scanner is now always enabled.",
   }),
+  codemode_vm: Schema.Boolean.pipe(optional).annotate({
+    description: "Deprecated: ignored because Code Mode always runs on the VM.",
+  }),
   all_flags: Schema.Boolean.pipe(optional).annotate({
     description:
       "Turn every feature flag on regardless of the build channel, like OPENCODE_FLAGS=all; explicit per-flag settings still win, and false is not a kill switch.",
@@ -22,10 +25,6 @@ export class Info extends Schema.Class<Info>("ConfigExperimental.Info")({
   part_rows: Schema.Boolean.pipe(optional).annotate({
     description:
       "Write each assistant part as its own session_part row instead of rewriting the whole message on every event. Defaults to false.",
-  }),
-  codemode_vm: Schema.Boolean.pipe(optional).annotate({
-    description:
-      "Run the Code Mode execute tool on the experimental bytecode VM instead of the legacy interpreter. Defaults to false.",
   }),
   image_generate: Schema.Union([
     Schema.Boolean,
