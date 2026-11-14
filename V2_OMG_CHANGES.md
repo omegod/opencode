@@ -1239,3 +1239,37 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
   - `liveThought()` 与 `laneGap()` 改读展示层 `visibleRows()`，隐藏行后状态行不再折叠，间距按实际可见行计算。
   - `StatusLane` 新增 `working` 插槽；`working` 状态改由 fork 的 `SessionWorking` 渲染，`waiting*` 仍用官方标签。中文重新显示「思考中 · 最新行」与「工作中」。
 - 回归：新增 `timeline-stream.spec.ts` 用例「shows the scrolling thought line in the New timeline when grouped thinking is collapsed」；修复前失败（实时 `Thinking` 行仍在）、修复后通过，`Working` 全组 15/15。
+
+## 48. v2.3.0-fork.1 发布
+
+### 发布内容
+
+- 合并上游 v2.3.0（§47）：子代理默认后台运行、New timeline 实验、Recent / 可定制会话侧栏、供应商 TLS、freeform 工具输入等。
+- 分组侧栏、两行自定义提供商、vibrancy 主题继续保留。
+- 修复 New timeline 下 fork 的滚动思考行与「工作中 / 思考中」中文（§47 合并后修复）。
+- 仓库版本为官方 `2.3.0`，安装包与内置 CLI 版本为 `2.3.0-fork.1`。
+
+### 构建
+
+- 内置 CLI：`packages/cli` 下 `OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.3.0-fork.1 bun run build --single`，产物 `dist/cli-darwin-arm64/bin/opencode`，`--version` 输出 `2.3.0-fork.1`。
+- 桌面构建：`packages/desktop` 下 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.3.0-fork.1 bun run build`，脚本从 `packages/cli/dist` 复制 CLI 到 `resources/opencode-cli`。
+- 打包：清空 `dist/` 后 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.3.0-fork.1 bunx electron-builder --mac --arm64 --publish never --config electron-builder.local.ts`。
+- 本机未装 Xcode 26，`electron-builder.local.ts` 继续把 `mac.icon` 固定为 `resources/icons/icon.icns`。
+- 本次合并与发布没有数据库迁移，未做数据库备份。
+
+### 核验
+
+- 应用 `CFBundleShortVersionString`、`CFBundleVersion` 与内置 `opencode-cli --version` 均为 `2.3.0-fork.1`。
+- `app-update.yml`：`omegod/opencode`、`github`、`latest` 渠道。
+- `codesign --verify --deep --strict` 通过（`RedixDevCert`，`timestamp: none`）。
+- bundle 内只有 `icon.icns`，无 `Assets.car`。
+- DMG `hdiutil verify` 通过。
+- `latest-mac.yml` 的 SHA-512 与大小同 ZIP（290,674,342 B）和 DMG（300,608,690 B）一致：
+  - ZIP `IaI704jHiILA5uJuIp/VJr1gMojEtn720sJIqQ+27YbDmjyb+HpvfCZjjKFu/U0vAPyRPEUYvyxdM2iFGM4Q3A==`
+  - DMG `OdzJi8Uqjk1nuaTYq1u1YyTBQzaRHHwn0DXm9/D8RMBUiPUFDRdZT8Vjh6R1FOxbIyLBbKGJfNReTtO0LFbxSg==`
+- 时间线修复未跑 strobe：`timeline.bench.ts` 的用例是滚动历史、输入、查找、展开编辑、拖动审查边缘，不覆盖忙碌时的底部状态行；且本 fork 的 `origin/dev` 落后 HEAD 6,975 个提交，无法作为隔离基线。
+
+### 发布
+
+- 资产：DMG、ZIP、两个 blockmap、`latest-mac.yml`，共 5 个。
+- 先创建 draft、上传并核对资产，再发布；Release/tag `v2.3.0-fork.1` 指向本节所在提交。
