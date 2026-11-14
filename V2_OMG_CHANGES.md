@@ -1195,3 +1195,47 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 
 - 资产：DMG、ZIP、两个 blockmap、`latest-mac.yml`，共 5 个。
 - 先创建 draft、上传并核对资产，再发布；Release/tag `v2.2.6-fork.1` 指向本节所在提交。
+
+## 47. 合并上游 v2.3.0
+
+### 范围
+
+- 上游 `v2.2.6` 到 `v2.3.0`：376 个提交、2626 个文件、+91,854/−57,361 行。
+- 合并提交父：`aae73e58dd`（v2.2.6-fork.1）+ `a6b15d33da`（release v2.3.0）。
+- `v2.2.6` 是发布机器人提交，不在 v2.3.0 的历史里；实际合并基为 `33f94fce96`。
+- **没有新增数据库迁移**：`packages/core/src/database` 没有搬数据的迁移，本次合并未做数据库备份。
+
+### 上游重点
+
+- **子代理默认后台运行**：`subagent` 立即返回会话 ID，结束时把结果回报给父会话，父会话可同时运行多个子代理。
+- **New timeline 实验**：新的时间线投影与行渲染，底部使用 `StatusLane` 状态行（Working / 等待批准 / 等待回答 / 等待 shell），实时思考默认单独成行。
+- **桌面**：命令面板新增 **Jump to message**（`Cmd+Alt+G` / `Ctrl+Alt+G`）；实验性 **Recent** 会话侧栏（跨服务器最近、置顶、排序）；实验性可定制会话侧栏；标签按住修饰键显示序号；每个服务器可选择终端 shell；免费额度面板替换输入框；Mermaid 可最大化缩放；`Alt+Enter` 插队、`Mod+Enter` steer。
+- **核心**：`mcp_events` 实验、`shell_timeout_background` 实验、shell 在服务器切换与中断后保留输出、Windows 本地命令走 process daemon、freeform 工具输入、provider 双向 TLS（`settings.tls`）、输出截断保留开头、`read` 尾部读取不整文件载入、本地模型发现超时 15 秒。
+- **扩展**：实验性 `session.fork` hook、Promise 工具可协作停止、`@opencode/plugin/effect` 导出 `Tool`。
+
+### 合并处理
+
+- 38 个冲突：32 个 `package.json` 全部取上游；上游删除的 `packages/function`、`packages/web` 用 `git rm` 移除；`CHANGELOG.md`、`bun.lock` 取上游；`titlebar.tsx`、`message-timeline.tsx` 手工解决。
+- **`titlebar.tsx`**：外层继续用 fork 的 `groupedSidebar()` + `ProjectGroupSidebar`；其 fallback 采用上游新的 `Switch`，依次支持 `inbox` / `projects` / `customize` / `recent`，默认仍是竖向标签条。
+- **`message-timeline.tsx`**：经典时间线保留 fork 的 `hiddenThoughtRow` / `visibleRows` / `presentationProjection` 与 `SessionWorking`；New timeline 分支采用上游的 `StatusLane`、`laneSpacing`、`working` 与 `blockingPartID` 300ms 稳定逻辑。
+- `bun install` 正常：新增 `packages/nav-menus`、`services/data`、`services/legacy`；`packages/stats/*` 移入 `packages/data/*`；`packages/function`、`packages/web` 移除；OpenTUI 0.8.4、Effect 4.1.0。
+- `packages/client` 重跑 `bun run generate` 无差异；fork 的 `Config.Patch.provider` 补丁保留。
+
+### 验证
+
+- 根 `bun run check` 35/35 通过（工作区数量从 32 回升到 35）。
+- `packages/app` 单测 360 通过 / 0 失败；`packages/ui` 620 通过 / 0 失败；`packages/gui-plugins` 1129 通过 / 1 跳过 / 0 失败；`packages/session-ui` 599 通过 / 0 失败。
+- `packages/core` 7472 项：7431 通过 / 38 跳过 / 3 失败，仍是 §41 记录的 3 个 macOS bash 3.2 环境失败。
+- e2e keepers 30/30：`providers:` 19 项、分组与折叠侧栏 6 项、New timeline 之前的时间线状态 2 项、粘贴 1 项、终端恢复 1 项。
+- `timeline-stream.spec.ts -g Working` 15/15（新增 New timeline 用例）。
+- dev 桌面冒烟：`oc-2-translucent` 主题、分组侧栏、中文界面正常，无报错。
+
+### 合并后修复：New timeline 的底部思考滚动
+
+- 现象：默认（经典）时间线的 fork 行为完好，`Working` 用例 14/14 通过；开启上游 New timeline 后，底部只剩官方状态行，实时思考被上游单独渲染成一行，fork 的「思考中 · 思考内容滚动行」和“折叠时由底部接管首个思考”的规则消失。
+- i18n：官方**没有删除**「工作中」——`session.timeline.working` 在 zh 里仍是「工作中」；官方为 New timeline 新增的 `session.timeline.status.working` 等键没有中文翻译，所以 New timeline 在中文界面显示英文 `Working`。按“官方新增键不补翻译”的约定，等待类状态保留英文回退。
+- 修复：
+  - `hiddenThoughtRow` 同时隐藏 New timeline 的实时 `Thinking` 行（仅 `thinking.placement === "grouped"`、`details === "collapsed"` 且会话忙碌时），底部状态行接管思考，与经典时间线一致。
+  - `liveThought()` 与 `laneGap()` 改读展示层 `visibleRows()`，隐藏行后状态行不再折叠，间距按实际可见行计算。
+  - `StatusLane` 新增 `working` 插槽；`working` 状态改由 fork 的 `SessionWorking` 渲染，`waiting*` 仍用官方标签。中文重新显示「思考中 · 最新行」与「工作中」。
+- 回归：新增 `timeline-stream.spec.ts` 用例「shows the scrolling thought line in the New timeline when grouped thinking is collapsed」；修复前失败（实时 `Thinking` 行仍在）、修复后通过，`Working` 全组 15/15。
