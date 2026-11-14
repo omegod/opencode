@@ -826,6 +826,44 @@ test.describe("Working", () => {
     await expect(line).toHaveCount(0)
   })
 
+  test("shows the scrolling thought line in the New timeline when grouped thinking is collapsed", async ({ page }) => {
+    const timeline = await setupTimeline(page, {
+      messages: [
+        userMessage(),
+        assistantMessage([reasoningPart("prt_next_working_thought", "Reading the request.")], { completed: false }),
+      ],
+      viewport: { width: 390, height: 900 },
+      // Fork: the New timeline keeps the live thought in its own row by default, but grouped collapsed thinking hands
+      // it to the lane, so the thought scrolls below the turn exactly as it does in the classic timeline.
+      settings: { newTimeline: true, timelineDetail: detailed },
+    })
+
+    const lane = page.locator('[data-component="timeline-status-lane"]')
+    const working = lane.locator('[data-component="session-working"]')
+    const line = working.locator('[data-slot="session-working-thought"]')
+
+    await expect(page.locator('[data-timeline-row="Thinking"]')).toHaveCount(0)
+    await expect(lane).not.toHaveAttribute("data-collapsed", "")
+    await expect(working).toBeVisible()
+    await expect(working.locator('[data-component="text-shimmer"]')).toHaveAttribute("aria-label", "Thinking")
+    await expect(line).toHaveText("Reading the request.")
+
+    await timeline.send(
+      reasoningPartDelta(
+        "prt_next_working_thought",
+        "\nComparing both approaches before answering the question at hand",
+      ),
+    )
+    await expect(line).toHaveText("Comparing both approaches before answering the question at hand")
+    await expect.poll(() => line.evaluate((element) => element.scrollLeft)).not.toBe(0)
+
+    await timeline.send(
+      partUpdated(toolPart("prt_next_working_thought_read", "read", "running", { filePath: "package.json" })),
+    )
+    await expect(working.locator('[data-component="text-shimmer"]')).toHaveAttribute("aria-label", "Working")
+    await expect(line).toHaveCount(0)
+  })
+
   for (const name of ["shell", "patch", "subagent"] as const) {
     test(`hides Working during ${name} input and execution, then restores it on completion`, async ({ page }) => {
       const timeline = await setupTimeline(page, {

@@ -9,6 +9,8 @@ import type { TimelineGap } from "./spacing"
  */
 export function StatusLane(props: {
   label?: string
+  /** A caller-owned live indicator drawn in place of the label, such as a thought the caller streams itself. */
+  working?: JSX.Element
   collapsed?: boolean
   /** The space above the next row of the turn, so the line sits where that row will. */
   spacing?: TimelineGap
@@ -23,15 +25,17 @@ export function StatusLane(props: {
       data-spacing={props.spacing}
       class={props.class}
     >
-      <Show when={props.label}>
-        {(label) => (
-          <div data-component="session-working" role="status" aria-label={label()}>
-            <span data-slot="timeline-status-label">
-              <TextShimmer text={label()} active />
-            </span>
-          </div>
-        )}
-      </Show>
+      {props.working ?? (
+        <Show when={props.label}>
+          {(label) => (
+            <div data-component="session-working" role="status" aria-label={label()}>
+              <span data-slot="timeline-status-label">
+                <TextShimmer text={label()} active />
+              </span>
+            </div>
+          )}
+        </Show>
+      )}
       {props.children}
     </div>
   )

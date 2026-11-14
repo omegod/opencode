@@ -200,9 +200,6 @@ function MessageTimelineView(
   // hand the live thought to SessionWorking, expanded details keep the timeline row. This block is display-only;
   // the visible row lookups below remap the indexes the virtualizer reads.
   const hiddenThoughtRow = createMemo(() => {
-    // The New timeline renders its own live status lane, so this remap applies only to the classic timeline.
-    if (props.next) return
-
     const detail = props.data.timelineDetail()
 
     if (detail.thinking.placement !== "grouped" || detail.thinking.details !== "collapsed") return
@@ -210,6 +207,11 @@ function MessageTimelineView(
 
     const active = projection.activeMessageID()
     if (!active) return
+
+    // The New timeline keeps the live thought in its own row; hide that row as well so the lane below carries it, the
+    // same way the classic timeline hides the reasoning-only group.
+    if (props.next)
+      return projection.rows().findLast((row) => Predicate.isTagged(row, "Thinking") && row.userMessageID === active)
 
     const assistant = projection.assistantMessagesByParent().get(active)?.at(-1)
     if (!assistant || assistant.time.completed !== undefined || assistant.error || assistant.retry) return
@@ -548,12 +550,12 @@ function MessageTimelineView(
   })
 
   // A thought the model is writing stands in for Working, as its row says Thinking. A wait still shows, so the user
-  // sees what to act on.
+  // sees what to act on. Fork: read the presentation rows, so a hidden live thought hands the lane the status instead.
   const liveThought = createMemo(() => {
     if (!props.next) return false
     const active = projection.activeMessageID()
 
-    return projection.rows().some((row) => Predicate.isTagged(row, "Thinking") && row.userMessageID === active)
+    return visibleRows().some((row) => Predicate.isTagged(row, "Thinking") && row.userMessageID === active)
   })
 
   const laneSpacing = createMemo(() => {
@@ -562,7 +564,7 @@ function MessageTimelineView(
 
     if (!active) return
 
-    return laneGap(projection.rows(), active, messageByID())
+    return laneGap(visibleRows(), active, messageByID())
   })
 
   const working = () => {
@@ -570,6 +572,16 @@ function MessageTimelineView(
     const status = nextStatus()
 
     return !!status && (status !== "working" || !liveThought())
+  }
+
+  // Fork: Working renders the scrolling thought line through SessionWorking in both timelines, so the plain label stays
+  // for the waits that have nothing to stream.
+  const statusLabel = () => {
+    const status = nextStatus()
+
+    if (!status || status === "working") return
+
+    return language.t(`session.timeline.status.${status}`)
   }
 
   // Undelivered input waits below the work the model has seen, so live status moves into the row above it.
@@ -618,7 +630,14 @@ function MessageTimelineView(
         <StatusLane
           class={turnPadding()}
           spacing={laneSpacing()}
-          label={live() && working() ? language.t(`session.timeline.status.${nextStatus() ?? "working"}`) : undefined}
+          label={live() && working() ? statusLabel() : undefined}
+          working={
+            live() && working() && nextStatus() === "working" ? (
+              <div class="flex min-w-0 text-[13px] font-[530] leading-text-compact">
+                <SessionWorking projection={projection} timelineDetail={props.data.timelineDetail} />
+              </div>
+            ) : undefined
+          }
           collapsed={live() && liveThought() && !working() && !backgroundHintPresence.present()}
         >
           {hint(live)}
