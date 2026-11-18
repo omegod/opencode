@@ -37,13 +37,6 @@ export const clientSettings: Entry<SettingsRootTab>[] = [
   },
   {
     tab: "general",
-    label: "settings.appearance.row.tabs.groupByProject.title",
-    target: "settings-tabs-group-by-project",
-    description: "settings.appearance.row.tabs.groupByProject.description",
-    keywords: "vertical tabs group project directory sessions",
-  },
-  {
-    tab: "general",
     label: "settings.workspaces.default.title",
     target: "settings-workspace-destination",
     description: "settings.workspaces.default.description",
@@ -145,6 +138,13 @@ export const clientSettings: Entry<SettingsRootTab>[] = [
     target: "settings-sidebar-organize",
     description: "settings.experimental.row.sidebarOrganize.description",
     keywords: "vertical side tabs projects recents organize sidebar",
+  },
+  {
+    tab: "experimental",
+    label: "settings.experimental.row.classicGroupByProject.title",
+    target: "settings-tabs-group-by-project",
+    description: "settings.experimental.row.classicGroupByProject.description",
+    keywords: "classic vertical tabs group project directory sessions",
   },
   {
     tab: "appearance",

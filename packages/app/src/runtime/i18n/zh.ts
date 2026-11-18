@@ -1243,6 +1243,9 @@ export const dict = {
   "settings.experimental.row.newQuestionUI.description": "预览以键盘操作为主的问题面板",
   "settings.experimental.row.sidebarOrganize.title": "整理垂直侧边栏",
   "settings.experimental.row.sidebarOrganize.description": "选择会话在侧边栏中的列出方式。仅适用于侧边标签页。",
+  "settings.experimental.row.classicGroupByProject.title": "经典按项目分组",
+  "settings.experimental.row.classicGroupByProject.description":
+    "会话归入各自的项目文件夹，替换上方的整理方式。仅适用于垂直标签布局。",
   "settings.experimental.sidebarOrganize.recent": "最近",
   "settings.experimental.sidebarOrganize.projects": "项目",
   "settings.experimental.sidebarOrganize.list": "单一列表",
@@ -1535,8 +1538,6 @@ export const dict = {
   "provider.remove.toast.removed.description": "该提供商已从配置文件中移除。",
   "provider.remove.toast.failed.description": "移除 {{provider}} 失败。",
   "common.remove": "移除",
-  "settings.appearance.row.tabs.groupByProject.title": "按项目分组",
-  "settings.appearance.row.tabs.groupByProject.description": "将会话标签归入各自的项目目录",
   "tab.group.projects": "项目 ({{count}})",
   "tab.group.openFolder": "打开文件夹",
   "tab.group.sessions": "所有会话",

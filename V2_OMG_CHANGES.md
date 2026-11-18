@@ -14,7 +14,7 @@
 ### 设置项
 
 - 新增 `appearance.groupTabsByProject`（布尔，默认关闭）。
-- 仅在 `tabLayout === "vertical"` 时显示「按项目分组」开关。
+- 开关位于「设置 → 实验 → 经典按项目分组」；分组只在 `tabLayout === "vertical"` 时生效。
 
 ### 交互
 
@@ -1304,3 +1304,40 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - e2e keepers：`providers:` 19/19（首个用例为冷启动抖动，单跑通过）、分组 / 折叠侧栏 4/4、`timeline-stream.spec.ts -g Working` 15/15、底部状态行 1/1、终端恢复 3/3。
 - `composer.spec.ts -g paste` 6 项中 4 项通过；失败的两项是上游 `ControlOrMeta+Home` 在 macOS headless 下不移动光标（非 fork 代码，CI/Linux 可过）。
 - 未修改 `main` 项目顺序，未删除旧 `/` 项目行；未重启已安装应用或服务。
+
+## 50. v2.3.2-fork.1 发布
+
+### 发布内容
+
+- 合并上游 v2.3.2（含 2.3.1 + 2.3.2，§49）：超时 shell 命令转后台、后台压缩默认开启、GPT 6.2 ChatGPT 登录、GPT-6.2 提示缓存修复、设置内更新插件、选中代码添加评论、`read` / `websearch` 结构化结果、experimental automations 等。
+- 保留 fork 全部功能：分组侧栏、两行自定义提供商（OpenAI / Anthropic，含编辑与删除）、vibrancy 窗口效果、滚动思考行与「工作中 / 思考中」。
+- 「按项目分组」开关从「通用」移到「设置 → 实验」，标题改为「经典按项目分组」，描述更新；不再随标签布局隐藏，但分组仍只在垂直标签布局下生效。
+- 仓库版本为官方 `2.3.2`，安装包与内置 CLI 版本为 `2.3.2-fork.1`。
+
+### 构建
+
+- 内置 CLI：`packages/cli` 下 `OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.3.2-fork.1 bun run build --single`，产物 `dist/cli-darwin-arm64/bin/opencode`，`--version` 输出 `2.3.2-fork.1`。
+- 桌面构建：`packages/desktop` 下 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.3.2-fork.1 bun run build`，从 `packages/cli/dist` 复制 CLI 到 `resources/opencode-cli`。
+- 打包：清空 `dist/` 后 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.3.2-fork.1 bunx electron-builder --mac --arm64 --publish never --config electron-builder.local.ts`。
+- 本机没有 Xcode 26，`electron-builder.local.ts` 继续固定 `mac.icon` 为 `resources/icons/icon.icns`。
+
+### 核验
+
+- 应用 `CFBundleShortVersionString`、`CFBundleVersion` 与内置 `opencode-cli --version` 均为 `2.3.2-fork.1`。
+- `app-update.yml`：`omegod/opencode`、`github`、`latest` 渠道。
+- `codesign --verify --deep --strict` 通过（`RedixDevCert`，无 TeamIdentifier、无时间戳）。
+- bundle 内只有 `icon.icns`，无 `Assets.car`。
+- DMG `hdiutil verify` 通过。
+- 新构建产物包含「经典按项目分组」改动（`app.asar` 内 `classicGroupByProject` 8 处）。
+- 发布资产共 5 个：DMG、ZIP、两个 blockmap、`latest-mac.yml`。
+- `latest-mac.yml` 的 SHA-512 与 ZIP / DMG 实际一致：ZIP 293,863,242 B，DMG 303,925,385 B。
+- SHA-256：
+  - DMG `756deaf38cb5096f723bfce8ee89b7c32fab50c2de8623d454764c0588afc48a`
+  - ZIP `f36fa67748d8fbb3c001768e89be63eda88484c4652094d07a1e66a0db20ca16`
+  - `dmg.blockmap` `6ef6a5f3f0ed7b2e14920ec7895745d3091b6d48a56d4b7233d2a827c554a01b`
+  - `zip.blockmap` `0b411e7bead98f42a7e6c06abab7e378ec818859c634de95b953caf23ebf287b`
+  - `latest-mac.yml` `0584833ed505327cc370d58cadb1e5338fee9d161b05abb66b515d83c3c79da7`
+
+### 发布
+
+- 先创建 draft，上传并核对资产后再发布；Release/tag `v2.3.2-fork.1` 指向本节所在提交。

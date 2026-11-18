@@ -44,6 +44,20 @@ export const SettingsExperimental: Component = () => {
               />
             </SettingsRow>
             <SettingsRow
+              title={language.t("settings.experimental.row.classicGroupByProject.title")}
+              description={language.t("settings.experimental.row.classicGroupByProject.description")}
+            >
+              <div data-action="settings-tabs-group-by-project">
+                <Switch
+                  checked={settings.appearance.groupTabsByProject()}
+                  onChange={settings.appearance.setGroupTabsByProject}
+                  hideLabel
+                >
+                  {language.t("settings.experimental.row.classicGroupByProject.title")}
+                </Switch>
+              </div>
+            </SettingsRow>
+            <SettingsRow
               title={language.t("settings.experimental.row.newTimeline.title")}
               description={language.t("settings.experimental.row.newTimeline.description")}
             >

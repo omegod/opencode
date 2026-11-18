@@ -952,6 +952,9 @@ export const dict = {
   "settings.experimental.row.sidebarOrganize.title": "Organize vertical sidebar",
   "settings.experimental.row.sidebarOrganize.description":
     "Choose how to organize sessions in side tabs. On desktop, Projects and Customize replace Home with Settings in the sidebar.",
+  "settings.experimental.row.classicGroupByProject.title": "Classic project grouping",
+  "settings.experimental.row.classicGroupByProject.description":
+    "Sessions are filed under their project folders instead of the organize options above. Applies to the vertical tab layout.",
   "settings.experimental.sidebarOrganize.recent": "Recent",
   "settings.experimental.sidebarOrganize.projects": "Projects",
   "settings.experimental.sidebarOrganize.list": "One list",
@@ -1048,8 +1051,6 @@ export const dict = {
   "settings.appearance.row.tabs.description": "Choose how session tabs are arranged",
   "settings.appearance.row.tabs.horizontal": "Horizontal",
   "settings.appearance.row.tabs.vertical": "Vertical",
-  "settings.appearance.row.tabs.groupByProject.title": "Group by project",
-  "settings.appearance.row.tabs.groupByProject.description": "Group session tabs under their project directories",
   "tab.group.projects": "Projects ({{count}})",
   "tab.group.openFolder": "Open Folder",
   "tab.group.sessions": "All Sessions",
