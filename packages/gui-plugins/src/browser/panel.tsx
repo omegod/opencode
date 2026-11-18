@@ -383,7 +383,7 @@ export default function SessionBrowserPane(props: {
   }
 
   let preview: HTMLDivElement | undefined
-  let backdrop: HTMLDivElement | undefined
+  let backdropEl: HTMLDivElement | undefined
   const [origin, setOrigin] = createSignal({ x: 0, y: 0 })
 
   // The spotlight scrolls with the still. Translate its page coordinates to the visible pane for the editor.
@@ -393,9 +393,9 @@ export default function SessionBrowserPane(props: {
     if (!port) return
 
     const measure = () => {
-      if (!backdrop) return
+      if (!backdropEl) return
       const page = surface.getBoundingClientRect()
-      const pane = backdrop.getBoundingClientRect()
+      const pane = backdropEl.getBoundingClientRect()
 
       setOrigin({ x: page.left - pane.left, y: page.top - pane.top })
     }
@@ -1077,7 +1077,7 @@ export default function SessionBrowserPane(props: {
         <Show when={comment()}>
           {(current) => (
             <div
-              ref={backdrop}
+              ref={backdropEl}
               data-component="browser-comment"
               class="absolute start-0 top-0 z-10"
               style={{ width: `${available().width}px`, height: `${available().height}px` }}

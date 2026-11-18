@@ -1,14 +1,5 @@
 export default {
   "command.toggle": "切换调试栏",
-  "command.heap": "捕获堆快照",
-  "command.heap.description": "将应用及其服务器的内存保存到文件夹",
-  "heap.loading": "正在捕获堆快照…",
-  "heap.done": "堆快照已保存",
-  "heap.partial": "部分堆快照失败，请查看 manifest.json。",
-  "heap.failed": "无法捕获堆快照",
-  "heap.reveal": "在文件夹中显示",
-  "status.toggle": "切换调试工具",
-  ariaLabel: "开发性能诊断",
   providerAriaLabel: "提供商性能诊断",
   na: "不适用",
   "duration.label": "TIME",
@@ -55,4 +46,5 @@ export default {
   "speed.tip": "全局动画速度。点击可依次切换 0.5× 和 0.25×，再回到 1×。",
   "slow.label": "SLOW",
   "slow.tip": "以四分之一速度运行所有已调节的动画。",
+  "status.toggle": "切换调试工具",
 }
