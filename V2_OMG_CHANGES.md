@@ -1273,3 +1273,34 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 
 - 资产：DMG、ZIP、两个 blockmap、`latest-mac.yml`，共 5 个。
 - 先创建 draft、上传并核对资产，再发布；Release/tag `v2.3.0-fork.1` 指向本节所在提交。
+
+## 49. 合并上游 v2.3.2
+
+### 合并范围
+
+- 目标为上游 `v2.3.2` tag（`c0ad18b402`），不是 `upstream/dev`。合并基 `73abe63ac2`，带入 193 个提交、1,813 个文件、+106,330 / −19,967（相对 fork 第一父）。
+- 合并前建备份 tag `backup/pre-2.3.2`（`a4fc015583`）；在 `merge-v2.3.2` 分支合并，验证后快进 `v2-omg`。
+- 本机 `opencode.db` / `opencode-local.db` 合并前已备份到临时目录；本次上游引入 `schedule` → `automation` 迁移，两库本地 `schedule` 表均为 0 行。
+- 上游在 2.3.2 的 `CHANGELOG.md` 中删除了 2.3.1 段，但 2.3.1 的代码均在本次合并内；发布说明需自行覆盖 2.3.1 + 2.3.2。
+- 33 个 `package.json`、`CHANGELOG.md`、`bun.lock` 冲突全部取上游，随后 `bun install`；新增 `@hona/strobe`、`@oxlint/plugins`、`oxlint` 1.93。
+
+### 冲突处理
+
+- **`titlebar.tsx`**：分组模式继续由 fork 的 `ProjectGroupSidebar` 拥有整个侧栏；非分组 fallback 改用上游新的 `firstSidebarAction` / `searchButton` / `settingsButton` / `SidebarOrganized` 结构。`homeInSidebarHeader` 改为分组感知的 `headerAction()`，分组时头部不再重复 Home。
+- **`message-timeline.tsx`**：同时保留上游 `inRow` 与 fork 的 `statusLabel()` / `working` 插槽；New timeline 的实时思考仍由 `SessionWorking` 接管。
+- **`connect/dialog.tsx`**：以上游重写后的对话框为底，保留 fork 的自定义提供商 5 个挂点（`CustomProviderForm`、`custom()`、`editProvider`、picker 入口、协议标题）；上游已用面包屑替代的旧 accounts header 不再保留。
+- **`providers.tsx`**：保留上游 `DialogConfirmProviderRemoval`，同时保留 fork `DialogRemoveProvider`；config/custom 提供商继续就地编辑 / 移除，不显示凭据 Disconnect。
+- **`settings.spec.ts`**：保留 fork 的 config-defined provider 用例；自定义提供商标题用例改走上游面包屑返回（`Connect`），不再点击已不存在的 `Navigate back`。
+- **`icons/catalog.ts`**：fork 的 codicon `folder`、`folder-opened`、`outline-dots-vertical` 并入上游新 catalog，`file-tree` 别名保留。
+- **`browser/panel.tsx`**：采用上游新工具栏 / 视口结构，重新加 fork 的 vibrancy `backdrop`；上游同名的 DOM `backdrop` 引用重命名为 `backdropEl`，避免与 memo 冲突。
+- **`zh.ts`**：以上游中文为基，补入 74 个 fork 独有键；删除 61 个重复键与 5 个上游已删除的陈旧键（`provider.connect.*` 3 个、`dialog.directory.*` 2 个）。上游新增键不补翻译。
+- 客户端 / 插件重新生成：`packages/client` 与 `packages/plugin` 的 `bun run generate` 均已跑过，`Config.Patch.provider` 仍在生成的 `api.ts`。
+
+### 验证
+
+- 根 `bun run check` 35/35 通过。
+- 单测：`packages/app` 2,760 通过 / 0 失败；`packages/ui` 634 通过 / 0 失败；`packages/gui-plugins` 1,140 通过 / 1 跳过 / 0 失败；`packages/session-ui` 617 通过 / 0 失败。
+- `packages/core` 7,596 项：7,526 通过 / 39 跳过 / 31 失败。31 个失败均为环境问题：3 个 macOS bash 3.2 条件替换（既有基线），28 个 ripgrep 测试因本机网络无法下载 `ripgrep-15.1.0` 二进制。
+- e2e keepers：`providers:` 19/19（首个用例为冷启动抖动，单跑通过）、分组 / 折叠侧栏 4/4、`timeline-stream.spec.ts -g Working` 15/15、底部状态行 1/1、终端恢复 3/3。
+- `composer.spec.ts -g paste` 6 项中 4 项通过；失败的两项是上游 `ControlOrMeta+Home` 在 macOS headless 下不移动光标（非 fork 代码，CI/Linux 可过）。
+- 未修改 `main` 项目顺序，未删除旧 `/` 项目行；未重启已安装应用或服务。

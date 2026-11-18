@@ -2072,7 +2072,7 @@ test("providers: a custom provider step is titled for its protocol", async ({ pa
   await dialog.locator('[data-provider-id="302ai"]').click()
   // The custom forms never report a title of their own, so they used to keep this one.
   await expect(dialog).toHaveAccessibleName("Connect 302.AI")
-  await dialog.getByRole("button", { name: "Navigate back", exact: true }).click()
+  await dialog.getByRole("navigation").getByRole("button", { name: "Connect", exact: true }).click()
   await dialog.getByRole("button", { name: "Custom OpenAI provider", exact: true }).click()
   await expect(dialog).toHaveAccessibleName("Custom OpenAI provider")
   // The header names the step, so the form must not repeat the same heading.
