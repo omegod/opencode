@@ -1382,3 +1382,42 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - 新增/编辑自定义提供商（OpenAI compatible / Anthropic）时，`Connect` 弹窗从 `normal`（480px）扩大为 `large`（720×600，`fit` 自适应高度）；提供商选择器与内置连接步骤仍保持 `normal`。
 - 文件：`packages/app/src/providers/connect/dialog.tsx`（`size={custom() ? "large" : "normal"}`）。
 - 验证：`packages/app` typecheck 通过；`settings.spec.ts -g "custom provider step"` 通过。
+
+## 53. v2.3.2-fork.2 发布
+
+### 发布内容
+
+- 未合并新的官方版本，仓库版本保持 `2.3.2`，仅递增 fork 号：安装包、内置 CLI 与 tag 均为 `2.3.2-fork.2`。
+- 经典分组侧栏：修复「整理垂直侧边栏 = 项目」时点主页无反应的 bug；Home 保留并恢复正常首页。
+- 分组侧栏「新建会话」下方新增「设置」（⌘,）。
+- 多服务器项目按服务器分区为 `项目 - 服务器名称`，支持整段折叠；单服务器保持单行 `项目`，不显示计数。
+- 单服务器时加号菜单仍列出所有服务器的已用项目，加入其他服务器项目后自动分区；多服务器时各自只列本服务器项目。
+- 「打开文件夹」使用所属分区服务器，远程服务器打开现有远程目录选择弹窗。
+- 修复多服务器下项目拖动排序失效（全局 sortable 索引 + 本服务器项目序换算）。
+- 修复新建会话首条消息时侧栏标题左侧 padding 闪烁（pending 行改用预留指示器凹槽）。
+- 自定义提供商（OpenAI compatible / Anthropic）弹窗由 `normal` 扩大为 `large`（720×600）。
+
+### 构建
+
+- 内置 CLI：`packages/cli` 下 `OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.3.2-fork.2 bun run build --single`，产物 `dist/cli-darwin-arm64/bin/opencode`，`--version` 输出 `2.3.2-fork.2`。
+- 桌面构建：`packages/desktop` 下 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.3.2-fork.2 bun run build`，从 `packages/cli/dist` 复制 CLI 到 `resources/opencode-cli`。
+- 打包：清空 `dist/` 后 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.3.2-fork.2 bunx electron-builder --mac --arm64 --publish never --config electron-builder.local.ts`。
+
+### 核验
+
+- 应用 `CFBundleShortVersionString`、`CFBundleVersion` 与内置 `opencode-cli --version` 均为 `2.3.2-fork.2`。
+- `app-update.yml`：`omegod/opencode`、`github`、`latest` 渠道。
+- `codesign --verify --deep --strict` 通过（`RedixDevCert`，无 TeamIdentifier、无时间戳）。
+- DMG `hdiutil verify` 通过。
+- 发布资产共 5 个：DMG、ZIP、两个 blockmap、`latest-mac.yml`。
+- 文件大小：ZIP 293,867,593 B，DMG 303,932,856 B。
+- SHA-256：
+  - DMG `40186612bf12c5248fbcfa240e9232bb84af52afea2996b79a581834429805f3`
+  - ZIP `602add7be32f7a2372c1a67e2436cd48ccbac1ffd4667bfca5d341754beb4b50`
+  - `dmg.blockmap` `a8796f26a4c636506db939789e0a59eddfb585e29e766779e89be503ec63ddfe`
+  - `zip.blockmap` `3d05939001da9a78b4a438c539d92c2ebc8b9cfeeb454840f575d5475f3e8cf1`
+  - `latest-mac.yml` `5cbf4a528c21ee8ced41992f763bb39f2a3b683e82d0a7532b5cc9d7bd664612`
+
+### 发布
+
+- 先创建 draft，上传并核对资产后再发布；Release/tag `v2.3.2-fork.2` 指向本节所在提交。
