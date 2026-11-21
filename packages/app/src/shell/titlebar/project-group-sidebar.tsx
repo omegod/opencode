@@ -2,14 +2,15 @@ import { createMemo, onCleanup, onMount } from "solid-js"
 import { createStore } from "solid-js/store"
 import { Icon } from "@opencode/ui/icon"
 import { useCommand } from "@/shell/commands/command"
+import { useSettingsCommand } from "@/settings/command"
 import { useLanguage } from "@/runtime/i18n/language"
 import { useLayout } from "@/shell/state/layout"
 import type { Tab } from "@/shell/tabs/tabs"
 import { ProjectTabList } from "./project-tab-list"
 
 // Sidebar shell for grouped vertical tabs. When appearance.groupTabsByProject is on it replaces the
-// whole vertical sidebar content (Home, Search sessions, New Session, then the grouped list), so
-// grouped mode keeps its own rows and never renders the upstream flat top group.
+// whole vertical sidebar content (Home, Search sessions, New Session, Settings, then the grouped
+// list), so grouped mode keeps its own rows and never renders the upstream flat top group.
 export function ProjectGroupSidebar(props: {
   tabs: Tab[]
   currentTab: Tab | undefined
@@ -56,6 +57,7 @@ export function ProjectGroupSidebar(props: {
         <ProjectGroupSidebarHome onToggle={props.onHome} />
         <ProjectGroupSidebarSearch />
         <ProjectGroupSidebarNewSession onNew={props.onNewSession} />
+        <ProjectGroupSidebarSettings />
       </div>
       <div class="h-4 w-full shrink-0" aria-hidden="true" />
       <div class="relative flex min-h-0 flex-1 flex-col">
@@ -149,6 +151,32 @@ function ProjectGroupSidebarNewSession(props: { onNew: () => void }) {
       <span class="min-w-0 truncate">{language.t("command.session.new")}</span>
       <span class="ms-auto min-w-0 truncate text-[11px] leading-text-compact text-v2-text-text-faint" aria-hidden="true">
         <bdi dir="ltr">{command.keybind("tab.new")}</bdi>
+      </span>
+    </button>
+  )
+}
+
+function ProjectGroupSidebarSettings() {
+  const layout = useLayout()
+  const command = useCommand()
+  const language = useLanguage()
+  const show = useSettingsCommand()
+
+  return (
+    <button
+      type="button"
+      data-titlebar-tab-action
+      data-action="vertical-tabs-settings"
+      data-state={layout.route().type === "settings" ? "pressed" : undefined}
+      class="group flex h-7 w-full shrink-0 items-center gap-1.5 rounded-[6px] ps-1.5 pe-2 text-[13px] leading-4 text-v2-text-text-base"
+      onClick={show}
+      aria-label={language.t("sidebar.settings")}
+      aria-pressed={layout.route().type === "settings"}
+    >
+      <Icon name="settings-gear" class="shrink-0" />
+      <span class="min-w-0 truncate">{language.t("sidebar.settings")}</span>
+      <span class="ms-auto min-w-0 truncate text-[11px] leading-text-compact text-v2-text-text-faint" aria-hidden="true">
+        <bdi dir="ltr">{command.keybind("settings.open")}</bdi>
       </span>
     </button>
   )

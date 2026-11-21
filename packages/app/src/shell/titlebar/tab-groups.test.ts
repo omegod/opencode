@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import type { ServerConnection } from "@/runtime/server/registry"
 import type { LocalProject } from "@/shell/state/layout"
 import type { Tab } from "@/shell/tabs/tabs"
-import { groupTabEntries, parseProjectSortableId, projectMoveIndex, projectSortableId } from "./tab-groups"
+import { groupTabEntries, parseProjectSortableId, projectMoveIndex, projectSectionMoveIndex, projectSortableId } from "./tab-groups"
 
 const key = (value: string) => value as ServerConnection.Key
 const session = (server: string, sessionId: string): Tab => ({ type: "session", server: key(server), sessionId })
@@ -90,6 +90,46 @@ describe("projectMoveIndex", () => {
     expect(projectMoveIndex({ full, visible: ["/b"], from: 0, to: 1 })).toBeUndefined()
     expect(projectMoveIndex({ full, visible: full, from: 0, to: -1 })).toBeUndefined()
     expect(projectMoveIndex({ full, visible: ["/missing"], from: 0, to: 0 })).toBeUndefined()
+  })
+})
+
+describe("projectSectionMoveIndex", () => {
+  // Local rows, one directory group, then the remote server's rows: global positions 0-4.
+  const rows = [
+    { server: key("local"), project: "/a" },
+    { server: key("local"), project: "/b" },
+    { server: key("local"), project: undefined },
+    { server: key("remote"), project: "/c" },
+    { server: key("remote"), project: "/d" },
+  ]
+  const local = ["/a", "/b"]
+  const remote = ["/c", "/d"]
+
+  test("maps drops inside a later server's section back to that server's project order", () => {
+    // The regression: global positions include the whole local section, so they cannot be used as
+    // per-server project indices.
+    expect(projectSectionMoveIndex({ full: remote, rows, from: 3, to: 4 })).toBe(1)
+    expect(projectSectionMoveIndex({ full: remote, rows, from: 4, to: 3 })).toBe(0)
+  })
+
+  test("clamps a drop over another server to this server's first or last project", () => {
+    expect(projectSectionMoveIndex({ full: local, rows, from: 0, to: 3 })).toBe(1)
+    expect(projectSectionMoveIndex({ full: remote, rows, from: 4, to: 0 })).toBe(0)
+    // Already at that edge: the clamp is a no-op.
+    expect(projectSectionMoveIndex({ full: local, rows, from: 1, to: 3 })).toBeUndefined()
+    expect(projectSectionMoveIndex({ full: remote, rows, from: 3, to: 0 })).toBeUndefined()
+  })
+
+  test("clamps a drop on a non-project row to the last project", () => {
+    expect(projectSectionMoveIndex({ full: local, rows, from: 0, to: 2 })).toBe(1)
+  })
+
+  test("ignores non-project sources, no-op drops, and out-of-range positions", () => {
+    expect(projectSectionMoveIndex({ full: local, rows, from: 2, to: 0 })).toBeUndefined()
+    expect(projectSectionMoveIndex({ full: local, rows, from: 0, to: 0 })).toBeUndefined()
+    expect(projectSectionMoveIndex({ full: local, rows, from: 0, to: -1 })).toBeUndefined()
+    expect(projectSectionMoveIndex({ full: local, rows, from: 0, to: 9 })).toBeUndefined()
+    expect(projectSectionMoveIndex({ full: local, rows, from: 9, to: 0 })).toBeUndefined()
   })
 })
 

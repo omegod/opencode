@@ -1341,3 +1341,44 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 ### 发布
 
 - 先创建 draft，上传并核对资产后再发布；Release/tag `v2.3.2-fork.1` 指向本节所在提交。
+
+## 51. 分组侧栏：首页、设置、多服务器分区与拖动修复
+
+### 修复
+
+- **首页无反应**：经典按项目分组开启后，`useProjectNavigation()` 仍因「整理垂直侧边栏 = 项目」返回 true，Home 路由被 `ProjectLanding` 接管并恢复最近标签页。现在经典分组开启时直接退出项目导航模式，Home 恢复为原来的首页概览（唯一 upstream 改动，`packages/app/src/shell/project-navigation.ts` 一行）。
+- **多服务器拖动排序**：所有服务器共用一个 dnd-kit sortable 组，但 `index` 是每服务器内部的项目序号，多服务器时序号重复，落点与 DOM 顺序错位。现在 `useSortable` 使用全部已渲染项目组的全局唯一序号，新增 `projectSectionMoveIndex`（`tab-groups.ts`）把全局落点换算回本服务器项目序；跨服务器落点夹取到本服务器首/末位，非项目目录行夹取到最后一个项目。
+- **新建会话首条消息标题闪烁**：分组行在 pending 会话（`session` 尚未加载）时仍渲染行内 16px 头像/转圈槽，把标题右推 22px，会话加载后跳回。分组行现在从不渲染行内头像槽，准备中、运行中和等待确认统一使用预留的绝对定位指示器凹槽。
+
+### 功能
+
+- **设置行**：分组侧栏在「新建会话」下方新增「设置」（`vertical-tabs-settings`，⌘,，设置路由下高亮）。
+- **按服务器分区**：只有一台服务器有项目组时保持单行 `项目`；两台及以上时每台服务器一行 `项目 - 服务器名称`，折叠箭头紧跟文案，整行可折叠/展开，折叠状态复用 `tabs.groups` 的 `groupCollapsed`（键 `server:<key>`）持久化，折叠段整段不渲染。
+- **添加项目作用域**：单服务器时加号菜单仍列出所有服务器的已用项目，加入其他服务器项目后列表自动分区；多服务器时每行的加号只列本服务器的已用项目。
+- **打开文件夹**：使用该分区所属服务器的连接，不再写死第一台服务器；远程服务器走现有 `DirectoryPickerDialog`（带服务器名的远程「打开项目」弹窗），本机桌面端仍走原生选择器。
+
+### 文件
+
+- `packages/app/src/shell/project-navigation.ts`（1 行 upstream 改动）
+- `packages/app/src/shell/titlebar/project-tab-list.tsx`（分区、折叠、全局索引；拆出 `ProjectServerHeader` / `ProjectGroupRow`）
+- `packages/app/src/shell/titlebar/grouped-tab-item.tsx`（分组行不再渲染行内头像槽，准备中/运行中统一走绝对定位指示器）
+- `packages/app/src/shell/titlebar/project-group-sidebar.tsx`（设置行）
+- `packages/app/src/shell/titlebar/project-group-add.tsx`（`scope` / `openServer`）
+- `packages/app/src/shell/titlebar/tab-groups.ts`（`projectSectionMoveIndex`）
+- `packages/app/src/shell/titlebar/grouped-tab.css`（服务器折叠三角形）
+- `packages/app/src/runtime/i18n/en.ts` / `zh.ts`（`tab.group.projectsByServer`）
+- `packages/app/e2e/regression/tabs.spec.ts`（5 个分组侧栏 keeper）
+- `packages/app/src/shell/titlebar/tab-groups.test.ts`（全局落点换算单测）
+
+### 验证
+
+- `packages/app` typecheck 通过；`tab-groups.test.ts` 12/12。
+- e2e：`grouped sidebar` 8/8（含首页、设置行、跨服务器添加、分区折叠、远程打开文件夹、双服务器拖动排序、新建会话标题不位移）。
+- dev 实例实测：Mac.local（3 个项目）与香港（1 个项目）正确分区显示。
+
+
+## 52. 自定义提供商弹窗尺寸
+
+- 新增/编辑自定义提供商（OpenAI compatible / Anthropic）时，`Connect` 弹窗从 `normal`（480px）扩大为 `large`（720×600，`fit` 自适应高度）；提供商选择器与内置连接步骤仍保持 `normal`。
+- 文件：`packages/app/src/providers/connect/dialog.tsx`（`size={custom() ? "large" : "normal"}`）。
+- 验证：`packages/app` typecheck 通过；`settings.spec.ts -g "custom provider step"` 通过。

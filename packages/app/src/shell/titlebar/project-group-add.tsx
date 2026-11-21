@@ -26,7 +26,12 @@ const menuItemClass =
 
 // Hover-revealed "add project" entry on the grouped list label row. Offers this
 // client's used projects that have no group yet, plus a pinned open-folder action.
-export function ProjectGroupAdd(props: { exclude: () => Set<string> }) {
+// `scope` keeps one server section self-contained; without it the menu lists every server.
+export function ProjectGroupAdd(props: {
+  exclude: () => Set<string>
+  scope?: ServerConnection.Any
+  openServer?: ServerConnection.Any
+}) {
   const global = useGlobal()
   const tabs = useTabs()
   const language = useLanguage()
@@ -41,7 +46,7 @@ export function ProjectGroupAdd(props: { exclude: () => Set<string> }) {
   const [visible, setVisible] = createSignal(false)
 
   const addable = () =>
-    global.servers.list().flatMap((conn) => {
+    (props.scope ? [props.scope] : global.servers.list()).flatMap((conn) => {
       const key = ServerConnection.key(conn)
       const context = global.serverCtx(key)
       if (!context) return []
@@ -84,7 +89,7 @@ export function ProjectGroupAdd(props: { exclude: () => Set<string> }) {
   }
 
   const openFolder = () => {
-    const conn = global.servers.list()[0]
+    const conn = props.scope ?? props.openServer ?? global.servers.list()[0]
     if (!conn) return
     pickDirectory({
       server: conn,

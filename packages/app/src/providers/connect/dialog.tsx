@@ -134,7 +134,7 @@ export const DialogConnectProvider: Component<{
 
   return (
     <Dialog
-      size="normal"
+      size={custom() ? "large" : "normal"}
       fit
       anchored
       containerClass="!bg-v2-background-bg-base"

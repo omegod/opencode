@@ -290,6 +290,26 @@
   gap: 4px;
 }
 
+/* Server section header: the shared triangle sits at the trailing edge, points down expanded and
+   turns toward the inline end when collapsed, mirroring itself in RTL. */
+[data-slot="tab-list-server-chevron"] svg {
+  transition: transform 150ms ease-out;
+}
+
+[data-slot="tab-list-server"][data-collapsed="true"] [data-slot="tab-list-server-chevron"] svg {
+  transform: rotate(-90deg);
+}
+
+[data-slot="tab-list-server"][data-collapsed="true"]:dir(rtl) [data-slot="tab-list-server-chevron"] svg {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="tab-list-server-chevron"] svg {
+    transition: none;
+  }
+}
+
 /* 11. Collapse + add-menu motion (moved out of tab-nav.css). */
 [data-slot="tab-group-motion"] {
   display: grid;

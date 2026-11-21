@@ -115,3 +115,41 @@ function arrayMove<T>(items: T[], from: number, to: number): T[] {
   next.splice(to, 0, item)
   return next
 }
+
+export type ProjectSortRow = {
+  server: ServerConnection.Key
+  project: string | undefined
+}
+
+// One dnd-kit sortable group spans every server section, so `from` and `to` are positions among all
+// rendered rows. Translate a drop back to the dragged project's own server: a target in the same
+// server names a project order position, while a target in another section (or a non-project row)
+// clamps to this server's first or last project.
+export function projectSectionMoveIndex(input: {
+  full: string[]
+  rows: ProjectSortRow[]
+  from: number
+  to: number
+}): number | undefined {
+  const source = input.rows[input.from]
+  if (!source?.project) return undefined
+  if (input.to < 0 || input.to >= input.rows.length) return undefined
+  const visible = input.rows.flatMap((row) => (row.server === source.server && row.project ? [row.project] : []))
+  const from = visible.indexOf(source.project)
+  if (from === -1) return undefined
+
+  const target = input.rows[input.to]
+  const serverRows = input.rows.flatMap((row, index) =>
+    row.server === source.server && row.project ? [index] : [],
+  )
+  const first = serverRows[0]
+  if (first === undefined) return undefined
+  const to =
+    target?.server === source.server && target.project
+      ? visible.indexOf(target.project)
+      : input.to < first
+        ? 0
+        : visible.length - 1
+  if (to < 0) return undefined
+  return projectMoveIndex({ full: input.full, visible, from, to })
+}

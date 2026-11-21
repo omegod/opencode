@@ -6,9 +6,10 @@ import { Accessibility, AutoScroller, Feedback, PointerActivationConstraints } f
 import { RestrictToVerticalAxis } from "@dnd-kit/abstract/modifiers"
 import { RestrictToElement } from "@dnd-kit/dom/modifiers"
 import { arrayMove } from "@dnd-kit/helpers"
+import { Icon } from "@opencode/ui/icon"
 import { tabKey, type Tab } from "@/shell/tabs/tabs"
 import { useLanguage } from "@/runtime/i18n/language"
-import { ServerConnection } from "@/runtime/server/registry"
+import { ServerConnection, useServers } from "@/runtime/server/registry"
 import { useGlobal } from "@/runtime/server/runtime"
 import { useCommand } from "@/shell/commands/command"
 import { useTabs } from "@/shell/tabs/tabs"
@@ -21,7 +22,7 @@ import {
   groupTabEntries,
   parseProjectSortableId,
   projectGroupKey,
-  projectMoveIndex,
+  projectSectionMoveIndex,
   projectSortableId,
   type TabGroup,
 } from "./tab-groups"
@@ -83,10 +84,27 @@ function restoreDraggedRow(row: DraggedRow | undefined) {
   if (row.parent && row.element.parentElement !== row.parent) row.parent.appendChild(row.element)
 }
 
-// Grouped vertical tab list. Project headers and the sessions of each project sort in separate drag
-// contexts: the outer provider owns one sortable per project row (dragged by its header), and every
-// project mounts its own provider for its sessions, so a session can never be sorted into another
-// project.
+const serverSectionKey = (server: ServerConnection.Key) => `server:${server}`
+const isServerRowKey = (key: string) => key.startsWith("server:")
+
+type ServerSection = {
+  server: ServerConnection.Key
+  connection: ServerConnection.Any | undefined
+  name: string
+  groups: TabGroup[]
+  projectCount: number
+  collapsed: boolean
+}
+
+type ListRow =
+  | { kind: "server"; key: string; section: ServerSection }
+  | { kind: "group"; key: string; group: TabGroup }
+
+// Grouped vertical tab list. More than one server with project groups splits the list into one
+// collapsible section per server; a single server keeps the flat `Projects (n)` list. Project
+// headers and the sessions of each project sort in separate drag contexts: the outer provider owns
+// one sortable per project row (dragged by its header), and every project mounts its own provider
+// for its sessions, so a session can never be sorted into another project.
 export function ProjectTabList(props: {
   tabs: Tab[]
   currentTab: Tab | undefined
@@ -97,6 +115,7 @@ export function ProjectTabList(props: {
 }) {
   const global = useGlobal()
   const tabs = useTabs()
+  const servers = useServers()
   const command = useCommand()
   const language = useLanguage()
   const [visibility, setVisibility] = createStore<Record<string, boolean>>({})
@@ -137,27 +156,73 @@ export function ProjectTabList(props: {
   })
 
   const groupCollapsed = (group: TabGroup) => tabs.groupCollapsed(group.key)
+  const groupVisible = (group: TabGroup) =>
+    groupCollapsed(group) || group.tabs.some((tab) => tab.type === "draft" || visibility[tabKey(tab)])
+
+  const sections = createMemo((): ServerSection[] => {
+    const connections = global.servers.list()
+    const byServer = new Map<ServerConnection.Key, TabGroup[]>()
+    for (const group of groups()) {
+      const items = byServer.get(group.server)
+      if (items) items.push(group)
+      else byServer.set(group.server, [group])
+    }
+    return [...byServer.entries()].map(([server, items]) => {
+      const connection = connections.find((conn) => ServerConnection.key(conn) === server)
+      return {
+        server,
+        connection,
+        name: connection ? servers.label(connection) : server,
+        groups: items,
+        projectCount: items.filter((group) => !!group.project && groupVisible(group)).length,
+        collapsed: tabs.groupCollapsed(serverSectionKey(server)),
+      }
+    })
+  })
+
+  // Only an actual split across servers earns section headers; a second server with no project
+  // group keeps the flat list.
+  const multiServer = createMemo(() => sections().filter((section) => section.projectCount > 0).length > 1)
+  const singleSection = () => sections().find((section) => section.projectCount > 0)
+
+  const rows = createMemo((): ListRow[] => {
+    if (!multiServer()) return groups().map((group) => ({ kind: "group", key: group.key, group }))
+    return sections().flatMap((section) => {
+      const items: ListRow[] = section.groups.map((group) => ({ kind: "group", key: group.key, group }))
+      if (section.projectCount === 0) return items
+      return [
+        { kind: "server", key: serverSectionKey(section.server), section },
+        ...(section.collapsed ? [] : items),
+      ]
+    })
+  })
+
+  const renderedGroups = createMemo(() =>
+    rows().flatMap((row) => (row.kind === "group" ? [row.group] : [])),
+  )
+
+  const rowGroup = (key: string) => {
+    const row = rows().find((item) => item.key === key)
+    return row?.kind === "group" ? row.group : undefined
+  }
+
+  const groupRowIndex = (key: string) => {
+    const index = renderedGroups().findIndex((group) => group.key === key)
+    return index === -1 ? 0 : index
+  }
+
   const collapsedKeys = createMemo(
-    () => new Set((groups() ?? []).filter(groupCollapsed).flatMap((group) => group.tabs.map(tabKey))),
+    () => new Set(renderedGroups().filter(groupCollapsed).flatMap((group) => group.tabs.map(tabKey))),
   )
   const visibleTabs = createMemo(() =>
-    groups()
+    renderedGroups()
       .flatMap((group) => group.tabs)
       .filter((tab) => !collapsedKeys().has(tabKey(tab)) && (tab.type === "draft" || visibility[tabKey(tab)])),
   )
   const visibleTabIds = () => visibleTabs().map(tabKey)
   const visibleKeys = createMemo(() => new Set(visibleTabIds()))
   const visibleIndex = (key: string) => visibleTabIds().indexOf(key)
-  const groupVisible = (group: TabGroup) =>
-    groupCollapsed(group) || group.tabs.some((tab) => tab.type === "draft" || visibility[tabKey(tab)])
-  const projectCount = () => groups().filter((group) => group.project && groupVisible(group)).length
   const groupedKeys = () => new Set(groups().map((group) => projectGroupKey(group.server, group.directory)))
-  const projectGroupIndex = (group: TabGroup) => {
-    if (!group.project || !groupVisible(group)) return undefined
-    return groups()
-      .filter((item) => item.server === group.server && item.project && groupVisible(item))
-      .findIndex((item) => item.key === group.key)
-  }
 
   const moveProject = (server: ServerConnection.Key, worktree: string, from: number, to: number) => {
     const conn = global.servers.list().find((item) => ServerConnection.key(item) === server)
@@ -165,12 +230,25 @@ export function ProjectTabList(props: {
     const ctx = global.serverCtx(ServerConnection.key(conn))
     if (!ctx) return
     const full = ctx.projects.unique().map((project) => project.worktree)
-    const visible = groups()
-      .filter((group) => group.server === server && !!group.project && groupVisible(group))
-      .map((group) => group.directory)
-    const index = projectMoveIndex({ full, visible, from, to })
+    const index = projectSectionMoveIndex({
+      full,
+      rows: renderedGroups().map((group) => ({ server: group.server, project: group.project?.worktree })),
+      from,
+      to,
+    })
     if (index === undefined) return
     ctx.projects.move(worktree, index, full)
+  }
+
+  const closeGroup = (groupTabs: Tab[]) => {
+    const closing = new Set(groupTabs.map(tabKey))
+    // Keep the first tab after the group, else the one before it, so the view leaves the block it
+    // just closed; closing every tab goes home.
+    const last = props.tabs.findLastIndex((tab) => closing.has(tabKey(tab)))
+    const keep =
+      props.tabs.slice(last + 1).find((tab) => !closing.has(tabKey(tab))) ??
+      props.tabs.findLast((tab) => !closing.has(tabKey(tab)))
+    tabs.closeTabs(groupTabs.map(tabKey), keep)
   }
 
   command.register("titlebar-tab-cycle", () => [
@@ -228,113 +306,201 @@ export function ProjectTabList(props: {
         data-orientation="vertical"
         class="flex w-full min-w-0 flex-col items-stretch"
       >
-        <div data-slot="tab-list-label" class="group/label flex select-none items-center pt-1 pe-1 ps-1.5">
-          <span class="min-w-0 flex-1 text-[13px] leading-4 font-medium text-v2-text-text-faint">
-            {language.t("tab.group.projects", { count: projectCount() })}
-          </span>
-          <ProjectGroupAdd exclude={groupedKeys} />
-        </div>
-        {/* Keyed by group key strings: group objects are recreated on every recompute. */}
-        <For each={groups().map((group) => group.key)}>
+        <Show when={!multiServer()}>
+          <div data-slot="tab-list-label" class="group/label flex select-none items-center pt-1 pe-1 ps-1.5">
+            <span class="min-w-0 flex-1 text-[13px] leading-4 font-medium text-v2-text-text-faint">
+              {language.t("tab.group.projects")}
+            </span>
+            <ProjectGroupAdd exclude={groupedKeys} openServer={singleSection()?.connection} />
+          </div>
+        </Show>
+        {/* Keyed by row key strings: row objects are recreated on every recompute. */}
+        <For each={rows().map((row) => row.key)}>
           {(key) => {
-            const group = createMemo(() => groups().find((item) => item.key === key))
-            // The sortable unit is the whole group block, not just the header: dnd-kit reorders by
-            // moving the source element next to the hovered element, and a header-sized unit lands
-            // inside the hovered group container (splitting its header from its sessions). The
-            // header stays the drag handle, the feedback source and the droppable target, so the
-            // drag starts, renders and hits exactly as before while the block moves as one.
-            const sortable = useSortable({
-              get id() {
-                const current = group()
-                return current ? projectSortableId(current.server, current.directory) : `project:${key}`
-              },
-              get index() {
-                const current = group()
-                return (current && projectGroupIndex(current)) ?? 0
-              },
-              get disabled() {
-                const current = group()
-                return !current || projectGroupIndex(current) === undefined
-              },
-              get transition() {
-                // The dragged block is only an empty slot while it is the source, and animating it
-                // would briefly make it the containing block of the fixed-position header.
-                return draggingKey() === key ? { duration: 0 } : undefined
-              },
-            })
-            let motionEl!: HTMLDivElement
-            // Dragging a header collapses its sessions without writing the persisted collapse
-            // state, so dropping (or canceling) restores the pre-drag expansion automatically.
-            const effCollapsed = () => {
-              const current = group()
-              return !!current && (groupCollapsed(current) || draggingKey() === current.key)
+            if (isServerRowKey(key)) {
+              return (
+                <ProjectServerHeader
+                  row={() => {
+                    const row = rows().find((item) => item.key === key)
+                    return row?.kind === "server" ? row : undefined
+                  }}
+                  exclude={groupedKeys}
+                  onToggle={(server) => tabs.toggleGroupCollapsed(serverSectionKey(server))}
+                />
+              )
             }
-            const initial = group()
-            const [itemsMounted, setItemsMounted] = createSignal(!!initial && !groupCollapsed(initial))
-            // Collapsed sessions stay mounted only until the height transition ends, preserving the
-            // unmount-on-collapse lazy loading.
-            createEffect(() => {
-              if (!effCollapsed()) {
-                setItemsMounted(true)
-                return
-              }
-              const timer = window.setTimeout(() => setItemsMounted(false), 160)
-              onCleanup(() => window.clearTimeout(timer))
-            })
             return (
-              <Show when={group()}>
-                {(value) => (
-                  <div ref={sortable.ref} data-slot="tab-group" class="flex min-w-0 flex-col">
-                    <Show when={groupVisible(value())}>
-                      <ProjectTabGroupHeader
-                        group={value()}
-                        collapsed={effCollapsed()}
-                        dragging={sortable.isDragSource()}
-                        handleRef={sortable.handleRef}
-                        sourceRef={sortable.sourceRef}
-                        targetRef={sortable.targetRef}
-                        onToggle={() => tabs.toggleGroupCollapsed(value().key)}
-                        onCloseAll={(groupTabs) => {
-                          const closing = new Set(groupTabs.map(tabKey))
-                          // Keep the first tab after the group, else the one before it, so the view leaves the
-                          // block it just closed; closing every tab goes home.
-                          const last = props.tabs.findLastIndex((tab) => closing.has(tabKey(tab)))
-                          const keep =
-                            props.tabs.slice(last + 1).find((tab) => !closing.has(tabKey(tab))) ??
-                            props.tabs.findLast((tab) => !closing.has(tabKey(tab)))
-                          tabs.closeTabs(groupTabs.map(tabKey), keep)
-                        }}
-                      />
-                    </Show>
-                    <div
-                      ref={motionEl}
-                      data-slot="tab-group-motion"
-                      data-collapsed={effCollapsed()}
-                      inert={effCollapsed()}
-                    >
-                      <Show when={itemsMounted()}>
-                        <ProjectGroupTabs
-                          group={value()}
-                          current={props.currentTab}
-                          allKeys={props.tabs.map(tabKey)}
-                          visibleKeys={visibleKeys()}
-                          shortcutIndex={visibleIndex}
-                          showSessionTime={props.showSessionTime ?? false}
-                          onVisibleChange={(key, visible) => setVisibility(key, visible)}
-                          onNavigate={props.onNavigate}
-                          onClose={props.onClose}
-                          onReorder={props.onReorder}
-                        />
-                      </Show>
-                    </div>
-                  </div>
-                )}
-              </Show>
+              <ProjectGroupRow
+                groupKey={key}
+                group={() => rowGroup(key)}
+                sortableIndex={() => groupRowIndex(key)}
+                visible={() => {
+                  const group = rowGroup(key)
+                  return !!group && groupVisible(group)
+                }}
+                collapsed={() => {
+                  const group = rowGroup(key)
+                  return !!group && groupCollapsed(group)
+                }}
+                dragging={() => draggingKey() === key}
+                current={props.currentTab}
+                allKeys={props.tabs.map(tabKey)}
+                visibleKeys={visibleKeys()}
+                shortcutIndex={visibleIndex}
+                showSessionTime={props.showSessionTime ?? false}
+                onVisibleChange={(tab, visible) => setVisibility(tab, visible)}
+                onNavigate={props.onNavigate}
+                onClose={props.onClose}
+                onReorder={props.onReorder}
+                onToggle={() => {
+                  const group = rowGroup(key)
+                  if (group) tabs.toggleGroupCollapsed(group.key)
+                }}
+                onCloseAll={closeGroup}
+              />
             )
           }}
         </For>
       </div>
     </DragDropProvider>
+  )
+}
+
+function ProjectServerHeader(props: {
+  row: () => Extract<ListRow, { kind: "server" }> | undefined
+  exclude: () => Set<string>
+  onToggle: (server: ServerConnection.Key) => void
+}) {
+  const language = useLanguage()
+
+  return (
+    <Show when={props.row()}>
+      {(row) => (
+        <div
+          data-slot="tab-list-server"
+          data-collapsed={row().section.collapsed ? "true" : undefined}
+          class="group/label flex select-none items-center pt-1 pe-1 ps-1.5"
+        >
+          <button
+            type="button"
+            data-slot="tab-list-server-toggle"
+            class="flex h-7 min-w-0 flex-1 items-center rounded-[6px] bg-transparent text-left text-[13px] leading-4 font-medium text-v2-text-text-faint outline-none focus-visible:bg-v2-overlay-simple-overlay-hover"
+            aria-expanded={!row().section.collapsed}
+            aria-label={language.t(row().section.collapsed ? "tab.group.expand" : "tab.group.collapse")}
+            onClick={() => props.onToggle(row().section.server)}
+          >
+            <span class="min-w-0 truncate">
+              {language.t("tab.group.projectsByServer", { server: row().section.name })}
+            </span>
+            <span
+              data-slot="tab-list-server-chevron"
+              class="ms-1 flex size-4 shrink-0 items-center justify-center text-v2-icon-icon-muted"
+            >
+              <Icon name="fill-triangle-down" />
+            </span>
+          </button>
+          <ProjectGroupAdd exclude={props.exclude} scope={row().section.connection} />
+        </div>
+      )}
+    </Show>
+  )
+}
+
+function ProjectGroupRow(props: {
+  groupKey: string
+  group: () => TabGroup | undefined
+  sortableIndex: () => number
+  visible: () => boolean
+  collapsed: () => boolean
+  dragging: () => boolean
+  current: Tab | undefined
+  allKeys: string[]
+  visibleKeys: Set<string>
+  shortcutIndex: (key: string) => number
+  showSessionTime: boolean
+  onVisibleChange: (key: string, visible: boolean) => void
+  onNavigate: (tab: Tab, el?: HTMLDivElement) => void
+  onClose: (tab: Tab) => void
+  onReorder: (keys: string[]) => void
+  onToggle: () => void
+  onCloseAll: (tabs: Tab[]) => void
+}) {
+  // The sortable unit is the whole group block, not just the header: dnd-kit reorders by moving the
+  // source element next to the hovered element, and a header-sized unit lands inside the hovered
+  // group container (splitting its header from its sessions). The header stays the drag handle, the
+  // feedback source and the droppable target, so the drag starts, renders and hits exactly as
+  // before while the block moves as one.
+  const sortable = useSortable({
+    get id() {
+      const group = props.group()
+      return group ? projectSortableId(group.server, group.directory) : `project:${props.groupKey}`
+    },
+    get index() {
+      return props.sortableIndex()
+    },
+    get disabled() {
+      return !props.group()?.project || !props.visible()
+    },
+    get transition() {
+      // The dragged block is only an empty slot while it is the source, and animating it would
+      // briefly make it the containing block of the fixed-position header.
+      return props.dragging() ? { duration: 0 } : undefined
+    },
+  })
+  // Dragging a header collapses its sessions without writing the persisted collapse state, so
+  // dropping (or canceling) restores the pre-drag expansion automatically.
+  const effCollapsed = () => props.collapsed() || props.dragging()
+  const [itemsMounted, setItemsMounted] = createSignal(!!props.group() && !props.collapsed())
+  // Collapsed sessions stay mounted only until the height transition ends, preserving the
+  // unmount-on-collapse lazy loading.
+  createEffect(() => {
+    if (!effCollapsed()) {
+      setItemsMounted(true)
+      return
+    }
+    const timer = window.setTimeout(() => setItemsMounted(false), 160)
+    onCleanup(() => window.clearTimeout(timer))
+  })
+
+  return (
+    <Show when={props.group()}>
+      {(group) => (
+        <div ref={sortable.ref} data-slot="tab-group" class="flex min-w-0 flex-col">
+          <Show when={props.visible()}>
+            <ProjectTabGroupHeader
+              group={group()}
+              collapsed={effCollapsed()}
+              dragging={sortable.isDragSource()}
+              handleRef={sortable.handleRef}
+              sourceRef={sortable.sourceRef}
+              targetRef={sortable.targetRef}
+              onToggle={props.onToggle}
+              onCloseAll={props.onCloseAll}
+            />
+          </Show>
+          <div
+            data-slot="tab-group-motion"
+            data-collapsed={effCollapsed()}
+            inert={effCollapsed()}
+          >
+            <Show when={itemsMounted()}>
+              <ProjectGroupTabs
+                group={group()}
+                current={props.current}
+                allKeys={props.allKeys}
+                visibleKeys={props.visibleKeys}
+                shortcutIndex={props.shortcutIndex}
+                showSessionTime={props.showSessionTime}
+                onVisibleChange={props.onVisibleChange}
+                onNavigate={props.onNavigate}
+                onClose={props.onClose}
+                onReorder={props.onReorder}
+              />
+            </Show>
+          </div>
+        </div>
+      )}
+    </Show>
   )
 }
 

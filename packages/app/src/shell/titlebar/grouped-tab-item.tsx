@@ -291,14 +291,19 @@ export function GroupedTabItem(props: {
       <Show when={promptPulse()} keyed>
         <span data-slot="tab-prompt-pulse" aria-hidden="true" onAnimationEnd={() => setPromptPulse(0)} />
       </Show>
-      {/* Grouped lists hide the avatar slot, so the running indicator carries its own loading state and the confirmation dot while a session waits for a permission or form answer. */}
-      <Show when={props.hideProjectAvatar && props.session && (avatar.loading() || avatar.attention())}>
+      {/* Grouped lists hide the avatar slot, so the running indicator carries its own loading state and the confirmation dot while a session waits for a permission or form answer. A starting session uses the same groove, so its title never shifts when the session loads. */}
+      <Show
+        when={
+          props.hideProjectAvatar &&
+          (props.preparing || (!!props.session && (avatar.loading() || avatar.attention())))
+        }
+      >
         <span
           data-slot="tab-running-indicator"
           class="absolute start-1.5 top-1/2 flex size-4 -translate-y-1/2 items-center justify-center"
         >
           <SessionProgressIndicatorV2 />
-          <Show when={avatar.attention()}>
+          <Show when={!!props.session && avatar.attention()}>
             <span data-slot="tab-running-indicator-dot" aria-hidden="true" />
           </Show>
         </span>
@@ -338,7 +343,7 @@ export function GroupedTabItem(props: {
         }}
         class="flex h-full min-w-0 flex-1 flex-row items-center gap-1.5 text-[13px] font-medium text-v2-text-text-faint group-data-[active='true']:text-v2-text-text-base group-data-[editing='true']:text-v2-text-text-base [-webkit-user-drag:none]"
       >
-        <Show when={!props.hideProjectAvatar || !props.session}>
+        <Show when={!props.hideProjectAvatar}>
           <span data-slot="project-avatar-slot" class="flex size-4 shrink-0 items-center justify-center">
             <Show
               when={props.session}

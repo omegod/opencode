@@ -17,7 +17,7 @@ import {
 import { openFileLauncher, reviewTabs } from "../utils/side-panel"
 import { mockServers } from "../utils/mock-server"
 import { fixture, mockStressTimeline } from "../utils/session-fixture"
-import { fileNode, mockWorkspace, openSession } from "../utils/workspace"
+import { fileNode, mockRemoteServer, mockWorkspace, openDraft, openSession } from "../utils/workspace"
 import { expectSessionTitle } from "../utils/waits"
 import { openWithDirection } from "../utils/direction"
 
@@ -1282,6 +1282,233 @@ test("grouped sidebar add menu lists this client's projects only", async ({ page
   // Same source as Home: the used projects minus the one already grouped. The root and unused
   // projects exist on the server but were never used here. The leading letter is the avatar.
   await expect(menu.getByRole("menuitem")).toHaveText([/Shared$/, "Open Folder"])
+})
+
+test("grouped sidebar Home still opens Home when projects organize mode is on", async ({ page }) => {
+  await mockWorkspace(page, {
+    name: "GroupedHome",
+    sessions: [a],
+    seed: {
+      settings: {
+        appearance: { tabLayout: "vertical", sidebarOpen: true, groupTabsByProject: true },
+        general: { sidebarOrganize: "projects" },
+      },
+      tabs: [a.id],
+    },
+  })
+  await page.goto(sessionHref(a.id))
+  await expect(page.locator('[data-slot="tab-group-title"]')).toHaveText(["GroupedHome"])
+
+  // Before the fix the projects organize mode kept Home on ProjectLanding, which restored the
+  // session tab, so the click looked like a no-op.
+  await page.locator('[data-action="vertical-tabs-home"]').click()
+  await expectPath(page, "/")
+  await expect(page.getByRole("textbox", { name: /Search sessions/ })).toBeVisible()
+})
+
+test("grouped sidebar lists Settings below New session", async ({ page }) => {
+  await mockWorkspace(page, {
+    name: "GroupedSettings",
+    sessions: [a],
+    seed: {
+      settings: { appearance: { tabLayout: "vertical", sidebarOpen: true, groupTabsByProject: true } },
+      tabs: [a.id],
+    },
+  })
+  await page.goto(sessionHref(a.id))
+
+  const newSession = page.locator('[data-action="vertical-tabs-new-session"]')
+  const settings = page.locator('[data-action="vertical-tabs-settings"]')
+  await expect(newSession).toBeVisible()
+  await expect(settings).toBeVisible()
+  expect((await settings.boundingBox())!.y).toBeGreaterThan((await newSession.boundingBox())!.y)
+
+  await settings.click()
+  await expect(page.getByTestId("settings-screen")).toBeFocused()
+  await expect(settings).toHaveAttribute("data-state", "pressed")
+})
+
+test("grouped sidebar adds another server's project and splits the list", async ({ page }) => {
+  const primary = project({ id: "proj_primary", directory: "C:/OpenCode/Primary", name: "Primary" })
+  const remote = project({ id: "proj_remote_added", directory: "/remote/added", name: "Remote Beta" })
+  await mockWorkspace(page, {
+    name: "Primary",
+    directory: primary.worktree,
+    project: primary,
+    projects: [primary],
+    sessions: [{ id: "ses_primary", directory: primary.worktree, projectID: primary.id, title: "Primary session" }],
+    seed: {
+      usedProjects: { local: [primary.id], [REMOTE_SERVER]: [remote.id] },
+      settings: { appearance: { tabLayout: "vertical", sidebarOpen: true, groupTabsByProject: true } },
+      tabs: ["ses_primary"],
+    },
+  })
+  await mockRemoteServer(page, {
+    name: "Build server",
+    directory: remote.worktree,
+    project: remote,
+    projects: [remote],
+    sessions: [
+      session({
+        id: "ses_remote_added",
+        directory: remote.worktree,
+        projectID: remote.id,
+        title: "Remote session",
+      }),
+    ],
+  })
+  await page.goto(sessionHref("ses_primary"))
+
+  const sidebar = page.locator('[data-slot="vertical-tabs-sidebar"]')
+  const label = sidebar.locator('[data-slot="tab-list-label"]')
+  await expect(label).toHaveText("Projects")
+  await expect(sidebar.locator('[data-slot="tab-list-server"]')).toHaveCount(0)
+
+  // One server on screen still offers every server's projects; adding the remote one makes the
+  // list split into per-server sections.
+  await label.hover()
+  await label.locator('[data-action="tab-list-add-project"]').click()
+  const menu = page.locator('[data-slot="tab-list-add-content"]:visible')
+  await expect(menu.getByRole("menuitem")).toHaveText([/Remote Beta$/, "Open Folder"])
+  await menu.getByRole("menuitem", { name: /Remote Beta$/ }).click()
+
+  await expect(sidebar.locator('[data-slot="tab-group-title"]')).toHaveText(["Primary", "Remote Beta"])
+  await expect(sidebar.locator('[data-slot="tab-list-server"]')).toHaveCount(2)
+  await expect(label).toHaveCount(0)
+})
+
+test("grouped sidebar splits projects per server and keeps drag order inside a server", async ({ page }) => {
+  const localAlpha = project({ id: "proj_grouped_alpha", directory: "C:/OpenCode/Grouped/Alpha", name: "Alpha" })
+  const localBeta = project({ id: "proj_grouped_beta", directory: "C:/OpenCode/Grouped/Beta", name: "Beta" })
+  const localGamma = project({ id: "proj_grouped_gamma", directory: "C:/OpenCode/Grouped/Gamma", name: "Local Gamma" })
+  const remoteAlpha = project({ id: "proj_remote_alpha", directory: "/remote/alpha", name: "Remote Alpha" })
+  const remoteBeta = project({ id: "proj_remote_beta", directory: "/remote/beta", name: "Remote Beta" })
+  const remoteGamma = project({ id: "proj_remote_gamma", directory: "/remote/gamma", name: "Remote Gamma" })
+
+  await mockWorkspace(page, {
+    name: "Grouped",
+    directory: localAlpha.worktree,
+    project: localAlpha,
+    projects: [localAlpha, localBeta, localGamma],
+    sessions: [
+      { id: "ses_grouped_alpha", directory: localAlpha.worktree, projectID: localAlpha.id, title: "Local Alpha" },
+      { id: "ses_grouped_beta", directory: localBeta.worktree, projectID: localBeta.id, title: "Local Beta" },
+    ],
+    seed: {
+      usedProjects: {
+        local: [localAlpha.id, localBeta.id, localGamma.id],
+        [REMOTE_SERVER]: [remoteAlpha.id, remoteBeta.id, remoteGamma.id],
+      },
+      settings: { appearance: { tabLayout: "vertical", sidebarOpen: true, groupTabsByProject: true } },
+      tabs: [
+        "ses_grouped_alpha",
+        "ses_grouped_beta",
+        { session: "ses_grouped_remote_alpha", server: REMOTE_SERVER },
+        { session: "ses_grouped_remote_beta", server: REMOTE_SERVER },
+      ],
+    },
+  })
+  await mockRemoteServer(page, {
+    name: "Build server",
+    directory: remoteAlpha.worktree,
+    project: remoteAlpha,
+    projects: [remoteAlpha, remoteBeta, remoteGamma],
+    sessions: [
+      session({
+        id: "ses_grouped_remote_alpha",
+        directory: remoteAlpha.worktree,
+        projectID: remoteAlpha.id,
+        title: "Remote Alpha",
+      }),
+      session({
+        id: "ses_grouped_remote_beta",
+        directory: remoteBeta.worktree,
+        projectID: remoteBeta.id,
+        title: "Remote Beta",
+      }),
+    ],
+  })
+  await page.goto(sessionHref("ses_grouped_alpha"))
+
+  const sidebar = page.locator('[data-slot="vertical-tabs-sidebar"]')
+  const serverRows = sidebar.locator('[data-slot="tab-list-server"]')
+  const groupTitles = sidebar.locator('[data-slot="tab-group-title"]')
+  await expect(serverRows).toHaveCount(2)
+  await expect(groupTitles).toHaveText(["Alpha", "Beta", "Remote Alpha", "Remote Beta"])
+  const remoteRow = serverRows.filter({ hasText: "Build server" })
+  await expect(remoteRow).toContainText("Projects - Build server")
+  await expect(serverRows.filter({ hasNotText: "Build server" })).toHaveText(/^Projects - [^(]+$/)
+
+  // Each section's add menu offers only its own server's unused projects.
+  await remoteRow.hover()
+  await remoteRow.locator('[data-action="tab-list-add-project"]').click()
+  const remoteMenu = page.locator('[data-slot="tab-list-add-content"]:visible')
+  await expect(remoteMenu).toBeVisible()
+  await expect(remoteMenu.getByRole("menuitem")).toHaveText([/Remote Gamma$/, "Open Folder"])
+  await remoteMenu.getByRole("menuitem", { name: /Open Folder$/ }).click()
+  const picker = page.getByRole("dialog", { name: "Open project", exact: true })
+  await expect(picker.locator('[data-slot="directory-picker-server"], .directory-picker-server')).toContainText(
+    "Build server",
+  )
+  await page.keyboard.press("Escape")
+  await expect(picker).toBeHidden()
+
+  // A remote section collapses as one block and restores.
+  const remoteToggle = remoteRow.locator('[data-slot="tab-list-server-toggle"]')
+  await expect(remoteToggle).toHaveAttribute("aria-expanded", "true")
+  await remoteToggle.click()
+  await expect(remoteToggle).toHaveAttribute("aria-expanded", "false")
+  await expect(groupTitles).toHaveText(["Alpha", "Beta"])
+  await remoteToggle.click()
+  await expect(groupTitles).toHaveText(["Alpha", "Beta", "Remote Alpha", "Remote Beta"])
+
+  // Global sortable indices used to repeat per server; this drag was a no-op before the split.
+  const group = (title: string) =>
+    sidebar.locator('[data-slot="tab-group"]').filter({ has: page.getByText(title, { exact: true }) })
+  const source = await group("Alpha").locator('[data-slot="tab-group-header"]').boundingBox()
+  const target = await group("Beta").locator('[data-slot="tab-group-header"]').boundingBox()
+  if (!source || !target) throw new Error("grouped project headers have no bounding boxes")
+  await page.mouse.move(source.x + source.width / 2, source.y + source.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(target.x + target.width / 2, target.y + target.height - 2, { steps: 8 })
+  await page.mouse.up()
+  await expect(groupTitles).toHaveText(["Beta", "Alpha", "Remote Alpha", "Remote Beta"])
+})
+
+test("grouped sidebar keeps a starting session title inside the row indent", async ({ page }) => {
+  const settledID = "ses_grouped_settled"
+  const view = await openDraft(page, {
+    name: "GroupedPending",
+    sessions: [{ id: settledID, title: "Settled session" }],
+    seed: {
+      settings: { appearance: { tabLayout: "vertical", sidebarOpen: true, groupTabsByProject: true } },
+    },
+  })
+
+  const held = await holdRoute(page, /\/api\/session(\?|$)/, { method: "POST" })
+  await view.editor.fill("hi")
+  await page.locator('[data-action="composer-submit"]').click()
+
+  await expect.poll(() => held.requests.length).toBe(1)
+  const created = (held.requests[0]!.postDataJSON() as { id: string }).id
+  const sidebar = page.locator('[data-slot="vertical-tabs-sidebar"]')
+  const pendingTitle = sidebar.locator(
+    `[data-grouped-tab-link][href="${sessionHref(created)}"] [data-grouped-tab-title]`,
+  )
+  const settledTitle = sidebar.locator(
+    `[data-grouped-tab-link][href="${sessionHref(settledID)}"] [data-grouped-tab-title]`,
+  )
+  await expect(pendingTitle).toHaveText("Session")
+
+  const [pendingBox, settledBox] = await Promise.all([pendingTitle.boundingBox(), settledTitle.boundingBox()])
+  if (!pendingBox || !settledBox) throw new Error("grouped session titles have no bounding boxes")
+  // The pending row used to keep an in-flow avatar slot, pushing its title right until the session
+  // loaded. It now uses the reserved running-indicator groove.
+  expect(pendingBox.x).toBe(settledBox.x)
+
+  held.release()
+  await expect(pendingTitle).toHaveText("New session")
+  expect((await pendingTitle.boundingBox())!.x).toBe(settledBox.x)
 })
 
 test("vertical tab gaps hover and select the nearest row", async ({ page }) => {
