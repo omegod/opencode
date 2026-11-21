@@ -91,6 +91,7 @@ type ServerSection = {
   server: ServerConnection.Key
   connection: ServerConnection.Any | undefined
   name: string
+  local: boolean
   groups: TabGroup[]
   projectCount: number
   collapsed: boolean
@@ -173,6 +174,7 @@ export function ProjectTabList(props: {
         server,
         connection,
         name: connection ? servers.label(connection) : server,
+        local: servers.local(connection),
         groups: items,
         projectCount: items.filter((group) => !!group.project && groupVisible(group)).length,
         collapsed: tabs.groupCollapsed(serverSectionKey(server)),
@@ -390,7 +392,11 @@ function ProjectServerHeader(props: {
             onClick={() => props.onToggle(row().section.server)}
           >
             <span class="min-w-0 truncate">
-              {language.t("tab.group.projectsByServer", { server: row().section.name })}
+              {language.t("tab.group.projectsByServer", {
+                server: row().section.local
+                  ? language.t("tab.group.localServer")
+                  : row().section.name,
+              })}
             </span>
             <span
               data-slot="tab-list-server-chevron"

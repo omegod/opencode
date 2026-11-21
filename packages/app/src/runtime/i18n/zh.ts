@@ -1540,6 +1540,7 @@ export const dict = {
   "common.remove": "移除",
   "tab.group.projects": "项目",
   "tab.group.projectsByServer": "项目 - {{server}}",
+  "tab.group.localServer": "本地",
   "tab.group.openFolder": "打开文件夹",
   "tab.group.sessions": "所有会话",
   "tab.group.collapse": "收起项目会话",

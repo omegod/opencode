@@ -1421,3 +1421,11 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 ### 发布
 
 - 先创建 draft，上传并核对资产后再发布；Release/tag `v2.3.2-fork.2` 指向本节所在提交。
+
+## 54. 分组侧栏本机服务器标题
+
+- 多服务器分组时，本机（sidecar 或与 App 同源的 loopback 服务器）的分区标题固定显示为 `项目 - 本地`（英文 `Projects - Local`），不再显示主机名或「此电脑」。
+- 远程服务器仍显示 `项目 - 服务器名称`；只有一个服务器时仍只显示 `项目`。
+- 新增 i18n key `tab.group.localServer`（`Local` / `本地`）。
+- 文件：`packages/app/src/shell/titlebar/project-tab-list.tsx`（`ServerSection.local`）、`packages/app/src/runtime/i18n/en.ts` / `zh.ts`。
+- 验证：`packages/app` typecheck 通过；`tabs.spec.ts -g "splits projects per server"` 通过，并断言本机标题为 `Projects - Local`。

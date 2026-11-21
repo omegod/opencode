@@ -1437,7 +1437,8 @@ test("grouped sidebar splits projects per server and keeps drag order inside a s
   await expect(groupTitles).toHaveText(["Alpha", "Beta", "Remote Alpha", "Remote Beta"])
   const remoteRow = serverRows.filter({ hasText: "Build server" })
   await expect(remoteRow).toContainText("Projects - Build server")
-  await expect(serverRows.filter({ hasNotText: "Build server" })).toHaveText(/^Projects - [^(]+$/)
+  // The server the app runs beside is named by role, not by its hostname.
+  await expect(serverRows.filter({ hasNotText: "Build server" })).toHaveText(/^Projects - Local$/)
 
   // Each section's add menu offers only its own server's unused projects.
   await remoteRow.hover()

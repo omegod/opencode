@@ -1053,6 +1053,7 @@ export const dict = {
   "settings.appearance.row.tabs.vertical": "Vertical",
   "tab.group.projects": "Projects",
   "tab.group.projectsByServer": "Projects - {{server}}",
+  "tab.group.localServer": "Local",
   "tab.group.openFolder": "Open Folder",
   "tab.group.sessions": "All Sessions",
   "tab.group.collapse": "Collapse project sessions",
