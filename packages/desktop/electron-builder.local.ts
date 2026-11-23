@@ -18,6 +18,13 @@ import base from "./electron-builder.config"
 // afterPack copy of that ICNS into the bundle still runs, so the app icon is unchanged.
 export default {
   ...base,
+  // Upstream encrypts browser-pane cookies with a key from the login Keychain. A self-signed app is not trusted
+  // for that item's ACL, so macOS asks for the login password at every launch of the fork build. Keep Electron's
+  // default plain-text cookie store instead (as every fork before 2.4.0 did), which never touches the Keychain.
+  electronFuses: {
+    ...base.electronFuses,
+    enableCookieEncryption: false,
+  },
   mac: {
     ...base.mac,
     icon: "resources/icons/icon.icns",
