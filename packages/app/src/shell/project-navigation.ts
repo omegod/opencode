@@ -14,9 +14,10 @@ export function useProjectNavigation() {
   return () => {
     // Classic project grouping replaces the organize modes, so Home keeps its own overview.
     if (settings.appearance.groupTabsByProject()) return false
-    if (mobile() || settings.appearance.tabLayout() !== "vertical") return false
-    const mode = settings.general.sidebarOrganize()
+    // The navigation prototype keeps Home in the sidebar.
+    if (mobile() || settings.appearance.tabLayout() !== "vertical" || settings.appearance.navigationPrototype())
+      return false
 
-    return mode === "projects" || mode === "customize"
+    return settings.general.sidebarOrganize() === "customize"
   }
 }

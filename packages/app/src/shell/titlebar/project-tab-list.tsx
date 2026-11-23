@@ -25,7 +25,7 @@ import {
   projectSectionMoveIndex,
   projectSortableId,
   type TabGroup,
-} from "./tab-groups"
+} from "./project-groups"
 
 function activationSensor() {
   return PointerSensor.configure({

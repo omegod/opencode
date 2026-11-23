@@ -6,7 +6,7 @@ import { Tooltip } from "@opencode/ui/tooltip"
 import { useLanguage } from "@/runtime/i18n/language"
 import { useSettingsSurface } from "@/settings/surface"
 import { useLayout } from "@/shell/state/layout"
-import type { TabGroup } from "./tab-groups"
+import type { TabGroup } from "./project-groups"
 import { useTabs, type Tab } from "@/shell/tabs/tabs"
 
 export function ProjectTabGroupHeader(props: {
