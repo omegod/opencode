@@ -1,4 +1,4 @@
-import { createSignal, For, Show } from "solid-js"
+import { createMemo, createSignal, For, Show } from "solid-js"
 import { Menu } from "@opencode/ui/menu"
 import { Icon } from "@opencode/ui/icon"
 import { IconButton } from "@opencode/ui/icon-button"
@@ -7,7 +7,7 @@ import { ProjectAvatar } from "@opencode/ui/project-avatar"
 import { addProjects } from "@/home/projects/add"
 import { parseHomeSessionIndex } from "@/home/sessions/index"
 import { useLanguage } from "@/runtime/i18n/language"
-import { ServerConnection } from "@/runtime/server/registry"
+import { ServerConnection, useServers } from "@/runtime/server/registry"
 import { useGlobal } from "@/runtime/server/runtime"
 import { displayName, getProjectAvatarSource, getProjectAvatarVariant } from "@opencode/ui/project-avatar"
 import { homeProjectDirectories } from "@/shell/layout/helpers"
@@ -15,7 +15,7 @@ import type { LocalProject } from "@/shell/state/layout"
 import { useTabs } from "@/shell/tabs/tabs"
 import { useDirectoryPicker } from "@/workspaces/selection/picker"
 import { pathKey } from "@/workspaces/path-key"
-import { projectGroupKey } from "./tab-groups"
+import { projectGroupKey } from "./project-groups"
 
 // Cap for one index pull when loading a project's sessions; matching the home
 // page's bounded-index approach so a huge project cannot open endless tabs.
@@ -26,7 +26,8 @@ const menuItemClass =
 
 // Hover-revealed "add project" entry on the grouped list label row. Offers this
 // client's used projects that have no group yet, plus a pinned open-folder action.
-// `scope` keeps one server section self-contained; without it the menu lists every server.
+// `scope` keeps one server section self-contained; without it the menu lists every server,
+// under a heading per server once those projects come from more than one.
 export function ProjectGroupAdd(props: {
   exclude: () => Set<string>
   scope?: ServerConnection.Any
@@ -35,6 +36,7 @@ export function ProjectGroupAdd(props: {
   const global = useGlobal()
   const tabs = useTabs()
   const language = useLanguage()
+  const servers = useServers()
   const pickDirectory = useDirectoryPicker()
   // The menu content is force-mounted (see tab-nav.css), so the closed state must not run the
   // close fade before the menu ever opened; that would flash the popup on every mount.
@@ -56,6 +58,25 @@ export function ProjectGroupAdd(props: {
         .map((project) => ({ conn, project }))
     })
 
+  // The server's own order holds across groups, and its used-project order inside one. A scope has
+  // a single group, so the menu keeps that server's flat list without a heading.
+  const groups = createMemo(() => {
+    const byServer = new Map<
+      ServerConnection.Key,
+      { conn: ServerConnection.Any; entries: ReturnType<typeof addable> }
+    >()
+    for (const entry of addable()) {
+      const key = ServerConnection.key(entry.conn)
+      const group = byServer.get(key)
+      if (group) group.entries.push(entry)
+      else byServer.set(key, { conn: entry.conn, entries: [entry] })
+    }
+    return [...byServer.values()]
+  })
+
+  const serverLabel = (conn: ServerConnection.Any) =>
+    servers.local(conn) ? language.t("tab.group.localServer") : servers.label(conn)
+
   // Load the project's sessions as background tabs: merge the fetched index
   // into the client store first, then add one idempotent tab per session.
   const loadSessions = (conn: ServerConnection.Any, project: LocalProject) => {
@@ -70,13 +91,15 @@ export function ProjectGroupAdd(props: {
       .catch(() => undefined)
       .then(() => {
         const directories = new Set([project.worktree, ...(project.sandboxes ?? [])].map(pathKey))
-        const sessions = context.data.session.list().filter(
-          (session) =>
-            !session.parentID &&
-            typeof session.time.archived !== "number" &&
-            (directories.has(pathKey(session.location.directory)) ||
-              (!!project.id && session.projectID === project.id)),
-        )
+        const sessions = context.data.session
+          .list()
+          .filter(
+            (session) =>
+              !session.parentID &&
+              typeof session.time.archived !== "number" &&
+              (directories.has(pathKey(session.location.directory)) ||
+                (!!project.id && session.projectID === project.id)),
+          )
         // An empty project still needs its group, so fall back to the new-session flow.
         if (sessions.length === 0) {
           void tabs.newDraft({ server: ServerConnection.key(conn), directory: project.worktree })
@@ -145,16 +168,29 @@ export function ProjectGroupAdd(props: {
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
           <div class="max-h-[224px] overflow-y-auto">
-            <For each={addable()}>
-              {(entry) => (
-                <Menu.Item class={menuItemClass} closeOnSelect onSelect={() => loadSessions(entry.conn, entry.project)}>
-                  <ProjectAvatar
-                    fallback={displayName(entry.project)}
-                    src={getProjectAvatarSource(entry.project.id, entry.project.icon)}
-                    variant={getProjectAvatarVariant(entry.project.icon?.color)}
-                  />
-                  <span class="min-w-0 truncate leading-5">{displayName(entry.project)}</span>
-                </Menu.Item>
+            <For each={groups()}>
+              {(group) => (
+                <Menu.Group>
+                  <Show when={groups().length > 1}>
+                    <Menu.GroupLabel>{serverLabel(group.conn)}</Menu.GroupLabel>
+                  </Show>
+                  <For each={group.entries}>
+                    {(entry) => (
+                      <Menu.Item
+                        class={menuItemClass}
+                        closeOnSelect
+                        onSelect={() => loadSessions(entry.conn, entry.project)}
+                      >
+                        <ProjectAvatar
+                          fallback={displayName(entry.project)}
+                          src={getProjectAvatarSource(entry.project.id, entry.project.icon)}
+                          variant={getProjectAvatarVariant(entry.project.icon?.color)}
+                        />
+                        <span class="min-w-0 truncate leading-5">{displayName(entry.project)}</span>
+                      </Menu.Item>
+                    )}
+                  </For>
+                </Menu.Group>
               )}
             </For>
           </div>

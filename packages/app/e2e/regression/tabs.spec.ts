@@ -1300,6 +1300,7 @@ test("grouped sidebar add menu lists this client's projects only", async ({ page
   // Same source as Home: the used projects minus the one already grouped. The root and unused
   // projects exist on the server but were never used here. The leading letter is the avatar.
   await expect(menu.getByRole("menuitem")).toHaveText([/Shared$/, "Open Folder"])
+  await expect(menu.locator('[data-slot="menu-v2-group-label"]')).toHaveCount(0)
 })
 
 test("grouped sidebar Home still opens Home when projects organize mode is on", async ({ page }) => {
@@ -1348,15 +1349,16 @@ test("grouped sidebar lists Settings below New session", async ({ page }) => {
 
 test("grouped sidebar adds another server's project and splits the list", async ({ page }) => {
   const primary = project({ id: "proj_primary", directory: "C:/OpenCode/Primary", name: "Primary" })
+  const localAdded = project({ id: "proj_local_added", directory: "C:/OpenCode/Local Added", name: "Local Added" })
   const remote = project({ id: "proj_remote_added", directory: "/remote/added", name: "Remote Beta" })
   await mockWorkspace(page, {
     name: "Primary",
     directory: primary.worktree,
     project: primary,
-    projects: [primary],
+    projects: [primary, localAdded],
     sessions: [{ id: "ses_primary", directory: primary.worktree, projectID: primary.id, title: "Primary session" }],
     seed: {
-      usedProjects: { local: [primary.id], [REMOTE_SERVER]: [remote.id] },
+      usedProjects: { local: [primary.id, localAdded.id], [REMOTE_SERVER]: [remote.id] },
       settings: { appearance: { tabLayout: "vertical", sidebarOpen: true, groupTabsByProject: true } },
       tabs: ["ses_primary"],
     },
@@ -1382,12 +1384,17 @@ test("grouped sidebar adds another server's project and splits the list", async 
   await expect(label).toHaveText("Projects")
   await expect(sidebar.locator('[data-slot="tab-list-server"]')).toHaveCount(0)
 
-  // One server on screen still offers every server's projects; adding the remote one makes the
-  // list split into per-server sections.
+  // One server on screen still offers every server's projects. Those projects come from two
+  // servers, so the menu heads each server's rows with its name.
   await label.hover()
   await label.locator('[data-action="tab-list-add-project"]').click()
   const menu = page.locator('[data-slot="tab-list-add-content"]:visible')
-  await expect(menu.getByRole("menuitem")).toHaveText([/Remote Beta$/, "Open Folder"])
+  await expect(menu.locator('[data-slot="menu-v2-group-label"]')).toHaveText(["Local", "Build server"])
+  const groups = menu.getByRole("group")
+  await expect(groups).toHaveCount(2)
+  await expect(groups.nth(0).getByRole("menuitem")).toHaveText([/Local Added$/])
+  await expect(groups.nth(1).getByRole("menuitem")).toHaveText([/Remote Beta$/])
+  await expect(menu.getByRole("menuitem")).toHaveText([/Local Added$/, /Remote Beta$/, "Open Folder"])
   await menu.getByRole("menuitem", { name: /Remote Beta$/ }).click()
 
   await expect(sidebar.locator('[data-slot="tab-group-title"]')).toHaveText(["Primary", "Remote Beta"])
@@ -3129,7 +3136,9 @@ test("tab groups reorder without color drift, collapse and auto-expand on naviga
   const sidebar = page.locator('[data-slot="vertical-tabs-sidebar"]')
   const localHeader = sidebar.locator(`[data-tab-group-header][data-group-key="server:${SERVER}"]`)
   const remoteHeader = sidebar.locator(`[data-tab-group-header][data-group-key="server:${REMOTE_SERVER}"]`)
-  const remoteTab = sidebar.locator(`[data-titlebar-tab-slot]:has(a[href="${sessionHref(remoteOne.id, REMOTE_SERVER)}"])`)
+  const remoteTab = sidebar.locator(
+    `[data-titlebar-tab-slot]:has(a[href="${sessionHref(remoteOne.id, REMOTE_SERVER)}"])`,
+  )
 
   await expect(sidebar.locator("[data-tab-group]")).toHaveCount(2)
   await expect(remoteTab).toBeVisible()
