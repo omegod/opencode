@@ -1429,3 +1429,66 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 - 新增 i18n key `tab.group.localServer`（`Local` / `本地`）。
 - 文件：`packages/app/src/shell/titlebar/project-tab-list.tsx`（`ServerSection.local`）、`packages/app/src/runtime/i18n/en.ts` / `zh.ts`。
 - 验证：`packages/app` typecheck 通过；`tabs.spec.ts -g "splits projects per server"` 通过，并断言本机标题为 `Projects - Local`。
+
+## 55. 合并上游 v2.4.0
+
+### 合并
+
+- 目标为上游 `v2.4.0` tag（`44aed4fd14`），合并基 `de291ab7b1`，带入 334 个上游提交；`v2.4.0` 不含 `v2.3.2` 的 release 提交，但内容已覆盖 2.3.2。
+- 46 个冲突：33 个 `package.json`、`bun.lock`、`CHANGELOG.md`，以及 11 个代码文件。版本文件与 `CHANGELOG` 取上游 `2.4.0`；`bun.lock` 不手工合并。
+- fork 经典按项目分组与上游新的 tab groups **并存**，不迁移、不删除：上游新增 `settings.general.tabGroups`、`tab-groups.ts`、`tab-groups-ui.tsx`、拖拽状态机和 `Persist.window("tabs.groups")`；fork 分组继续接管整个侧栏。
+- fork 的 `titlebar/tab-groups.ts` / `tab-groups.test.ts` 改名为 `project-groups.ts` / `project-groups.test.ts`，避免与上游同名文件冲突；4 处引用同步更新。
+- fork 的分组折叠状态存储键从 `tabs.groups` 改为 `tabs.projectGroups`，避免与上游 tab groups 的持久化结构冲突。
+- `titlebar.tsx` 以上游 2.4.0 结构为底重建：保留 `TabGroupsProvider`、`PinsProvider`、`navigationPrototype` 与新的侧栏动作，重新接入 `ProjectGroupSidebar`、`headerAction()` 和无背景标题栏。
+- 其余合并：设置模型同时保留 `groupTabsByProject` 与上游导航字段；自定义提供商弹窗采用上游 `size="large"` 并保留 fork 两行表单；时间线保留 fork 隐藏 thought-only 行的逻辑；浏览器面板采用上游新版并重做 vibrancy backdrop；pairing 合并 `icons.pair` 与 `en` / `zh`；`connect/dialog.tsx`、`en.ts` / `zh.ts` 取并集。
+- 补上 fork 漏声明的 `@dnd-kit/helpers@0.5.0`，否则干净安装时 `project-tab-list.tsx` 无法解析。
+
+### 修复与验证
+
+- 合并后发现并修复时间线 `laneSpacing` 在 `createTimelineVirtualizer` 之前被读取导致的 `ReferenceError: Cannot access 'laneSpacing' before initialization` 白屏；定义移回 virtualizer 之前并继续使用 `visibleRows()`。
+- `packages/app`、`desktop`、`client`、`plugin`、`core`、`schema` typecheck 通过；app 单测 2893 pass。
+- e2e：grouped sidebar 8 个 keeper + 上游 tab groups 用例 9 pass；时间线相关 3 pass；自定义提供商 1 pass。
+- 两个既有失败与本次合并无关：时间线首个用例的 Solid owner warning 在干净 `v2-omg` 工作树上同样失败；`Control+,` 设置快捷键用例是 macOS 本地的测试按键差异。
+
+## 56. 「添加项目」弹窗按服务器分组
+
+- 弹窗里的项目来自两个及以上服务器时，按服务器分组显示标题：本机为 `本地` / `Local`，远程为服务器名称；只有一台服务器的项目时保持平铺，不显示标题。
+- 侧栏仍只显示一个服务器分区、但弹窗能列出另一台服务器未分组项目时，也会分组。
+- 从某个服务器分区标题打开的加号只包含该服务器，保持平铺；「打开文件夹」仍固定在底部，不参与分组。
+- 文件：`packages/app/src/shell/titlebar/project-group-add.tsx`、`packages/app/e2e/regression/tabs.spec.ts`（单服务器无标题、跨服务器标题与项目归属断言）。
+- 验证：`packages/app` typecheck 通过；相关 e2e 2 pass；grouped sidebar + 上游 tab groups 回归 9 pass。
+
+## 57. v2.4.0-fork.1 发布
+
+### 发布内容
+
+- 合并上游 `v2.4.0`（§55），包含 2.3.2 至 2.4.0 的全部官方改动：新的标签分组、pins、导航原型、浏览器面板重写、设置与时间线更新。
+- 保留 fork 全部功能：经典按项目分组侧栏、多服务器分区与 `项目 - 本地`、自定义提供商、vibrancy、滚动思考行与「工作中 / 思考中」。
+- 「添加项目」弹窗按服务器分组（§56）。
+- 仓库版本为官方 `2.4.0`，安装包与内置 CLI 版本为 `2.4.0-fork.1`。
+
+### 构建
+
+- 内置 CLI：`packages/cli` 下 `OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.4.0-fork.1 bun run build --single`，产物 `dist/cli-darwin-arm64/bin/opencode`，`--version` 输出 `opencode v2.4.0-fork.1`。
+- 桌面构建：`packages/desktop` 下 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.4.0-fork.1 bun run build`，从 `packages/cli/dist` 复制 CLI 到 `resources/opencode-cli`。
+- 打包：清空 `packages/desktop/dist/` 后 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.4.0-fork.1 bunx electron-builder --mac --arm64 --publish never --config electron-builder.local.ts`。
+
+### 核验
+
+- 应用 `CFBundleShortVersionString`、`CFBundleVersion` 与内置 `opencode-cli --version` 均为 `2.4.0-fork.1`。
+- `app-update.yml`：`omegod/opencode`、`github`、`latest` 渠道。
+- `codesign --verify --deep --strict` 通过（`RedixDevCert`，无 TeamIdentifier、无时间戳）。
+- DMG `hdiutil verify` 通过。
+- 发布资产共 5 个：DMG、ZIP、两个 blockmap、`latest-mac.yml`。
+- 文件大小：ZIP 300,605,996 B，DMG 310,897,093 B。
+- SHA-256：
+  - DMG `9d4ce57a489fb58386b17dd10c9440b1894832ca991ea1511e481ea2f19e3dcd`
+  - ZIP `5472c557cecb06b9b6e70cfdb9a3470b885080f47de72c12a638f8fd66e4a96e`
+  - `dmg.blockmap` `e4a53dfa5aa6a83adcacacdd91e004a0dfbb3985b46f773c9cb65b2932fe332d`
+  - `zip.blockmap` `437a420bcc6de784385e37c1971c29cc3a95a7e8dfad8cec85f6bb56a163a93a`
+  - `latest-mac.yml` `6489c08539d1cb29441be31c8033e8da12615f66be4e1aba32eb9be95c82834a`
+- `latest-mac.yml` 的 SHA-512 与 ZIP / DMG 实际一致。
+
+### 发布
+
+- 先创建 draft，上传并核对资产后再发布；Release/tag `v2.4.0-fork.1` 指向本节所在提交。
