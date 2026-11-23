@@ -1492,3 +1492,44 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 ### 发布
 
 - 先创建 draft，上传并核对资产后再发布；Release/tag `v2.4.0-fork.1` 指向本节所在提交。
+
+## 58. v2.4.0-fork.2：fork 构建关闭 cookie 加密
+
+### 问题
+
+- 上游 2.4.0 新增 `enableCookieEncryption: true`（`a7bb038c5a` / `cd0d037d68`）。Electron 改用钥匙串中 `OpenCode Safe Storage`（账户 `OpenCode Key`）的密钥加密浏览器面板 cookie。
+- 自签名、无 Team ID 的 fork 构建不被该钥匙串项的 ACL 信任，第一次读取时 macOS 要求输入登录密码；只点「允许」会每次启动都问。
+- 签名本身没有变化：仍是 `RedixDevCert`，DR 仍是 `identifier "ai.opencode.desktop" and certificate leaf = H"2e855ab52710805c3fd8332a1c73099297dcb271"`。
+
+### 改动
+
+- `packages/desktop/electron-builder.local.ts` 覆盖 `electronFuses.enableCookieEncryption = false`。只影响 fork 的本地 prod 打包，上游/CI 构建仍保持加密。
+- 打包后 fuse 读数为 `EnableCookieEncryption = 48`，启动不再访问钥匙串。
+- 代价：浏览器面板 cookie 回到 Electron 默认的明文存储（与 2.4.0 之前所有 fork 版本一致）；从 2.4.0-fork.1 升级时现有浏览器登录态会丢一次。旧钥匙串项可留着不管。
+- 仓库版本仍为官方 `2.4.0`，安装包与内置 CLI 版本为 `2.4.0-fork.2`。
+
+### 构建
+
+- 内置 CLI：`packages/cli` 下 `OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.4.0-fork.2 bun run build --single`，`--version` 输出 `opencode v2.4.0-fork.2`。
+- 桌面构建：`packages/desktop` 下 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.4.0-fork.2 bun run build`，从 `packages/cli/dist` 复制 CLI 到 `resources/opencode-cli`。
+- 打包：清空 `packages/desktop/dist/` 后 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.4.0-fork.2 bunx electron-builder --mac --arm64 --publish never --config electron-builder.local.ts`。
+
+### 核验
+
+- 应用 `CFBundleShortVersionString`、`CFBundleVersion` 与内置 `opencode-cli --version` 均为 `2.4.0-fork.2`。
+- fuse：`EnableCookieEncryption = 48`，`RunAsNode = 48`。
+- `app-update.yml`：`omegod/opencode`、`github`、`latest` 渠道。
+- `codesign --verify --deep --strict` 通过（`RedixDevCert`，无 TeamIdentifier、无时间戳）；DMG `hdiutil verify` 通过。
+- 发布资产共 5 个：DMG、ZIP、两个 blockmap、`latest-mac.yml`。
+- 文件大小：ZIP 300,609,306 B，DMG 310,898,786 B。
+- SHA-256：
+  - DMG `baa95e22793cec23959d775adcf6d8635d05376eab65fb2a50c795776e67f072`
+  - ZIP `95debc9f32ab724ff7be439291ca123d8f1e6776ab486c073b10448918abe65d`
+  - `dmg.blockmap` `8ef101b79c10130c9bfafda6b75f9f05a743c09f4493dc50362ebc09dc4e0695`
+  - `zip.blockmap` `8e4e45b83a2ea2dc23d3fc4c5eff0d847cfffd00583c581c1a1ec6af7692a670`
+  - `latest-mac.yml` `2ae895f301fab5b34ab78a6c93b5c0a3ad7050ff6e1f73372904e3e02d82202a`
+- `latest-mac.yml` 的 SHA-512 与 ZIP / DMG 实际一致。
+
+### 发布
+
+- 先创建 draft，上传并核对资产后再发布；Release/tag `v2.4.0-fork.2` 指向本节所在提交。
