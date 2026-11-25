@@ -1533,3 +1533,48 @@ OpenCode2（`oc-2-translucent`）亮色下 `v2-background-bg-base` 指向 `v2-gr
 ### 发布
 
 - 先创建 draft，上传并核对资产后再发布；Release/tag `v2.4.0-fork.2` 指向本节所在提交。
+
+## 59. 合并上游 v2.4.1
+
+### 合并
+
+- 目标为上游 `v2.4.1` tag（`6f0514052a`），从 `v2-omg` 建 `merge-v2.4.1`，带入 21 个上游提交；合并基为 `v2.4.0`。
+- 35 个冲突：33 个 `package.json`、`bun.lock`、`CHANGELOG.md`。版本文件与 `CHANGELOG` 取上游 `2.4.1`；`bun.lock` 先取上游再运行 `bun install`，只补回 fork 的 `@dnd-kit/helpers@0.5.0`（+3 行）。
+- `packages/app/package.json` 继续保留 fork 的 `@dnd-kit/helpers@0.5.0`，其余依赖跟随上游。
+- 其余代码文件自动合并。上游本次未改动 fork 的 `titlebar.tsx`、`project-groups.ts`、分组侧栏、`settings/model.tsx`、`connect/dialog.tsx`、`message-timeline.tsx`、`browser/panel.tsx` 等文件。
+- 上游新增模型 service tier / speed 功能（`experimental.model_speeds`），补齐 `packages/app/src/runtime/i18n/zh.ts` 与 `packages/ui/src/i18n/zh.ts` 的中文文案。
+- `packages/client` 与 `packages/plugin` 重新运行 `generate`，生成文件与上游一致，无额外差异。
+
+### 验证
+
+- `app`、`ui`、`client`、`core`、`desktop`、`plugin`、`schema`、`server`、`gui-plugins`、`session-ui`、`protocol`、`tui` 的 typecheck 全部通过。
+- app 单测 2895 pass；ui 640 pass；client 269 pass。
+- core 7930 pass、31 fail，均为本机环境导致：ripgrep 测试需要联网下载二进制，bash process substitution 用例受本机 shell 行为影响，与合并无关。
+- e2e 选取 tabs（含 fork grouped sidebar、添加项目、tab groups）、btw-sidebar、settings、home、review、session-timeline-accessibility 共 230 个用例：215 pass，15 fail 全部是 macOS 本地按键与键位标签差异（`Control` 与 `Meta`、`⌃`/`⌘` 标签、`Control+,`），CI 的 Chromium 配置不受影响。
+- 仓库版本为官方 `2.4.1`，fork 安装包与内置 CLI 版本为 `2.4.1-fork.1`。
+
+### 构建
+
+- 内置 CLI：`packages/cli` 下 `OPENCODE_CHANNEL=latest OPENCODE_VERSION=2.4.1-fork.1 bun run build --single`，`--version` 输出 `opencode v2.4.1-fork.1`。
+- 桌面构建：`packages/desktop` 下 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.4.1-fork.1 bun run build`，从 `packages/cli/dist` 复制 CLI 到 `resources/opencode-cli`。
+- 打包：清空 `packages/desktop/dist/` 后 `OPENCODE_CHANNEL=prod OPENCODE_VERSION=2.4.1-fork.1 bunx electron-builder --mac --arm64 --publish never --config electron-builder.local.ts`。
+
+### 核验
+
+- 应用 `CFBundleShortVersionString`、`CFBundleVersion` 与内置 `opencode-cli --version` 均为 `2.4.1-fork.1`。
+- fuse：`EnableCookieEncryption = 48`，`RunAsNode = 48`。
+- `app-update.yml`：`omegod/opencode`、`github`、`latest` 渠道。
+- `codesign --verify --deep --strict` 通过（`RedixDevCert`，无 TeamIdentifier、无时间戳）；DMG `hdiutil verify` 通过。
+- 发布资产共 5 个：DMG、ZIP、两个 blockmap、`latest-mac.yml`。
+- 文件大小：ZIP 300,631,670 B，DMG 310,946,641 B。
+- SHA-256：
+  - DMG `7364d0bee5b9bbcf739a918c6de1f2eea21e45a9d9d310e40d970e315a8cef0d`
+  - ZIP `9782781f98dfafca28b0b7dac4c29443eb2802aa861e1531a3859fe3b021a1b3`
+  - `dmg.blockmap` `adaa3a011f758ecbe554584fa55c8f7dc9e1bc7c09bc40a657acd65ec7af87d1`
+  - `zip.blockmap` `2026f952eb07f131a896693e923da013d3ce5e76bb610a982855eddd41dba7aa`
+  - `latest-mac.yml` `c0f18600bb81cb66f8846682708d452459e017e0269e45d0964e7ac7c3858fc3`
+- `latest-mac.yml` 的 SHA-512 与 ZIP / DMG 实际一致。
+
+### 发布
+
+- 先创建 draft，上传并核对资产后再发布；Release/tag `v2.4.1-fork.1` 指向本节所在提交。
