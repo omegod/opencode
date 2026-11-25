@@ -131,6 +131,9 @@ export const dict = {
 
   "command.model.variant.cycle": "切换思考强度",
   "command.model.variant.cycle.description": "切换到下一个强度等级",
+  "command.model.speed.cycle": "切换模型速度",
+  "command.model.speed.cycle.description": "切换到下一个速度等级",
+  "composer.speed.standard": "标准",
 
   "command.prompt.mode.shell": "Shell",
   "command.prompt.mode.normal": "Prompt",

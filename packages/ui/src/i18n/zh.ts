@@ -132,6 +132,7 @@ export const dict = {
   "ui.promptInput.chooseAgent": "选择智能体",
   "ui.promptInput.chooseModel": "选择模型",
   "ui.promptInput.chooseVariant": "选择模型变体",
+  "ui.promptInput.chooseSpeed": "选择模型速度",
   "ui.promptInput.send": "发送",
   "ui.promptInput.stop": "停止",
 
@@ -402,6 +403,8 @@ export const dict = {
   "ui.sources.openFailed": "无法打开页面",
   "ui.sessionTimeline.notice.variantSwitched": "已将变体切换为 {{variant}}",
   "ui.sessionTimeline.notice.variantDefault": "已将变体切换为默认",
+  "ui.sessionTimeline.notice.speedSwitched": "已将速度切换为 {{speed}}",
+  "ui.sessionTimeline.notice.speedStandard": "已将速度切换为标准",
   "ui.question.singleHint": "选择一个答案",
   "ui.question.classic.multiHint": "选择所有适用的答案",
   "ui.question.custom.answerPlaceholder": "输入你自己的答案…",
